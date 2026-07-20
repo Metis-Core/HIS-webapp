@@ -1,6 +1,29 @@
 import type { ReactNode } from "react";
 import type { ButtonVariantEnum, PillVariantEnum } from "@/enum";
 
+export interface IBaseEntity {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface IResponse<T> {
+  data: T;
+  pagination: IPagination;
+}
+
+export interface IError {
+  message: string;
+  statusCode: number;
+}
+
 export interface IOption {
   label: string;
   value: string | number;
