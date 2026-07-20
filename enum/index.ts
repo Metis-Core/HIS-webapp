@@ -12,3 +12,9 @@ export enum PillVariantEnum {
   Danger = "danger",
   Info = "info",
 }
+
+export enum GenderEnum {
+  Male = "male",
+  Female = "female",
+  Other = "other",
+}
