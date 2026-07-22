@@ -4,7 +4,7 @@ import { ButtonVariantEnum } from "@/enum";
 import type { IButtonProps } from "@/interfaces";
 
 const styles: Record<ButtonVariantEnum, string> = {
-  [ButtonVariantEnum.Primary]: "bg-green-600 text-white hover:bg-green-700",
+  [ButtonVariantEnum.Primary]: "bg-green-800 text-white hover:bg-green-900",
   [ButtonVariantEnum.Secondary]: "bg-zinc-200 text-zinc-900 hover:bg-zinc-300",
   [ButtonVariantEnum.Danger]: "bg-red-600 text-white hover:bg-red-700",
   [ButtonVariantEnum.Ghost]: "bg-transparent text-zinc-700 hover:bg-zinc-100",
