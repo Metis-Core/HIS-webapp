@@ -12,7 +12,7 @@ const schema = Yup.object({
 export default function AuthPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-slate-100 via-emerald-50/50 to-orange-50/40 p-4 sm:p-6">
-      <div className="grid w-full max-w-5xl min-h-[540px] overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/60 md:grid-cols-2">
+      <div className="grid w-full max-w-5xl min-h-[540px] overflow-hidden rounded-xl bg-white  md:grid-cols-2">
         <div className="relative hidden min-h-[540px] md:block">
           <Image
             src="/auth.jpg"
