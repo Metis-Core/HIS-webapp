@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import * as Yup from "yup";
-import { Button, Form, FormInput } from "@/components";
+import Image from 'next/image';
+import * as Yup from 'yup';
+import { Button, Form, FormInput } from '@/components';
 
 const schema = Yup.object({
-  username: Yup.string().required("Username is required"),
-  password: Yup.string().required("Password is required"),
+  username: Yup.string().required('Username is required'),
+  password: Yup.string().required('Password is required'),
 });
 
 export default function AuthPage() {
@@ -28,12 +28,9 @@ export default function AuthPage() {
               Suubi Medical Centre
             </p> */}
             <div className="space-y-3">
-              <h2 className="max-w-sm text-2xl font-semibold leading-snug tracking-tight">
-                Care that stays connected
-              </h2>
+              <h2 className="max-w-sm text-2xl font-semibold leading-snug tracking-tight">Care that stays connected</h2>
               <p className="max-w-sm text-sm leading-relaxed text-white/85">
-                Access patient records, clinical workflows, and day-to-day hospital
-                operations in one secure place.
+                Access patient records, clinical workflows, and day-to-day hospital operations in one secure place.
               </p>
               <ul className="space-y-1.5 pt-1 text-sm text-white/75">
                 <li className="flex items-center gap-2">
@@ -59,27 +56,17 @@ export default function AuthPage() {
               className="h-28 w-auto object-contain"
               priority
             />
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
-              Sign in
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Enter your credentials to continue
-            </p>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">Sign in</h1>
+            <p className="mt-1 text-sm text-slate-500">Enter your credentials to continue</p>
           </div>
 
           <Form
-            initialValues={{ username: "", password: "" }}
+            initialValues={{ username: '', password: '' }}
             validationSchema={schema}
             onSubmit={() => undefined}
             className="flex flex-col gap-4"
           >
-            <FormInput
-              name="username"
-              label="Username"
-              placeholder="Enter username"
-              autoComplete="username"
-              required
-            />
+            <FormInput name="username" label="Username" placeholder="Enter username" autoComplete="username" required />
             <FormInput
               name="password"
               type="password"
@@ -89,10 +76,7 @@ export default function AuthPage() {
               required
             />
             <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-sm font-medium text-[#f37021] hover:underline"
-              >
+              <button type="button" className="text-sm font-medium text-[#f37021] hover:underline">
                 Forgot password?
               </button>
             </div>
@@ -101,9 +85,7 @@ export default function AuthPage() {
             </Button>
           </Form>
 
-          <p className="text-center text-xs text-slate-400">
-            Authorized staff only · Suubi Medical Centre
-          </p>
+          <p className="text-center text-xs text-slate-400">Authorized staff only · Suubi Medical Centre</p>
         </div>
       </div>
     </div>

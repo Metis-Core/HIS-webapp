@@ -1,0 +1,12 @@
+import StatCard from './stat-card';
+import type { IStatsProps } from '@/interfaces';
+
+export default function Stats({ items, className = '' }: IStatsProps) {
+  return (
+    <div className={`grid gap-4 sm:grid-cols-2 md:grid-cols-3 ${className}`.trim()}>
+      {items.map((item) => (
+        <StatCard key={item.label} {...item} />
+      ))}
+    </div>
+  );
+}
