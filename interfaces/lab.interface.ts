@@ -1,3 +1,3 @@
 import { IBaseEntity } from '.';
 
-export interface ILab extends IBaseEntity { }
+export interface ILab extends IBaseEntity {}

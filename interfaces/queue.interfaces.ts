@@ -1,3 +1,3 @@
 import { IBaseEntity } from '.';
 
-export interface IQueue extends IBaseEntity { }
+export interface IQueue extends IBaseEntity {}

@@ -1,20 +1,28 @@
 export enum ButtonVariantEnum {
-  Primary = "primary",
-  Secondary = "secondary",
-  Danger = "danger",
-  Ghost = "ghost",
+  PRIMARY = 'primary',
+  SECONDARY = 'secondary',
+  DANGER = 'danger',
+  GHOST = 'ghost',
 }
 
 export enum PillVariantEnum {
-  Default = "default",
-  Success = "success",
-  Warning = "warning",
-  Danger = "danger",
-  Info = "info",
+  DEFAULT = 'default',
+  SUCCESS = 'success',
+  WARNING = 'warning',
+  DANGER = 'danger',
+  INFO = 'info',
 }
 
 export enum GenderEnum {
-  Male = "male",
-  Female = "female",
-  Other = "other",
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
 }
+
+export enum ModalDrawerModeEnum {
+  ADD = 'add',
+  EDIT = 'edit',
+  VIEW = 'view',
+}
+
+export { StatVariantEnum } from './stat.enum';
