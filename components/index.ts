@@ -4,6 +4,8 @@ export { default as Toggle } from './inputs/toggle';
 export { default as Dropdown } from './inputs/dropdown';
 export { default as PhoneInput } from './inputs/phone-input';
 export { default as Pill } from './pills/pill';
+export { default as EmptyState } from './state/empty.state';
+export { default as StagePathway } from './queue/stage-pathway';
 export { default as Form } from './forms/form';
 export { default as FormInput } from './forms/form-input';
 export { default as FormDropdown } from './forms/form-dropdown';
