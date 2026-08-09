@@ -14,6 +14,8 @@ import {
   FaProcedures,
   FaUserInjured,
   FaXRay,
+  FaCalendar,
+  FaCog,
 } from 'react-icons/fa';
 import { UserRoleEnum } from '@/enum/user.enum';
 
@@ -63,6 +65,11 @@ const navigations: Partial<Record<UserRoleEnum, NavItem[]>> = {
       href: '/diagnosis',
       icon: <FaNotesMedical className="w-5 h-5" />,
     },
+    {
+      label: 'Settings',
+      href: '/settings',
+      icon: <FaCog className="w-5 h-5" />,
+    },
   ],
   [UserRoleEnum.DOCTOR]: [
     { label: 'Dashboard', href: '/', icon: <FaHome className="w-5 h-5" /> },
@@ -98,24 +105,28 @@ const navigations: Partial<Record<UserRoleEnum, NavItem[]>> = {
       icon: <FaNotesMedical className="w-5 h-5" />,
     },
   ],
-  [UserRoleEnum.STAFF]: [
+  [UserRoleEnum.RECEPTIONIST]: [
     { label: 'Dashboard', href: '/', icon: <FaHome className="w-5 h-5" /> },
     {
-      label: 'Patients',
+      label: 'Patients Registry',
       href: '/patients',
       icon: <FaUserInjured className="w-5 h-5" />,
     },
     {
-      label: 'Queue',
+      label: 'Queue Management',
       href: '/queue',
       icon: <FaClipboardList className="w-5 h-5" />,
     },
-    { label: 'Lab', href: '/lab', icon: <FaFlask className="w-5 h-5" /> },
-    { label: 'Stock', href: '/stock', icon: <FaBoxes className="w-5 h-5" /> },
+    { label: 'Appointments', href: '/appointments', icon: <FaCalendar className="w-5 h-5" /> },
+    // {
+    //   label: 'Invoices',
+    //   href: '/invoices',
+    //   icon: <FaFileInvoiceDollar className="w-5 h-5" />,
+    // },
     {
-      label: 'Invoices',
-      href: '/invoices',
-      icon: <FaFileInvoiceDollar className="w-5 h-5" />,
+      label: 'Settings',
+      href: '/settings',
+      icon: <FaCog className="w-5 h-5" />,
     },
   ],
   [UserRoleEnum.PATIENT]: [
@@ -136,12 +147,11 @@ const navigations: Partial<Record<UserRoleEnum, NavItem[]>> = {
       icon: <FaFileInvoiceDollar className="w-5 h-5" />,
     },
   ],
-  [UserRoleEnum.OTHER]: [{ label: 'Dashboard', href: '/', icon: <FaHome className="w-5 h-5" /> }],
 };
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const navigation = navigations[UserRoleEnum.ADMIN] ?? [];
+  const navigation = navigations[UserRoleEnum.RECEPTIONIST] ?? [];
 
   return (
     <aside className="flex h-full w-72 shrink-0 flex-col border-r border-zinc-200 bg-white px-4 shadow-md">
@@ -156,8 +166,8 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-4 rounded-sm px-3 py-2 text-md font-medium transition ${
-                active ? 'bg-green-800 text-white' : 'text-slate-700 hover:bg-slate-100'
+              className={`flex items-center gap-4 rounded-sm px-3 py-3 text-md font-medium transition ${
+                active ? 'bg-green-600 text-white' : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               {item.icon}

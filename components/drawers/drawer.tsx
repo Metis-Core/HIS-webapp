@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { IDrawerProps } from '@/interfaces';
 import { FaTimes } from 'react-icons/fa';
 
-export default function Drawer({ open, onClose, title, children }: IDrawerProps) {
+export default function Drawer({ open, onClose, title, children, width = 'w-225' }: IDrawerProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -24,7 +24,7 @@ export default function Drawer({ open, onClose, title, children }: IDrawerProps)
   return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40 cursor-pointer" onClick={onClose} />
-      <div className="relative z-10 flex h-full w-[900px] max-w-full flex-col bg-white shadow-xl">
+      <div className={`relative z-10 flex h-full max-w-full flex-col bg-white shadow-xl ${width}`}>
         <header className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-green-900 px-4 py-4">
           <h2 className="text-md font-semibold text-white">{title}</h2>
           <button
