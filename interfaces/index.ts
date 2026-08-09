@@ -81,6 +81,7 @@ export interface IDrawerProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  width?: string;
 }
 
 export interface IPillProps {
@@ -90,6 +91,13 @@ export interface IPillProps {
 
 export interface ISkeletonProps {
   className?: string;
+}
+
+export interface IEmptyStateProps {
+  message: string;
+  icon?: IconType;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export interface IStatCardProps {
