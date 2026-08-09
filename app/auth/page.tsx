@@ -11,7 +11,7 @@ const schema = Yup.object({
 
 export default function AuthPage() {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-slate-100 via-emerald-50/50 to-orange-50/40 p-4 sm:p-6">
+    <div className="flex min-h-screen w-full items-center justify-center bg-linear-to-br from-slate-100 via-emerald-50/50 to-orange-50/40 p-4 sm:p-6">
       <div className="grid w-full max-w-5xl min-h-[540px] overflow-hidden rounded-xl bg-white  md:grid-cols-2">
         <div className="relative hidden min-h-[540px] md:block">
           <Image
@@ -22,7 +22,7 @@ export default function AuthPage() {
             priority
             sizes="50vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f1c3f]/90 via-[#0f1c3f]/35 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-[#0f1c3f]/90 via-[#0f1c3f]/35 to-transparent" />
           <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
             {/* <p className="text-xs font-semibold tracking-[0.2em] text-blue-900 uppercase">
               Suubi Medical Centre
