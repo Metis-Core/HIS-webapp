@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { useAuth } from '@/providers';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
   const menuRef = useRef<HTMLDetailsElement>(null);
 
   const titleFromPath = (pathname: string) => {
@@ -15,11 +16,16 @@ export default function Header() {
     return segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  const logout = () => {
-    Cookies.remove('token');
-    Cookies.remove('user');
-    router.replace('/auth');
+  const handleLogout = async () => {
+    await logout();
   };
+
+  const initials = (() => {
+    if (!user) return '';
+    const first = user.firstName?.[0] ?? user.username?.[0] ?? user.email?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return `${first}${last}`.toUpperCase();
+  })();
 
   useEffect(() => {
     const close = () => {
@@ -50,7 +56,7 @@ export default function Header() {
       <details ref={menuRef} className="relative">
         <summary className="flex cursor-pointer list-none items-center gap-3 rounded-sm px-2 py-1.5 hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-white">
-            LW
+            {initials || '—'}
           </div>
         </summary>
 
@@ -64,7 +70,7 @@ export default function Header() {
           </button>
           <button
             type="button"
-            onClick={logout}
+            onClick={handleLogout}
             className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
           >
             Logout

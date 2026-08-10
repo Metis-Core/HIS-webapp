@@ -26,3 +26,5 @@ export enum ModalDrawerModeEnum {
 }
 
 export { StatVariantEnum } from './stat.enum';
+export { UserRoleEnum, UserStatusEnum, UserGenderEnum, DepartmentEnum } from './user.enum';
+export { AuthEndpointEnum, AuthCookieEnum, JwtTokenTypeEnum, AuthErrorCodeEnum, AuthStatusEnum } from './auth.enum';
