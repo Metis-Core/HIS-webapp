@@ -4,6 +4,9 @@ import type { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum } from '@/
 import type { StatVariantEnum } from '@/enum/stat.enum';
 import type { IPatient } from './patient.interface';
 
+export * from './auth.interface';
+export * from './user.interface';
+
 export interface IBaseEntity {
   id: string;
   createdAt: Date;

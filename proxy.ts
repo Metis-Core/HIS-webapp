@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { AuthCookieEnum } from '@/enum';
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('token')?.value;
+  const hasSession = request.cookies.has(AuthCookieEnum.REFRESH_TOKEN);
   const isAuthRoute = pathname.startsWith('/auth');
 
-  if (!token && !isAuthRoute) {
-    return NextResponse.redirect(new URL('/auth', request.url));
+  if (!hasSession && !isAuthRoute) {
+    const url = new URL('/auth', request.url);
+    if (pathname !== '/') url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
   }
 
-  if (token && isAuthRoute) {
+  if (hasSession && isAuthRoute) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

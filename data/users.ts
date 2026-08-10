@@ -73,7 +73,7 @@ export const staffUsers: IStaffUser[] = [
     email: 'okot@metis.health',
     role: UserRoleEnum.NURSE,
     department: 'Radiology',
-    status: UserStatusEnum.PENDING,
+    status: UserStatusEnum.PENDING_RESET,
     lastLogin: subDays(new Date(), 30),
   },
   {
@@ -82,7 +82,7 @@ export const staffUsers: IStaffUser[] = [
     email: 'ivan.ssempijja@metis.health',
     role: UserRoleEnum.ACCOUNTANT,
     department: 'Finance',
-    status: UserStatusEnum.BLOCKED,
+    status: UserStatusEnum.SUSPENDED,
     lastLogin: subDays(new Date(), 60),
   },
 ];
@@ -90,8 +90,8 @@ export const staffUsers: IStaffUser[] = [
 export const statusVariants: Record<UserStatusEnum, PillVariantEnum> = {
   [UserStatusEnum.ACTIVE]: PillVariantEnum.SUCCESS,
   [UserStatusEnum.INACTIVE]: PillVariantEnum.DEFAULT,
-  [UserStatusEnum.PENDING]: PillVariantEnum.WARNING,
-  [UserStatusEnum.BLOCKED]: PillVariantEnum.DANGER,
+  [UserStatusEnum.PENDING_RESET]: PillVariantEnum.WARNING,
+  [UserStatusEnum.SUSPENDED]: PillVariantEnum.DANGER,
 };
 
 export function roleLabel(value: string) {
