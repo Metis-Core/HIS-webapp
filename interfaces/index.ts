@@ -6,6 +6,10 @@ import type { IPatient } from './patient.interface';
 
 export * from './auth.interface';
 export * from './user.interface';
+export * from './patient.interface';
+export * from './queue.interfaces';
+export * from './triage.interface';
+export * from './consultation.interface';
 
 export interface IBaseEntity {
   id: string;
@@ -28,6 +32,26 @@ export interface IResponse<T> {
 export interface IError {
   message: string;
   statusCode: number;
+}
+
+export type SortOrder = 'ASC' | 'DESC';
+
+export interface IListQuery {
+  page?: number;
+  limit?: number;
+  sortOrder?: SortOrder;
+}
+
+export interface IPaginatedList<T> {
+  items: T[];
+  total: number;
+}
+
+export interface IPagedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface IOption {
@@ -134,6 +158,7 @@ export type PatientFormValues = {
   emergencyContactRelationship: string;
   insuranceProvider: string;
   insurancePolicyNumber: string;
+  allergies: string;
 };
 
 export interface IPatientDrawerProps {

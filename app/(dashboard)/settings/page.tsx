@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { FaEye, FaMoneyBillWave, FaPen, FaPlus, FaTrash, FaUsersCog } from 'react-icons/fa';
-import { Button, Drawer, Dropdown, Input, Pill } from '@/components';
-import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
+import { Button, Drawer, Dropdown, Input, PageHeader, Pill } from '@/components';
+import { ButtonVariantEnum, DepartmentEnum, ModalDrawerModeEnum } from '@/enum';
 import { UserRoleEnum, UserStatusEnum } from '@/enum/user.enum';
 import { serviceFees as initialServiceFees, stageLabel } from '@/data/services';
-import { roleLabel, staffUsers, statusVariants, type IStaffUser } from '@/data/users';
-import type { IOption } from '@/interfaces';
+import { roleLabel, statusVariants } from '@/data/users';
+import { useUsers } from '@/hooks';
+import type { ICreateUserDto, IOption, IUpdateUserDto, IUser } from '@/interfaces';
 
 type SettingsTab = 'users' | 'services';
 
@@ -22,22 +23,31 @@ const statusOptions: IOption[] = Object.values(UserStatusEnum).map((status) => (
   label: roleLabel(status),
   value: status,
 }));
+const departmentOptions: IOption[] = Object.values(DepartmentEnum).map((department) => ({
+  label: roleLabel(department),
+  value: department,
+}));
 
 interface UserFormState {
-  name: string;
+  username: string;
   email: string;
-  department: string;
+  password: string;
+  department: IOption;
   role: IOption;
   status: IOption;
 }
 
 const emptyUserForm: UserFormState = {
-  name: '',
+  username: '',
   email: '',
-  department: '',
+  password: '',
+  department: departmentOptions[0],
   role: roleOptions[0],
   status: statusOptions[0],
 };
+
+const optionValue = (option: IOption | IOption[] | null, fallback: IOption): IOption =>
+  (Array.isArray(option) ? option[0] : option) ?? fallback;
 
 interface FeeRow {
   id: string;
@@ -48,10 +58,11 @@ interface FeeRow {
 export default function SettingsPage() {
   const [tab, setTab] = useState<SettingsTab>('users');
 
-  const [users, setUsers] = useState<IStaffUser[]>(staffUsers);
+  const { users, isLoading, createUser, updateUser, removeUser } = useUsers({ limit: 100 });
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
+  const [saving, setSaving] = useState(false);
 
   const [feeRows, setFeeRows] = useState<FeeRow[]>(() =>
     initialServiceFees.map((service) => ({ id: service.stage, label: stageLabel(service.stage), fee: service.fee })),
@@ -63,68 +74,59 @@ export default function SettingsPage() {
     setDrawerMode(ModalDrawerModeEnum.ADD);
   };
 
-  const openEditUser = (user: IStaffUser) => {
+  const fillForm = (user: IUser, mode: ModalDrawerModeEnum) => {
     setEditingId(user.id);
     setUserForm({
-      name: user.name,
+      username: user.username,
       email: user.email,
-      department: user.department,
+      password: '',
+      department: departmentOptions.find((option) => option.value === user.department) ?? departmentOptions[0],
       role: roleOptions.find((option) => option.value === user.role) ?? roleOptions[0],
       status: statusOptions.find((option) => option.value === user.status) ?? statusOptions[0],
     });
-    setDrawerMode(ModalDrawerModeEnum.EDIT);
+    setDrawerMode(mode);
   };
 
-  const openViewUser = (user: IStaffUser) => {
-    setEditingId(user.id);
-    setUserForm({
-      name: user.name,
-      email: user.email,
-      department: user.department,
-      role: roleOptions.find((option) => option.value === user.role) ?? roleOptions[0],
-      status: statusOptions.find((option) => option.value === user.status) ?? statusOptions[0],
-    });
-    setDrawerMode(ModalDrawerModeEnum.VIEW);
-  };
-
-  const deleteUser = (id: string) => {
+  const deleteUser = async (id: string) => {
     if (!window.confirm('Delete this user?')) return;
-    setUsers((prev) => prev.filter((user) => user.id !== id));
+    try {
+      await removeUser(id);
+    } catch {
+      window.alert('Failed to delete user.');
+    }
   };
 
-  const saveUser = () => {
-    if (!userForm.name.trim() || !userForm.email.trim()) return;
-
-    if (drawerMode === ModalDrawerModeEnum.EDIT && editingId) {
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === editingId
-            ? {
-                ...user,
-                name: userForm.name,
-                email: userForm.email,
-                department: userForm.department,
-                role: userForm.role.value as UserRoleEnum,
-                status: userForm.status.value as UserStatusEnum,
-              }
-            : user,
-        ),
-      );
-    } else {
-      setUsers((prev) => [
-        {
-          id: crypto.randomUUID(),
-          name: userForm.name,
-          email: userForm.email,
-          department: userForm.department,
+  const saveUser = async () => {
+    if (!userForm.username.trim() || !userForm.email.trim()) return;
+    setSaving(true);
+    try {
+      if (drawerMode === ModalDrawerModeEnum.EDIT && editingId) {
+        const payload: IUpdateUserDto = {
+          username: userForm.username.trim(),
+          email: userForm.email.trim(),
+          department: userForm.department.value as DepartmentEnum,
           role: userForm.role.value as UserRoleEnum,
           status: userForm.status.value as UserStatusEnum,
-          lastLogin: new Date(),
-        },
-        ...prev,
-      ]);
+        };
+        if (userForm.password.trim()) payload.password = userForm.password.trim();
+        await updateUser(editingId, payload);
+      } else {
+        const payload: ICreateUserDto = {
+          username: userForm.username.trim(),
+          email: userForm.email.trim(),
+          password: userForm.password.trim(),
+          department: userForm.department.value as DepartmentEnum,
+          role: userForm.role.value as UserRoleEnum,
+          status: userForm.status.value as UserStatusEnum,
+        };
+        await createUser(payload);
+      }
+      setDrawerMode(null);
+    } catch {
+      window.alert('Failed to save user. Please check the details and try again.');
+    } finally {
+      setSaving(false);
     }
-    setDrawerMode(null);
   };
 
   const addFeeRow = () => setFeeRows((prev) => [...prev, { id: crypto.randomUUID(), label: '', fee: 0 }]);
@@ -134,8 +136,11 @@ export default function SettingsPage() {
       prev.map((row) => (row.id === id ? { ...row, [field]: field === 'fee' ? Number(value) || 0 : value } : row)),
     );
 
+  const isView = drawerMode === ModalDrawerModeEnum.VIEW;
+
   return (
     <div className="flex flex-col gap-6 py-4">
+      <PageHeader title="Settings" description="Manage staff accounts and service configuration." />
       <div className="flex items-center justify-between border-b border-zinc-200">
         <div className="flex gap-2">
           {tabs.map(({ id, label, icon: Icon }) => (
@@ -172,60 +177,74 @@ export default function SettingsPage() {
               <table className="w-full text-left">
                 <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
                   <tr>
-                    <th className="px-6 py-3 text-md font-bold">Name</th>
+                    <th className="px-6 py-3 text-md font-bold">User</th>
                     <th className="px-6 py-3 text-md font-bold">Role</th>
                     <th className="px-6 py-3 text-md font-bold">Department</th>
                     <th className="px-6 py-3 text-md font-bold">Status</th>
-                    <th className="px-6 py-3 text-md font-bold">Last login</th>
+                    <th className="px-6 py-3 text-md font-bold">Created</th>
                     <th className="px-6 py-3 text-md font-bold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b border-zinc-100 last:border-0 transition hover:bg-green-50/30"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-zinc-900">{user.name}</p>
-                        <p className="text-xs text-zinc-500">{user.email}</p>
-                      </td>
-                      <td className="px-6 py-4 text-zinc-600">{roleLabel(user.role)}</td>
-                      <td className="px-6 py-4 text-zinc-600">{user.department}</td>
-                      <td className="px-6 py-4">
-                        <Pill variant={statusVariants[user.status]}>{user.status}</Pill>
-                      </td>
-                      <td className="px-6 py-4 text-zinc-500">{format(user.lastLogin, 'dd MMM yyyy')}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => openViewUser(user)}
-                            aria-label="View user"
-                            className="cursor-pointer text-zinc-500 hover:text-green-800"
-                          >
-                            <FaEye className="text-sm" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openEditUser(user)}
-                            aria-label="Edit user"
-                            className="cursor-pointer text-zinc-500 hover:text-green-800"
-                          >
-                            <FaPen className="text-sm" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteUser(user.id)}
-                            aria-label="Delete user"
-                            className="cursor-pointer text-red-500 hover:text-red-600"
-                          >
-                            <FaTrash className="text-sm" />
-                          </button>
-                        </div>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-16 text-center text-sm text-zinc-500">
+                        Loading users…
                       </td>
                     </tr>
-                  ))}
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-16 text-center text-sm text-zinc-500">
+                        No users found.
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((user) => (
+                      <tr
+                        key={user.id}
+                        className="border-b border-zinc-100 last:border-0 transition hover:bg-green-50/30"
+                      >
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-zinc-900">{user.username}</p>
+                          <p className="text-xs text-zinc-500">{user.email}</p>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-600">{roleLabel(user.role)}</td>
+                        <td className="px-6 py-4 text-zinc-600">{roleLabel(user.department)}</td>
+                        <td className="px-6 py-4">
+                          <Pill variant={statusVariants[user.status]}>{user.status}</Pill>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-500">{format(new Date(user.createdAt), 'dd MMM yyyy')}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => fillForm(user, ModalDrawerModeEnum.VIEW)}
+                              aria-label="View user"
+                              className="cursor-pointer text-zinc-500 hover:text-green-800"
+                            >
+                              <FaEye className="text-sm" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => fillForm(user, ModalDrawerModeEnum.EDIT)}
+                              aria-label="Edit user"
+                              className="cursor-pointer text-zinc-500 hover:text-green-800"
+                            >
+                              <FaPen className="text-sm" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteUser(user.id)}
+                              aria-label="Delete user"
+                              className="cursor-pointer text-red-500 hover:text-red-600"
+                            >
+                              <FaTrash className="text-sm" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -259,7 +278,7 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => {}}
-                            aria-label="Delete user"
+                            aria-label="Delete row"
                             className="cursor-pointer text-red-500 hover:text-red-600"
                           >
                             <FaTrash className="text-md" />
@@ -281,55 +300,54 @@ export default function SettingsPage() {
       <Drawer
         open={drawerMode !== null}
         onClose={() => setDrawerMode(null)}
-        title={
-          drawerMode === ModalDrawerModeEnum.EDIT
-            ? 'Edit user'
-            : drawerMode === ModalDrawerModeEnum.VIEW
-              ? 'View user'
-              : 'Add user'
-        }
+        title={drawerMode === ModalDrawerModeEnum.EDIT ? 'Edit user' : isView ? 'View user' : 'Add user'}
         width="w-125"
       >
         <div className="flex flex-col gap-4">
           <Input
-            label="Full name"
-            value={userForm.name}
-            disabled={drawerMode === ModalDrawerModeEnum.VIEW}
-            onChange={(e) => setUserForm((prev) => ({ ...prev, name: e.target.value }))}
+            label="Username"
+            value={userForm.username}
+            disabled={isView}
+            onChange={(e) => setUserForm((prev) => ({ ...prev, username: e.target.value }))}
           />
           <Input
             label="Email"
             type="email"
             value={userForm.email}
-            disabled={drawerMode === ModalDrawerModeEnum.VIEW}
+            disabled={isView}
             onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))}
           />
-          <Input
+          {!isView && (
+            <Input
+              label={drawerMode === ModalDrawerModeEnum.EDIT ? 'New password (optional)' : 'Password'}
+              type="password"
+              value={userForm.password}
+              onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
+            />
+          )}
+          <Dropdown
             label="Department"
+            options={departmentOptions}
             value={userForm.department}
-            disabled={drawerMode === ModalDrawerModeEnum.VIEW}
-            onChange={(e) => setUserForm((prev) => ({ ...prev, department: e.target.value }))}
+            isDisabled={isView}
+            onChange={(value) => setUserForm((prev) => ({ ...prev, department: optionValue(value, prev.department) }))}
           />
           <Dropdown
             label="Role"
             options={roleOptions}
             value={userForm.role}
-            isDisabled={drawerMode === ModalDrawerModeEnum.VIEW}
-            onChange={(value) =>
-              setUserForm((prev) => ({ ...prev, role: (Array.isArray(value) ? value[0] : value) ?? prev.role }))
-            }
+            isDisabled={isView}
+            onChange={(value) => setUserForm((prev) => ({ ...prev, role: optionValue(value, prev.role) }))}
           />
           <Dropdown
             label="Status"
             options={statusOptions}
             value={userForm.status}
-            isDisabled={drawerMode === ModalDrawerModeEnum.VIEW}
-            onChange={(value) =>
-              setUserForm((prev) => ({ ...prev, status: (Array.isArray(value) ? value[0] : value) ?? prev.status }))
-            }
+            isDisabled={isView}
+            onChange={(value) => setUserForm((prev) => ({ ...prev, status: optionValue(value, prev.status) }))}
           />
-          {drawerMode !== ModalDrawerModeEnum.VIEW && (
-            <Button type="button" onClick={saveUser} className="w-full justify-center">
+          {!isView && (
+            <Button type="button" onClick={saveUser} loading={saving} className="w-full justify-center">
               {drawerMode === ModalDrawerModeEnum.EDIT ? 'Save changes' : 'Add user'}
             </Button>
           )}

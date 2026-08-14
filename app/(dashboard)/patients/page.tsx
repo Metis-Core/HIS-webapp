@@ -18,16 +18,15 @@ import {
   FaUsers,
 } from 'react-icons/fa';
 import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
-import { Button, PatientDrawer, Pill, Stats } from '@/components';
+import { Button, PageHeader, PatientDrawer, Pill, Stats } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
-import { PatientTypeEnum, PatientMaritalStatusEnum, PatientBloodTypeEnum } from '@/enum/patient.enum';
-import { GenderEnum } from '@/enum';
+import { PatientTypeEnum } from '@/enum/patient.enum';
 import { patientFullName, patientInitials } from '@/data/patients';
 import type { PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import PatientsFilter, { type PatientsFilterValue } from './filter';
-import { usePatients } from './patients-provider';
-import api from '@/helpers/axios';
+import { usePatients } from '@/hooks';
+import { toPatientDto } from '@/helpers/patients.service';
 
 const initialFilters: PatientsFilterValue = {
   search: '',
@@ -43,7 +42,7 @@ const initialFilters: PatientsFilterValue = {
 const actionBtn = 'inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-zinc-100';
 
 export default function PatientsPage() {
-  const { patients, setPatients } = usePatients();
+  const { patients, isLoading, createPatient, updatePatient, removePatient } = usePatients({ limit: 100 });
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
@@ -63,26 +62,25 @@ export default function PatientsPage() {
     setSelected(null);
   };
 
-  const handleDelete = (patient: IPatient) => {
+  const handleDelete = async (patient: IPatient) => {
     if (!window.confirm(`Delete ${patient.firstName} ${patient.lastName}? This cannot be undone.`)) {
       return;
     }
-    setPatients((prev) => prev.filter((p) => p.id !== patient.id));
+    try {
+      await removePatient(patient.id);
+    } catch {
+      window.alert('Failed to delete patient. Please try again.');
+    }
   };
 
   const handleSave = async (values: PatientFormValues) => {
     try {
-      if (drawerMode === ModalDrawerModeEnum.ADD) {
-        await api.post<IPatient>('/patients', {
-          ...values,
-          emergencyContact: {
-            name: values.emergencyContactName.trim(),
-            phone: values.emergencyContactPhone.trim(),
-            relationship: values.emergencyContactRelationship.trim() || undefined,
-          },
-        });
-        closeDrawer();
+      if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
+        await updatePatient(selected.id, toPatientDto(values));
+      } else {
+        await createPatient(toPatientDto(values));
       }
+      closeDrawer();
     } catch (error) {
       console.error('Failed to save patient', error);
       window.alert('Failed to save patient. Please try again.');
@@ -163,16 +161,22 @@ export default function PatientsPage() {
 
   return (
     <div className="flex flex-col gap-8 py-4">
+      <PageHeader
+        title="Patients"
+        description="Register, search and manage patient records."
+        actions={
+          <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
+            <FaPlus className="text-base" />
+            <span className="font-semibold">New patient</span>
+          </Button>
+        }
+      />
       <Stats items={stats.items} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <PatientsFilter value={filters} onChange={setFilters} />
         </div>
-        <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
-          <FaPlus className="text-base" />
-          <span className="font-semibold">New patient</span>
-        </Button>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -190,7 +194,13 @@ export default function PatientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
+                <tr className="border-b border-zinc-100 last:border-0">
+                  <td colSpan={7} className="px-6 py-20 text-center text-sm text-zinc-500">
+                    Loading patients…
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr className="border-b border-zinc-100 last:border-0">
                   <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-zinc-500">

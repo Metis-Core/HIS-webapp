@@ -3,7 +3,15 @@
 import { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { FaEdit, FaEnvelope, FaMapMarkerAlt, FaPhone, FaShieldAlt, FaUserFriends } from 'react-icons/fa';
+import {
+  FaEdit,
+  FaEnvelope,
+  FaExclamationTriangle,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaShieldAlt,
+  FaUserFriends,
+} from 'react-icons/fa';
 import { Button, PatientDrawer, PatientTimeline, Pill, VisitDrawer } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum } from '@/enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
@@ -11,10 +19,8 @@ import { getPatientHistory } from '@/data/patient-history';
 import type { IPatientHistoryEvent } from '@/data/patient-history';
 import { patientFullName, patientInitials } from '@/data/patients';
 import type { PatientFormValues } from '@/interfaces';
-import type { IPatient } from '@/interfaces/patient.interface';
-import { PatientBloodTypeEnum, PatientMaritalStatusEnum } from '@/enum/patient.enum';
-import { GenderEnum } from '@/enum';
-import { usePatients } from '../patients-provider';
+import { usePatient } from '@/hooks';
+import { toPatientDto } from '@/helpers/patients.service';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -53,12 +59,15 @@ function ProfileRow({ icon, label, value }: { icon: React.ReactNode; label: stri
 export default function PatientDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { getPatient, setPatients } = usePatients();
+  const { patient, isLoading, updatePatient } = usePatient(params.id);
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selectedVisit, setSelectedVisit] = useState<IPatientHistoryEvent | null>(null);
 
-  const patient = getPatient(params.id);
   const history = useMemo(() => (patient ? getPatientHistory(patient.id) : []), [patient]);
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-sm text-zinc-500">Loading patient…</div>;
+  }
 
   if (!patient) {
     return (
@@ -71,36 +80,27 @@ export default function PatientDetailPage() {
     );
   }
 
-  const handleSave = (values: PatientFormValues) => {
-    const now = new Date();
-    const payload: Partial<IPatient> = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      middleName: values.middleName || undefined,
-      dateOfBirth: values.dateOfBirth ? new Date(values.dateOfBirth) : undefined,
-      phone: values.phone,
-      email: values.email || undefined,
-      gender: values.gender as GenderEnum,
-      type: values.type as PatientTypeEnum,
-      address: values.address,
-      city: values.city,
-      nationalId: values.nationalId || undefined,
-      maritalStatus: (values.maritalStatus as PatientMaritalStatusEnum) || undefined,
-      bloodType: (values.bloodType as PatientBloodTypeEnum) || undefined,
-      emergencyContactName: values.emergencyContactName,
-      emergencyContactPhone: values.emergencyContactPhone,
-      emergencyContactRelationship: values.emergencyContactRelationship,
-      insuranceProvider: values.insuranceProvider || undefined,
-      insurancePolicyNumber: values.insurancePolicyNumber || undefined,
-      updatedAt: now,
-    };
-
-    setPatients((prev) => prev.map((entry) => (entry.id === patient.id ? { ...entry, ...payload } : entry)));
-    setDrawerMode(null);
+  const handleSave = async (values: PatientFormValues) => {
+    try {
+      await updatePatient(toPatientDto(values));
+      setDrawerMode(null);
+    } catch {
+      window.alert('Failed to update patient. Please try again.');
+    }
   };
 
   return (
     <div className="flex flex-col gap-6 py-4">
+      {patient.allergies?.trim() ? (
+        <div role="alert" className="flex items-start gap-3 rounded-lg border-l-4 border-red-600 bg-red-50 px-4 py-3">
+          <FaExclamationTriangle aria-hidden className="mt-0.5 shrink-0 text-red-600" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-red-800">Allergies</p>
+            <p className="text-sm font-medium text-red-900">{patient.allergies}</p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-6 lg:col-span-5">
           <section className="p-6">

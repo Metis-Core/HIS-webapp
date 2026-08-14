@@ -3,6 +3,7 @@
 import * as Yup from 'yup';
 import { format } from 'date-fns';
 import type { ReactNode } from 'react';
+import { FaExclamationTriangle } from 'react-icons/fa';
 import Drawer from './drawer';
 import Button from '../buttons/button';
 import Form from '../forms/form';
@@ -93,6 +94,7 @@ const emptyValues: PatientFormValues = {
   emergencyContactRelationship: '',
   insuranceProvider: '',
   insurancePolicyNumber: '',
+  allergies: '',
 };
 
 function initials(patient: IPatient) {
@@ -121,6 +123,7 @@ function toFormValues(patient?: IPatient | null): PatientFormValues {
     emergencyContactRelationship: patient.emergencyContactRelationship ?? '',
     insuranceProvider: patient.insuranceProvider ?? '',
     insurancePolicyNumber: patient.insurancePolicyNumber ?? '',
+    allergies: patient.allergies ?? '',
   };
 }
 
@@ -200,6 +203,29 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
               <ViewField label="Relationship" value={patient.emergencyContactRelationship} />
               <ViewField label="Contact phone" value={patient.emergencyContactPhone} />
             </dl>
+          </FormSection>
+
+          <FormSection title="Clinical">
+            <div
+              role={patient.allergies?.trim() ? 'alert' : undefined}
+              className={
+                patient.allergies?.trim()
+                  ? 'flex items-start gap-3 rounded-lg border-l-4 border-red-600 bg-red-50 px-4 py-3'
+                  : 'text-sm text-zinc-500'
+              }
+            >
+              {patient.allergies?.trim() ? (
+                <>
+                  <FaExclamationTriangle aria-hidden className="mt-0.5 shrink-0 text-red-600" />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-red-800">Allergies</p>
+                    <p className="text-sm text-red-900">{patient.allergies}</p>
+                  </div>
+                </>
+              ) : (
+                'No known allergies recorded.'
+              )}
+            </div>
           </FormSection>
 
           <FormSection title="Insurance">
@@ -287,6 +313,16 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
                 placeholder="Select provider"
               />
               <FormInput name="insurancePolicyNumber" label="Policy / member ID" placeholder="Optional" />
+            </div>
+          </FormSection>
+
+          <FormSection title="Clinical">
+            <div className={fullWidth}>
+              <FormInput
+                name="allergies"
+                label="Known allergies"
+                placeholder="e.g. Penicillin, peanuts — leave blank if none"
+              />
             </div>
           </FormSection>
 

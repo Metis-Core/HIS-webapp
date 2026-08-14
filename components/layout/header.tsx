@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { FaChevronRight } from 'react-icons/fa';
 import { useAuth } from '@/providers';
+
+const isDynamicSegment = (segment: string) => /^[0-9a-f-]{16,}$/i.test(segment);
+
+const labelFor = (segment: string) =>
+  isDynamicSegment(segment) ? 'Details' : segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function Header() {
   const pathname = usePathname();
@@ -10,11 +17,14 @@ export default function Header() {
   const { user, logout } = useAuth();
   const menuRef = useRef<HTMLDetailsElement>(null);
 
-  const titleFromPath = (pathname: string) => {
-    const segment = pathname.split('/').filter(Boolean).pop();
-    if (!segment) return 'Dashboard';
-    return segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  };
+  const segments = pathname.split('/').filter(Boolean);
+  const crumbs = [
+    { label: 'Home', href: '/' },
+    ...segments.map((segment, index) => ({
+      label: labelFor(segment),
+      href: `/${segments.slice(0, index + 1).join('/')}`,
+    })),
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -51,7 +61,27 @@ export default function Header() {
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 shadow-md">
-      <h1 className="text-lg tracking-wider font-bold text-zinc-800">{titleFromPath(pathname)}</h1>
+      <nav aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1.5 text-sm">
+          {crumbs.map((crumb, index) => {
+            const isLast = index === crumbs.length - 1;
+            return (
+              <li key={crumb.href} className="flex items-center gap-1.5">
+                {index > 0 && <FaChevronRight aria-hidden className="text-[10px] text-slate-300" />}
+                {isLast ? (
+                  <span aria-current="page" className="font-semibold text-slate-800">
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <Link href={crumb.href} className="text-slate-500 transition hover:text-green-800">
+                    {crumb.label}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
 
       <details ref={menuRef} className="relative">
         <summary className="flex cursor-pointer list-none items-center gap-3 rounded-sm px-2 py-1.5 hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">

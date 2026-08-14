@@ -17,5 +17,6 @@ export { default as PatientTimeline } from './timeline/patient-timeline';
 export { default as VisitDrawer } from './drawers/visit.drawer';
 export { default as Sidebar } from './layout/sidebar';
 export { default as Header } from './layout/header';
+export { default as PageHeader } from './layout/page-header';
 export { default as StatCard } from './stats/stat-card';
 export { default as Stats } from './stats/stats';

@@ -1,13 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { format, formatDistanceToNow } from 'date-fns';
-import { FaArrowLeft, FaEnvelope, FaMapMarkerAlt, FaPhone, FaShieldAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaEnvelope, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 import type { ReactNode } from 'react';
-import { Button, Pill, StagePathway } from '@/components';
-import { ButtonVariantEnum } from '@/enum';
-import { getQueueEntry, initialsOf, priorityVariants, stageLabel, statusVariants } from '@/data/queue';
+import { Button, Dropdown, Pill } from '@/components';
+import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum } from '@/enum';
+import { QueueEntryStatusEnum } from '@/enum/queue.enum';
+import { useQueueEntry } from '@/hooks';
+import type { IOption } from '@/interfaces';
+
+const humanize = (value: string) => value.replace(/_/g, ' ').toLowerCase();
+
+const statusVariants: Record<QueueEntryStatusEnum, PillVariantEnum> = {
+  [QueueEntryStatusEnum.WAITING]: PillVariantEnum.WARNING,
+  [QueueEntryStatusEnum.CALLED]: PillVariantEnum.INFO,
+  [QueueEntryStatusEnum.IN_SERVICE]: PillVariantEnum.INFO,
+  [QueueEntryStatusEnum.COMPLETED]: PillVariantEnum.SUCCESS,
+  [QueueEntryStatusEnum.SKIPPED]: PillVariantEnum.DEFAULT,
+  [QueueEntryStatusEnum.TRANSFERRED]: PillVariantEnum.DEFAULT,
+};
+
+const departmentOptions: IOption[] = Object.values(DepartmentEnum).map((department) => ({
+  label: humanize(department),
+  value: department,
+}));
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -31,7 +50,6 @@ function DetailField({ label, value }: { label: string; value?: string | null })
 
 function ProfileRow({ icon, label, value }: { icon: ReactNode; label: string; value?: string | null }) {
   if (!value?.trim()) return null;
-
   return (
     <div className="flex items-start gap-3 text-sm text-zinc-700">
       <span className="mt-0.5 text-zinc-500">{icon}</span>
@@ -46,7 +64,24 @@ function ProfileRow({ icon, label, value }: { icon: ReactNode; label: string; va
 export default function QueueDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const entry = getQueueEntry(params.id);
+  const { entry, isLoading, startService, completeStage, skip, transfer } = useQueueEntry(params.id);
+  const [transferTo, setTransferTo] = useState<IOption>(departmentOptions[0]);
+  const [busy, setBusy] = useState(false);
+
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await action();
+    } catch {
+      window.alert('Action failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-sm text-zinc-500">Loading queue entry…</div>;
+  }
 
   if (!entry) {
     return (
@@ -58,6 +93,16 @@ export default function QueueDetailPage() {
       </div>
     );
   }
+
+  const patient = entry.visit?.patient;
+  const name = patient ? [patient.firstName, patient.lastName].filter(Boolean).join(' ') : 'Unknown patient';
+  const initials = name
+    .split(' ')
+    .map((part) => part[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  const isActive = entry.status === QueueEntryStatusEnum.WAITING || entry.status === QueueEntryStatusEnum.CALLED;
 
   return (
     <div className="flex flex-col gap-6 py-4">
@@ -74,84 +119,107 @@ export default function QueueDetailPage() {
           <section className="rounded-xl border border-zinc-200 bg-white p-6">
             <div className="flex flex-col items-center text-center">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-800 text-3xl font-bold text-white">
-                {initialsOf(entry.patientName)}
+                {initials}
               </div>
-              <h1 className="mt-4 text-2xl font-bold text-zinc-900">{entry.patientName}</h1>
+              <h1 className="mt-4 text-2xl font-bold text-zinc-900">{name}</h1>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                <Pill variant={statusVariants[entry.status]}>{stageLabel(entry.status)}</Pill>
-                <Pill variant={priorityVariants[entry.priority]}>{entry.priority}</Pill>
-                {entry.bloodType && (
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold uppercase text-zinc-700">
-                    {entry.bloodType}
-                  </span>
-                )}
+                <Pill variant={statusVariants[entry.status]}>{humanize(entry.status)}</Pill>
+                <Pill variant={PillVariantEnum.INFO}>Priority {entry.priority}</Pill>
               </div>
               <div className="mt-5 w-full space-y-3 border-t border-zinc-100 pt-5 text-left">
-                <ProfileRow icon={<FaPhone />} label="Phone" value={entry.phone} />
-                <ProfileRow icon={<FaEnvelope />} label="Email" value={entry.email} />
+                <ProfileRow icon={<FaPhone />} label="Phone" value={patient?.phone} />
+                <ProfileRow icon={<FaEnvelope />} label="Email" value={patient?.email} />
                 <ProfileRow
                   icon={<FaMapMarkerAlt />}
                   label="Location"
-                  value={
-                    entry.city && entry.address ? `${entry.city} · ${entry.address}` : (entry.city ?? entry.address)
-                  }
+                  value={patient?.city && patient?.address ? `${patient.city} · ${patient.address}` : patient?.city}
                 />
               </div>
             </div>
           </section>
 
-          <DetailSection title="Personal details">
+          <DetailSection title="Patient details">
             <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Date of birth" value={format(entry.dateOfBirth, 'dd MMM yyyy')} />
-              <DetailField label="Gender" value={entry.gender} />
-              <DetailField label="National ID" value={entry.nationalId} />
-              <DetailField label="Blood type" value={entry.bloodType} />
+              <DetailField label="MRN" value={patient?.mrn} />
+              <DetailField label="Gender" value={patient?.gender} />
+              <DetailField label="National ID" value={patient?.nationalId} />
+              <DetailField label="Blood type" value={patient?.bloodType?.toUpperCase()} />
             </dl>
           </DetailSection>
-
-          {entry.insuranceProvider && (
-            <DetailSection title="Insurance">
-              <div className="flex items-center gap-3 rounded-lg border border-green-100 bg-green-50/50 p-4">
-                <FaShieldAlt className="text-green-700" />
-                <p className="font-medium text-zinc-800">{entry.insuranceProvider}</p>
-              </div>
-            </DetailSection>
-          )}
         </div>
 
         <div className="flex flex-col gap-6 lg:col-span-7">
-          <DetailSection title="Care pathway">
-            <StagePathway stage={entry.stage} />
-            <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-              <DetailField label="Handled by" value={entry.assignedTo} />
-              <DetailField label="Department" value={entry.department} />
-              <DetailField label="Checked in" value={format(entry.checkedInAt, 'dd MMM yyyy · HH:mm')} />
-              <DetailField label="Waiting" value={formatDistanceToNow(entry.checkedInAt, { addSuffix: true })} />
+          <DetailSection title="Queue status">
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <DetailField label="Department" value={humanize(entry.department)} />
+              <DetailField label="Token" value={entry.visit?.tokenNumber} />
+              <DetailField label="Sequence" value={String(entry.sequenceNumber)} />
+              <DetailField label="Handled by" value={entry.servedBy?.username} />
+              <DetailField
+                label="Waiting"
+                value={formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+              />
+              <DetailField
+                label="Called at"
+                value={entry.calledAt ? format(new Date(entry.calledAt), 'dd MMM · HH:mm') : undefined}
+              />
+              <DetailField label="Notes" value={entry.notes} />
             </dl>
           </DetailSection>
 
-          <DetailSection title="Doctor & staff comments">
-            {entry.notes.length === 0 ? (
-              <p className="text-sm text-zinc-500">No comments recorded yet.</p>
-            ) : (
-              <div className="flex flex-col divide-y divide-zinc-100">
-                {entry.notes.map((note) => (
-                  <div key={note.id} className="flex gap-3 py-4 first:pt-0 last:pb-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
-                      {initialsOf(note.author)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-medium text-zinc-900">{note.author}</p>
-                        <p className="text-xs text-zinc-400">{format(note.at, 'dd MMM yyyy · HH:mm')}</p>
-                      </div>
-                      <p className="text-xs text-zinc-500">{note.role}</p>
-                      <p className="mt-1.5 text-sm text-zinc-700">{note.message}</p>
-                    </div>
-                  </div>
-                ))}
+          <DetailSection title="Actions">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" disabled={busy || !isActive} onClick={() => run(() => startService())}>
+                  Start service
+                </Button>
+                <Button
+                  type="button"
+                  variant={ButtonVariantEnum.SECONDARY}
+                  disabled={!patient}
+                  onClick={() => router.push(`/consultation?patientId=${patient?.id}&visitId=${entry.visitId}`)}
+                >
+                  Start consultation
+                </Button>
+                <Button
+                  type="button"
+                  variant={ButtonVariantEnum.SECONDARY}
+                  disabled={busy || entry.status !== QueueEntryStatusEnum.IN_SERVICE}
+                  onClick={() => run(() => completeStage())}
+                >
+                  Complete stage
+                </Button>
+                <Button
+                  type="button"
+                  variant={ButtonVariantEnum.DANGER}
+                  disabled={busy || !isActive}
+                  onClick={() => run(() => skip())}
+                >
+                  Skip
+                </Button>
               </div>
-            )}
+              <div className="flex flex-wrap items-end gap-3 border-t border-zinc-100 pt-4">
+                <div className="w-60">
+                  <Dropdown
+                    compact
+                    label="Transfer to"
+                    options={departmentOptions}
+                    value={transferTo}
+                    onChange={(value) =>
+                      setTransferTo((Array.isArray(value) ? value[0] : value) ?? departmentOptions[0])
+                    }
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant={ButtonVariantEnum.SECONDARY}
+                  disabled={busy}
+                  onClick={() => run(() => transfer({ nextDepartment: transferTo.value as DepartmentEnum }))}
+                >
+                  Transfer
+                </Button>
+              </div>
+            </div>
           </DetailSection>
         </div>
       </div>
