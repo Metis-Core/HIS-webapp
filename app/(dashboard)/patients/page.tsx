@@ -27,6 +27,7 @@ import type { PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import PatientsFilter, { type PatientsFilterValue } from './filter';
 import { usePatients } from './patients-provider';
+import api from '@/helpers/axios';
 
 const initialFilters: PatientsFilterValue = {
   search: '',
@@ -69,43 +70,23 @@ export default function PatientsPage() {
     setPatients((prev) => prev.filter((p) => p.id !== patient.id));
   };
 
-  const handleSave = (values: PatientFormValues) => {
-    const now = new Date();
-    const payload = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      middleName: values.middleName || undefined,
-      dateOfBirth: values.dateOfBirth ? new Date(values.dateOfBirth) : undefined,
-      phone: values.phone,
-      email: values.email || undefined,
-      gender: values.gender as GenderEnum,
-      type: values.type as PatientTypeEnum,
-      address: values.address,
-      city: values.city,
-      nationalId: values.nationalId || undefined,
-      maritalStatus: (values.maritalStatus as PatientMaritalStatusEnum) || undefined,
-      bloodType: (values.bloodType as PatientBloodTypeEnum) || undefined,
-      emergencyContactName: values.emergencyContactName,
-      emergencyContactPhone: values.emergencyContactPhone,
-      emergencyContactRelationship: values.emergencyContactRelationship,
-      insuranceProvider: values.insuranceProvider || undefined,
-      insurancePolicyNumber: values.insurancePolicyNumber || undefined,
-      updatedAt: now,
-    };
-
-    if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
-      setPatients((prev) => prev.map((p) => (p.id === selected.id ? { ...p, ...payload } : p)));
-    } else {
-      setPatients((prev) => [
-        {
-          id: crypto.randomUUID(),
-          ...payload,
-          createdAt: now,
-        },
-        ...prev,
-      ]);
+  const handleSave = async (values: PatientFormValues) => {
+    try {
+      if (drawerMode === ModalDrawerModeEnum.ADD) {
+        await api.post<IPatient>('/patients', {
+          ...values,
+          emergencyContact: {
+            name: values.emergencyContactName.trim(),
+            phone: values.emergencyContactPhone.trim(),
+            relationship: values.emergencyContactRelationship.trim() || undefined,
+          },
+        });
+        closeDrawer();
+      }
+    } catch (error) {
+      console.error('Failed to save patient', error);
+      window.alert('Failed to save patient. Please try again.');
     }
-    closeDrawer();
   };
 
   const filtered = useMemo(() => {

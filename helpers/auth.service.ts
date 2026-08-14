@@ -37,6 +37,8 @@ class AuthService {
       tokenStore.setTokens(data);
       return data;
     } catch (error) {
+      console.log('error');
+      console.log(error);
       throw toAuthError(error);
     }
   }
