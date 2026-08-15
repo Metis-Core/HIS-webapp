@@ -6,6 +6,7 @@ import type { IPatient } from './patient.interface';
 
 export * from './auth.interface';
 export * from './user.interface';
+export * from './service.interface';
 
 export interface IBaseEntity {
   id: string;
@@ -13,16 +14,16 @@ export interface IBaseEntity {
   updatedAt: Date;
 }
 
-export interface IPagination {
+export interface IPagination<T> {
+  items: T[];
+  total: number;
   page: number;
   limit: number;
-  total: number;
-  totalPages: number;
 }
 
 export interface IResponse<T> {
   data: T;
-  pagination: IPagination;
+  pagination: any;
 }
 
 export interface IError {
