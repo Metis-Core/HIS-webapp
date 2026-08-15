@@ -23,16 +23,14 @@ export enum UserGenderEnum {
   OTHER = 'other',
 }
 
-// Mirror of API `Department` enum. Adjust values if the backend enum changes.
 export enum DepartmentEnum {
-  ADMINISTRATION = 'administration',
   RECEPTION = 'reception',
-  MEDICAL = 'medical',
-  NURSING = 'nursing',
-  LAB = 'lab',
-  PHARMACY = 'pharmacy',
+  TRIAGE = 'triage',
+  OUTPATIENT_CLINIC = 'outpatient_clinic',
+  INPATIENT_WARD = 'inpatient_ward',
+  MAIN_LABORATORY = 'main_laboratory',
   RADIOLOGY = 'radiology',
-  SURGERY = 'surgery',
-  ACCOUNTS = 'accounts',
-  NONE = 'none',
+  MAIN_PHARMACY = 'main_pharmacy',
+  FINANCE = 'finance',
+  ADMINISTRATION = 'administrator',
 }
