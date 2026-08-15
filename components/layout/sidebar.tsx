@@ -18,7 +18,7 @@ import {
   FaCog,
 } from 'react-icons/fa';
 import { UserRoleEnum } from '@/enum/user.enum';
-import { useAuth } from '@/providers';
+// import { useAuth } from '@/providers';
 
 interface NavItem {
   label: string;
@@ -152,8 +152,9 @@ const navigations: Partial<Record<UserRoleEnum, NavItem[]>> = {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const role = user?.role ?? UserRoleEnum.RECEPTIONIST;
+  // const { user } = useAuth();
+  // const role = user?.role ?? UserRoleEnum.RECEPTIONIST;
+  const role = UserRoleEnum.RECEPTIONIST;
   const navigation = navigations[role] ?? [];
 
   return (

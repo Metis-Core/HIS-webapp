@@ -1,3 +1,5 @@
+'use client';
+
 import { StatVariantEnum } from '@/enum/stat.enum';
 import type { IStatCardProps } from '@/interfaces';
 

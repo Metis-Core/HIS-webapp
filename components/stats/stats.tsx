@@ -1,3 +1,5 @@
+'use client';
+
 import StatCard from './stat-card';
 import type { IStatsProps } from '@/interfaces';
 

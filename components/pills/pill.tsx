@@ -1,3 +1,4 @@
+'use client';
 import { PillVariantEnum } from '@/enum';
 import type { IPillProps } from '@/interfaces';
 

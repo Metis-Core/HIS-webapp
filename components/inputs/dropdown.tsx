@@ -82,6 +82,7 @@ export default function Dropdown({
         placeholder={placeholder}
         isDisabled={isDisabled}
         classNamePrefix="rs"
+        className="capitalize"
         styles={styles}
       />
       {error && <span className="text-xs text-red-500">{error}</span>}
