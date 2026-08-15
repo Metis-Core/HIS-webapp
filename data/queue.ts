@@ -1,6 +1,7 @@
 import { PillVariantEnum } from '@/enum';
 import { GenderEnum } from '@/enum';
-import { QueueStageEnum, QueueStatusEnum } from '@/enum/queue.enum';
+import { DepartmentEnum, QueueEntryStatusEnum, QueueStageEnum, QueueStatusEnum } from '@/enum/queue.enum';
+import type { IVisitRecord } from '@/interfaces/queue.interfaces';
 
 export type QueuePriority = 'routine' | 'urgent' | 'emergency';
 
@@ -412,6 +413,32 @@ export const priorityVariants: Record<QueuePriority, PillVariantEnum> = {
 
 export function getQueueEntry(id: string) {
   return queueEntries.find((entry) => entry.id === id) ?? null;
+}
+
+export const departmentStageMap: Record<DepartmentEnum, QueueStageEnum> = {
+  [DepartmentEnum.RECEPTION]: QueueStageEnum.REGISTRATION,
+  [DepartmentEnum.TRIAGE]: QueueStageEnum.EXAMINATION,
+  [DepartmentEnum.OUTPATIENT_CLINIC]: QueueStageEnum.CONSULTATION,
+  [DepartmentEnum.INPATIENT_WARD]: QueueStageEnum.POSTOPERATIVE,
+  [DepartmentEnum.MAIN_LABORATORY]: QueueStageEnum.LAB,
+  [DepartmentEnum.RADIOLOGY]: QueueStageEnum.RADIOLOGY,
+  [DepartmentEnum.MAIN_PHARMACY]: QueueStageEnum.PHARMACY,
+  [DepartmentEnum.FINANCE]: QueueStageEnum.DISCHARGE,
+  [DepartmentEnum.ADMINISTRATION]: QueueStageEnum.DISCHARGE,
+};
+
+export const entryStatusMap: Record<QueueEntryStatusEnum, QueueStatusEnum> = {
+  [QueueEntryStatusEnum.WAITING]: QueueStatusEnum.PENDING,
+  [QueueEntryStatusEnum.CALLED]: QueueStatusEnum.PENDING,
+  [QueueEntryStatusEnum.IN_SERVICE]: QueueStatusEnum.IN_PROGRESS,
+  [QueueEntryStatusEnum.COMPLETED]: QueueStatusEnum.COMPLETED,
+  [QueueEntryStatusEnum.SKIPPED]: QueueStatusEnum.CANCELLED,
+  [QueueEntryStatusEnum.TRANSFERRED]: QueueStatusEnum.IN_PROGRESS,
+};
+
+export function currentEntry(visit: IVisitRecord) {
+  const sorted = [...(visit.queueEntries ?? [])].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+  return sorted.find((entry) => entry.status !== QueueEntryStatusEnum.COMPLETED) ?? sorted[sorted.length - 1] ?? null;
 }
 
 export function initialsOf(name: string) {

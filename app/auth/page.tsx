@@ -4,8 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import * as Yup from 'yup';
 import { Button, Form, FormInput } from '@/components';
-import { useAuth } from '@/providers';
-import { AuthErrorCodeEnum } from '@/enum';
+import { publicApi } from '@/helpers/axios';
+import { useUser } from '@/hooks/user.hook';
 
 interface LoginFormValues {
   identifier: string;
@@ -20,7 +20,7 @@ const schema = Yup.object({
 const initialValues: LoginFormValues = { identifier: '', password: '' };
 
 export default function AuthPage() {
-  const { login } = useAuth();
+  const { setUser } = useUser();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,18 +28,15 @@ export default function AuthPage() {
     setSubmitError(null);
     setLoading(true);
     try {
-      await login(values);
+      const r = await publicApi.post<Record<string, any>>('/auth/login', { ...values });
+      const { user, token } = r as any;
+      if (token && user) {
+        setUser({ ...user });
+      }
     } catch (error) {
-      const err = error as { code?: AuthErrorCodeEnum; message?: string };
-      const message =
-        err.code === AuthErrorCodeEnum.INVALID_CREDENTIALS
-          ? 'Invalid username or password'
-          : err.code === AuthErrorCodeEnum.ACCOUNT_SUSPENDED
-            ? 'Your account is inactive or suspended'
-            : err.code === AuthErrorCodeEnum.NETWORK
-              ? 'Could not reach the server. Check your connection.'
-              : (err.message ?? 'Login failed. Please try again.');
-      setSubmitError(message);
+      console.log('Error');
+      console.log(error);
+      // setSubmitError(message);
     } finally {
       setLoading(false);
     }
