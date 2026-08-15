@@ -4,11 +4,69 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { FaCheckCircle, FaClipboardList, FaHourglassHalf, FaPhone, FaSearch, FaUserClock } from 'react-icons/fa';
-import { Dropdown, EmptyState, Input, Pill, StagePathway, Stats } from '@/components';
+import { Dropdown, EmptyState, Input, Pill, Stats } from '@/components';
 import { StatVariantEnum } from '@/enum';
-import { QueueStageEnum, QueueStatusEnum } from '@/enum/queue.enum';
-import { initialsOf, priorityVariants, queueEntries, stageLabel, statusVariants } from '@/data/queue';
-import type { IOption } from '@/interfaces';
+import { QueueStageEnum, QueueStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import {
+  currentEntry,
+  departmentStageMap,
+  entryStatusMap,
+  initialsOf,
+  priorityVariants,
+  stageLabel,
+  statusVariants,
+} from '@/data/queue';
+import type { QueuePriority } from '@/data/queue';
+import { patientFullName } from '@/data/patients';
+import useSWR from 'swr';
+import { publicApi } from '@/helpers/axios';
+import type { IOption, IPagination } from '@/interfaces';
+import type { IVisitRecord } from '@/interfaces/queue.interfaces';
+
+interface IStageStep {
+  stage: QueueStageEnum;
+  status: QueueStatusEnum;
+}
+
+interface IQueueRow {
+  id: string;
+  patientName: string;
+  phone: string;
+  priority: QueuePriority;
+  stage: QueueStageEnum;
+  status: QueueStatusEnum;
+  assignedTo: string;
+  department: string;
+  checkedInAt: Date;
+  sequenceNumber: number;
+  steps: IStageStep[];
+}
+
+function VisitPathway({ steps }: { steps: IStageStep[] }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {steps.map((step, i) => (
+        <div key={`${step.stage}-${i}`} className="flex items-center">
+          <span
+            title={`${stageLabel(step.stage)} · ${stageLabel(step.status)}`}
+            className={`h-2.5 w-2.5 rounded-full ${
+              step.status === QueueStatusEnum.COMPLETED
+                ? 'bg-green-600'
+                : step.status === QueueStatusEnum.IN_PROGRESS
+                  ? 'bg-orange-500 ring-4 ring-orange-100'
+                  : 'bg-zinc-200'
+            }`}
+          />
+          {i < steps.length - 1 && (
+            <span
+              className={`h-0.5 w-6 ${step.status === QueueStatusEnum.COMPLETED ? 'bg-green-600' : 'bg-zinc-200'}`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const stageOptions: IOption[] = [
   { label: 'All stages', value: 'all' },
@@ -21,43 +79,74 @@ const statusOptions: IOption[] = [
 ];
 
 export default function QueuePage() {
+  const { data } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', publicApi);
+  const visits = useMemo(() => data?.data.data.items || [], [data]);
+
+  const rows = useMemo<IQueueRow[]>(
+    () =>
+      visits
+        .filter((visit) => (visit.queueEntries ?? []).length > 0)
+        .map((visit) => {
+          const sorted = [...visit.queueEntries].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+          const active = currentEntry(visit)!;
+          return {
+            id: visit.id,
+            patientName: visit.patient ? patientFullName(visit.patient) : visit.patientId,
+            phone: visit.patient?.phone ?? '—',
+            priority: (visit.visitType === VisitTypeEnum.EMERGENCY ? 'emergency' : 'routine') as QueuePriority,
+            stage: departmentStageMap[active.department],
+            status: entryStatusMap[active.status],
+            assignedTo: active.servedById ? 'Assigned staff' : 'Unassigned',
+            department: stageLabel(active.department),
+            checkedInAt: visit.createdAt,
+            sequenceNumber: active.sequenceNumber,
+            steps: sorted.map((entry) => ({
+              stage: departmentStageMap[entry.department],
+              status: entryStatusMap[entry.status],
+            })),
+          };
+        })
+        .sort((a, b) => a.sequenceNumber - b.sequenceNumber),
+    [visits],
+  );
+
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState<IOption>(stageOptions[0]);
   const [status, setStatus] = useState<IOption>(statusOptions[0]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return queueEntries.filter((entry) => {
+    return rows.filter((entry) => {
       if (stage.value !== 'all' && entry.stage !== stage.value) return false;
       if (status.value !== 'all' && entry.status !== status.value) return false;
       if (query && !entry.patientName.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [search, stage, status]);
+  }, [rows, search, stage, status]);
 
   const stats = useMemo(
     () => [
-      { label: 'Total in queue', value: queueEntries.length, icon: FaClipboardList, variant: StatVariantEnum.Green },
+      { label: 'Total in queue', value: rows.length, icon: FaClipboardList, variant: StatVariantEnum.Green },
       {
         label: 'Waiting',
-        value: queueEntries.filter((e) => e.status === QueueStatusEnum.PENDING).length,
+        value: rows.filter((e) => e.status === QueueStatusEnum.PENDING).length,
         icon: FaHourglassHalf,
         variant: StatVariantEnum.Amber,
       },
       {
         label: 'In progress',
-        value: queueEntries.filter((e) => e.status === QueueStatusEnum.IN_PROGRESS).length,
+        value: rows.filter((e) => e.status === QueueStatusEnum.IN_PROGRESS).length,
         icon: FaUserClock,
         variant: StatVariantEnum.Blue,
       },
       {
         label: 'Emergency cases',
-        value: queueEntries.filter((e) => e.priority === 'emergency').length,
+        value: rows.filter((e) => e.priority === 'emergency').length,
         icon: FaCheckCircle,
         variant: StatVariantEnum.Emerald,
       },
     ],
-    [],
+    [rows],
   );
 
   return (
@@ -142,7 +231,7 @@ export default function QueuePage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <StagePathway stage={entry.stage} />
+                      <VisitPathway steps={entry.steps} />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
