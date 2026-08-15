@@ -3,6 +3,7 @@ import { GenderEnum } from '@/enum';
 import { PatientBloodTypeEnum, PatientMaritalStatusEnum, PatientTypeEnum } from '@/enum/patient.enum';
 
 export interface IPatient extends IBaseEntity {
+  mrn?: string;
   firstName: string;
   lastName: string;
   middleName?: string;

@@ -1,33 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import {
-  FaBed,
-  FaEdit,
-  FaEnvelope,
-  FaEye,
-  FaMapMarkerAlt,
-  FaPhone,
-  FaPlus,
-  FaShieldAlt,
-  FaStethoscope,
-  FaTrash,
-  FaUserInjured,
-  FaUsers,
-} from 'react-icons/fa';
+import { FaBed, FaPlus, FaStethoscope, FaUserInjured, FaUsers } from 'react-icons/fa';
 import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
-import { Button, PatientDrawer, Pill, Stats } from '@/components';
-import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
-import { PatientTypeEnum, PatientMaritalStatusEnum, PatientBloodTypeEnum } from '@/enum/patient.enum';
-import { GenderEnum } from '@/enum';
-import { patientFullName, patientInitials } from '@/data/patients';
-import type { PatientFormValues } from '@/interfaces';
+import { Button, PatientDrawer } from '@/components';
+import { ButtonVariantEnum, ModalDrawerModeEnum, StatVariantEnum } from '@/enum';
+import type { IPagination, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
-import PatientsFilter, { type PatientsFilterValue } from './filter';
-import { usePatients } from './patients-provider';
-import api from '@/helpers/axios';
+import PatientsFilter, { type PatientsFilterValue } from './components/filter';
+import PatientRow from './components/patient-row';
+import { publicApi } from '@/helpers/axios';
+import useSWR from 'swr';
 
 const initialFilters: PatientsFilterValue = {
   search: '',
@@ -40,13 +23,13 @@ const initialFilters: PatientsFilterValue = {
   },
 };
 
-const actionBtn = 'inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-zinc-100';
-
 export default function PatientsPage() {
-  const { patients, setPatients } = usePatients();
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
+
+  const { data, isLoading, mutate, error } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', publicApi);
+  const patients = data?.data.data.items;
 
   const openAdd = () => {
     setSelected(null);
@@ -63,98 +46,114 @@ export default function PatientsPage() {
     setSelected(null);
   };
 
-  const handleDelete = (patient: IPatient) => {
-    if (!window.confirm(`Delete ${patient.firstName} ${patient.lastName}? This cannot be undone.`)) {
-      return;
-    }
-    setPatients((prev) => prev.filter((p) => p.id !== patient.id));
+  const handleDelete = async (id: string) => {
+    try {
+      await publicApi.delete(id);
+      mutate();
+    } catch (error) {}
   };
 
   const handleSave = async (values: PatientFormValues) => {
     try {
+      const {
+        emergencyContactName,
+        emergencyContactPhone,
+        emergencyContactRelationship,
+        maritalStatus,
+        bloodType,
+        ...rest
+      } = values;
+      const payload = {
+        ...rest,
+        maritalStatus: maritalStatus || undefined,
+        bloodType: bloodType || undefined,
+        emergencyContact: {
+          name: emergencyContactName.trim(),
+          phone: emergencyContactPhone.trim(),
+          relationship: emergencyContactRelationship.trim() || undefined,
+        },
+      };
+
       if (drawerMode === ModalDrawerModeEnum.ADD) {
-        await api.post<IPatient>('/patients', {
-          ...values,
-          emergencyContact: {
-            name: values.emergencyContactName.trim(),
-            phone: values.emergencyContactPhone.trim(),
-            relationship: values.emergencyContactRelationship.trim() || undefined,
-          },
-        });
+        await publicApi.post<IPatient>('/patients', payload);
+        mutate();
+        closeDrawer();
+      } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
+        await publicApi.put(`/patients/${selected.id}`, payload);
+        mutate();
         closeDrawer();
       }
-    } catch (error) {
-      console.error('Failed to save patient', error);
-      window.alert('Failed to save patient. Please try again.');
-    }
+    } catch (error) {}
   };
 
   const filtered = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
     const hasRange = filters.dateActive && Boolean(filters.range.startDate && filters.range.endDate);
 
-    return patients.filter((patient) => {
-      if (filters.type && patient.type !== filters.type) return false;
+    return patients
+      ? patients.filter((patient) => {
+          if (filters.type && patient.type !== filters.type) return false;
 
-      if (query) {
-        const haystack = [
-          patient.firstName,
-          patient.lastName,
-          patient.middleName,
-          patient.phone,
-          patient.email,
-          patient.nationalId,
-          patient.city,
-          patient.insuranceProvider,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
+          if (query) {
+            const haystack = [
+              patient.firstName,
+              patient.lastName,
+              patient.middleName,
+              patient.phone,
+              patient.email,
+              patient.nationalId,
+              patient.city,
+              patient.insuranceProvider,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+            if (!haystack.includes(query)) return false;
+          }
 
-      if (hasRange) {
-        const createdAt = new Date(patient.createdAt);
-        if (
-          !isWithinInterval(createdAt, {
-            start: startOfDay(filters.range.startDate!),
-            end: endOfDay(filters.range.endDate!),
-          })
-        ) {
-          return false;
-        }
-      }
+          if (hasRange) {
+            const createdAt = new Date(patient.createdAt);
+            if (
+              !isWithinInterval(createdAt, {
+                start: startOfDay(filters.range.startDate!),
+                end: endOfDay(filters.range.endDate!),
+              })
+            ) {
+              return false;
+            }
+          }
 
-      return true;
-    });
+          return true;
+        })
+      : [];
   }, [patients, filters]);
 
   const stats = useMemo(() => {
-    const total = patients.length;
-    const inpatient = patients.filter((p) => p.type === PatientTypeEnum.INPATIENT).length;
-    const outpatient = patients.filter((p) => p.type === PatientTypeEnum.OUTPATIENT).length;
-    const share = (count: number) => (total > 0 ? `${Math.round((count / total) * 100)}% of total` : undefined);
+    // const total = patients.length;
+    // const inpatient = patients.filter((p) => p.type === PatientTypeEnum.INPATIENT).length;
+    // const outpatient = patients.filter((p) => p.type === PatientTypeEnum.OUTPATIENT).length;
+    // const share = (count: number) => (total > 0 ? `${Math.round((count / total) * 100)}% of total` : undefined);
 
     return {
       items: [
         {
           label: 'Total patients',
-          value: total,
+          value: 100,
           icon: FaUsers,
           variant: StatVariantEnum.Green,
         },
         {
           label: 'Inpatients',
-          value: inpatient,
+          value: 100,
           icon: FaBed,
-          hint: share(inpatient),
+          hint: 100,
           variant: StatVariantEnum.Blue,
         },
         {
           label: 'Outpatients',
-          value: outpatient,
+          value: 100,
           icon: FaStethoscope,
-          hint: share(outpatient),
+          hint: '100',
           variant: StatVariantEnum.Emerald,
         },
       ],
@@ -163,7 +162,7 @@ export default function PatientsPage() {
 
   return (
     <div className="flex flex-col gap-8 py-4">
-      <Stats items={stats.items} />
+      {/* <Stats items={stats.items} /> */}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
@@ -202,109 +201,7 @@ export default function PatientsPage() {
                 </tr>
               ) : (
                 filtered.map((patient) => (
-                  <tr
-                    key={patient.id}
-                    className="border-b border-zinc-100 last:border-0 transition hover:bg-green-50/30"
-                  >
-                    <td className="px-6 py-4">
-                      <Link href={`/patients/${patient.id}`} className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 text-base font-bold text-white shadow">
-                          {patientInitials(patient)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-zinc-900">{patientFullName(patient)}</p>
-                          <p className="text-xs text-zinc-500">{patient.nationalId ?? 'No national ID'}</p>
-                          {patient.dateOfBirth && (
-                            <p className="text-xs text-zinc-400">
-                              DOB: {format(new Date(patient.dateOfBirth), 'dd MMM yyyy')}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1 text-zinc-600">
-                        {patient.phone ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <FaPhone className="text-xs text-zinc-400" />
-                            {patient.phone}
-                          </span>
-                        ) : null}
-                        {patient.email ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <FaEnvelope className="text-xs text-zinc-400" />
-                            {patient.email}
-                          </span>
-                        ) : null}
-                        {!patient.phone && !patient.email && <span className="text-zinc-400">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-600">
-                      {patient.city ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <FaMapMarkerAlt className="text-xs text-zinc-400" />
-                          {patient.city}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {patient.insuranceProvider ? (
-                        <div className="flex flex-col gap-1 text-zinc-600">
-                          <span className="inline-flex items-center gap-1.5 font-medium text-zinc-800">
-                            <FaShieldAlt className="text-xs text-green-700" />
-                            {patient.insuranceProvider}
-                          </span>
-                          {patient.insurancePolicyNumber && (
-                            <span className="text-xs text-zinc-500">{patient.insurancePolicyNumber}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-zinc-400">Self-pay</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Pill
-                        variant={
-                          patient.type === PatientTypeEnum.INPATIENT ? PillVariantEnum.INFO : PillVariantEnum.SUCCESS
-                        }
-                      >
-                        {patient.type}
-                      </Pill>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-600">{format(new Date(patient.createdAt), 'dd MMM yyyy')}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/patients/${patient.id}`}
-                          title="View"
-                          aria-label="View patient"
-                          className={`${actionBtn} text-blue-600 hover:text-blue-700`}
-                        >
-                          <FaEye />
-                        </Link>
-                        <button
-                          type="button"
-                          title="Edit"
-                          aria-label="Edit patient"
-                          className={`${actionBtn} text-amber-600 hover:text-amber-700`}
-                          onClick={() => openEdit(patient)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          type="button"
-                          title="Delete"
-                          aria-label="Delete patient"
-                          className={`${actionBtn} text-red-600 hover:text-red-700`}
-                          onClick={() => handleDelete(patient)}
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  <PatientRow key={patient.id} patient={patient} onEdit={openEdit} onDelete={handleDelete} />
                 ))
               )}
             </tbody>
