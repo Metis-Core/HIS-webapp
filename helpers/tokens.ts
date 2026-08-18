@@ -1,9 +1,8 @@
-import Cookies from 'js-cookie';
 import { AuthCookieEnum } from '@/enum';
 import type { IAuthTokens } from '@/interfaces';
 
-const REFRESH_COOKIE_MAX_AGE_DAYS = 7;
-
+// Persist the refresh token in localStorage so it survives app restarts on
+// Tauri (where cookies with Secure/SameSite flags can be dropped).
 class TokenStore {
   private accessToken: string | null = null;
 
@@ -16,16 +15,13 @@ class TokenStore {
   }
 
   getRefreshToken(): string | undefined {
-    return Cookies.get(AuthCookieEnum.REFRESH_TOKEN);
+    if (typeof window === 'undefined') return undefined;
+    return window.localStorage.getItem(AuthCookieEnum.REFRESH_TOKEN) ?? undefined;
   }
 
   setRefreshToken(token: string): void {
-    Cookies.set(AuthCookieEnum.REFRESH_TOKEN, token, {
-      expires: REFRESH_COOKIE_MAX_AGE_DAYS,
-      path: '/',
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(AuthCookieEnum.REFRESH_TOKEN, token);
   }
 
   setTokens({ accessToken, refreshToken }: IAuthTokens): void {
@@ -35,7 +31,9 @@ class TokenStore {
 
   clear(): void {
     this.accessToken = null;
-    Cookies.remove(AuthCookieEnum.REFRESH_TOKEN, { path: '/' });
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(AuthCookieEnum.REFRESH_TOKEN);
+    }
   }
 
   hasSession(): boolean {

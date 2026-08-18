@@ -1,21 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { FaEye, FaMoneyBillWave, FaPen, FaPlus, FaTrash, FaUsersCog } from 'react-icons/fa';
+import {
+  FaCheckCircle,
+  FaEye,
+  FaMoneyBillWave,
+  FaPen,
+  FaPlug,
+  FaPlus,
+  FaTimesCircle,
+  FaTrash,
+  FaUsersCog,
+} from 'react-icons/fa';
 import { Button, Drawer, Dropdown, Input, PageHeader, Pill } from '@/components';
 import { ButtonVariantEnum, DepartmentEnum, ModalDrawerModeEnum } from '@/enum';
 import { UserRoleEnum, UserStatusEnum } from '@/enum/user.enum';
 import { serviceFees as initialServiceFees, stageLabel } from '@/data/services';
 import { roleLabel, statusVariants } from '@/data/users';
+import { getApiBaseUrl, getDefaultApiBaseUrl, hasApiOverride, setApiBaseUrl } from '@/helpers/api-config';
 import { useUsers } from '@/hooks';
 import type { ICreateUserDto, IOption, IUpdateUserDto, IUser } from '@/interfaces';
 
-type SettingsTab = 'users' | 'services';
+type SettingsTab = 'users' | 'services' | 'connection';
 
 const tabs: { id: SettingsTab; label: string; icon: typeof FaUsersCog }[] = [
   { id: 'users', label: 'User Management', icon: FaUsersCog },
   { id: 'services', label: 'Services', icon: FaMoneyBillWave },
+  { id: 'connection', label: 'Connection', icon: FaPlug },
 ];
 
 const roleOptions: IOption[] = Object.values(UserRoleEnum).map((role) => ({ label: roleLabel(role), value: role }));
@@ -67,6 +79,53 @@ export default function SettingsPage() {
   const [feeRows, setFeeRows] = useState<FeeRow[]>(() =>
     initialServiceFees.map((service) => ({ id: service.stage, label: stageLabel(service.stage), fee: service.fee })),
   );
+
+  // Connection tab state (client-only so SSR stays stable).
+  const [apiUrlInput, setApiUrlInput] = useState('');
+  const [defaultApiUrl, setDefaultApiUrl] = useState('');
+  const [overrideActive, setOverrideActive] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    setApiUrlInput(getApiBaseUrl());
+    setDefaultApiUrl(getDefaultApiBaseUrl());
+    setOverrideActive(hasApiOverride());
+  }, []);
+
+  const saveApiUrl = () => {
+    const applied = setApiBaseUrl(apiUrlInput);
+    setApiUrlInput(applied);
+    setOverrideActive(hasApiOverride());
+    setTestResult(null);
+  };
+
+  const resetApiUrl = () => {
+    setApiBaseUrl('');
+    setApiUrlInput(getDefaultApiBaseUrl());
+    setOverrideActive(false);
+    setTestResult(null);
+  };
+
+  const testConnection = async () => {
+    const target = apiUrlInput.trim().replace(/\/+$/, '');
+    if (!target) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      // HEAD /: any HTTP response = reachable; only network failure counts as a failure.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(target, { method: 'HEAD', signal: controller.signal });
+      clearTimeout(timeout);
+      setTestResult({ ok: true, message: `Reachable (HTTP ${res.status})` });
+    } catch (err) {
+      const msg = (err as Error).name === 'AbortError' ? 'Timed out after 5s' : (err as Error).message;
+      setTestResult({ ok: false, message: `Could not reach server: ${msg}` });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const openAddUser = () => {
     setEditingId(null);
@@ -162,12 +221,12 @@ export default function SettingsPage() {
             <FaPlus className="text-sm" />
             Add user
           </Button>
-        ) : (
+        ) : tab === 'services' ? (
           <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={addFeeRow}>
             <FaPlus className="text-sm" />
             Add row
           </Button>
-        )}
+        ) : null}
       </div>
 
       {tab === 'users' ? (
@@ -250,7 +309,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : tab === 'services' ? (
         <div className="flex flex-col gap-4">
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
             <div className="overflow-x-auto">
@@ -294,6 +353,68 @@ export default function SettingsPage() {
           <Button type="button" variant={ButtonVariantEnum.PRIMARY} className="w-fit">
             Save changes
           </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-zinc-900">API connection</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Point the app at the backend it should talk to. Changes take effect immediately for new requests.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Input
+                label="API base URL"
+                type="url"
+                placeholder="https://api.example.com"
+                value={apiUrlInput}
+                onChange={(e) => setApiUrlInput(e.target.value)}
+              />
+              <div className="text-xs text-zinc-500">
+                Built-in default:{' '}
+                <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700">{defaultApiUrl || '(unset)'}</code>
+                {overrideActive ? (
+                  <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
+                    Override active
+                  </span>
+                ) : null}
+              </div>
+              {testResult ? (
+                <div
+                  role="status"
+                  className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
+                    testResult.ok
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-red-200 bg-red-50 text-red-800'
+                  }`}
+                >
+                  {testResult.ok ? (
+                    <FaCheckCircle className="mt-0.5 shrink-0" />
+                  ) : (
+                    <FaTimesCircle className="mt-0.5 shrink-0" />
+                  )}
+                  <span>{testResult.message}</span>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={saveApiUrl}>
+                  Save
+                </Button>
+                <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={testConnection} loading={testing}>
+                  Test connection
+                </Button>
+                <Button
+                  type="button"
+                  variant={ButtonVariantEnum.GHOST}
+                  disabled={!overrideActive}
+                  onClick={resetApiUrl}
+                >
+                  Reset to default
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,12 +1,19 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import Header from '@/components/layout/header';
 import Sidebar from '@/components/layout/sidebar';
 
 export default function DashboardShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
+
+  // The desktop (static) build has no server middleware, so guard client-side.
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.replace('/auth');
+  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading || !isAuthenticated) {
     return (

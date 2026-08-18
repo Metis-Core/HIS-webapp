@@ -1,9 +1,8 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { AuthEndpointEnum } from '@/enum';
 import type { IAuthTokens } from '@/interfaces';
+import { getApiBaseUrl } from './api-config';
 import tokenStore from './tokens';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -20,7 +19,7 @@ const performRefresh = async (): Promise<IAuthTokens> => {
       const refreshToken = tokenStore.getRefreshToken();
       if (!refreshToken) throw new Error('Missing refresh token');
       const { data } = await axios.post<IAuthTokens>(
-        `${API_BASE_URL}${AuthEndpointEnum.REFRESH}`,
+        `${getApiBaseUrl()}${AuthEndpointEnum.REFRESH}`,
         { refreshToken },
         { headers: { 'Content-Type': 'application/json' } },
       );
@@ -41,11 +40,12 @@ const onUnauthenticated = () => {
 };
 
 const api: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
+  // Resolved per-request so runtime override (Settings screen) takes effect immediately.
+  config.baseURL = getApiBaseUrl();
   const token = tokenStore.getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
