@@ -16,6 +16,10 @@ const emptyValues = {
   reorderLevel: '0',
   unitPrice: '0',
   manufacturer: '',
+  strength: '',
+  dosageForm: '',
+  genericName: '',
+  isControlled: false,
   isActive: true,
 };
 
@@ -56,6 +60,10 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         reorderLevel: String(item.reorderLevel),
         unitPrice: String(item.unitPrice),
         manufacturer: item.manufacturer ?? '',
+        strength: item.strength ?? '',
+        dosageForm: item.dosageForm ?? '',
+        genericName: item.genericName ?? '',
+        isControlled: item.isControlled ?? false,
         isActive: item.isActive,
       });
     } else {
@@ -82,6 +90,10 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         reorderLevel: Number(values.reorderLevel),
         unitPrice: Number(values.unitPrice),
         manufacturer: values.manufacturer.trim() || undefined,
+        strength: values.strength.trim() || undefined,
+        dosageForm: values.dosageForm.trim() || undefined,
+        genericName: values.genericName.trim() || undefined,
+        isControlled: values.isControlled,
         isActive: values.isActive,
       };
       await onSave(payload, item?.id);
@@ -151,6 +163,43 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
           />
         </div>
         <Input label="Manufacturer" value={values.manufacturer} onChange={(e) => set('manufacturer', e.target.value)} />
+
+        {values.type === InventoryItemTypeEnum.MEDICATION && (
+          <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Medication details</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Generic name"
+                value={values.genericName}
+                onChange={(e) => set('genericName', e.target.value)}
+                placeholder="e.g. Paracetamol"
+              />
+              <Input
+                label="Strength"
+                value={values.strength}
+                onChange={(e) => set('strength', e.target.value)}
+                placeholder="e.g. 500 mg"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Dosage form"
+                value={values.dosageForm}
+                onChange={(e) => set('dosageForm', e.target.value)}
+                placeholder="tablet, syrup, injection…"
+              />
+              <label className="mt-6 flex items-center gap-2 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  checked={values.isControlled}
+                  onChange={(e) => set('isControlled', e.target.checked)}
+                />
+                Controlled substance (extra dispensing safeguards)
+              </label>
+            </div>
+          </div>
+        )}
+
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" checked={values.isActive} onChange={(e) => set('isActive', e.target.checked)} />
           Active

@@ -3,6 +3,7 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { LabEndpointEnum } from '@/enum';
 import { labOrdersService, labTestsService } from '@/helpers/lab.service';
+import { asList } from './utils';
 import type {
   ICreateLabOrderDto,
   ICreateLabTestDto,
@@ -110,12 +111,12 @@ export function useLabOrder(id: string | null | undefined) {
 
 export function useLabOrdersByPatient(patientId: string | null | undefined) {
   const key = patientId ? labOrdersService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<ILabOrder[]>(key);
-  return { orders: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { orders: asList<ILabOrder>(data), isLoading, error, mutate };
 }
 
 export function useLabOrdersByConsultation(consultationId: string | null | undefined) {
   const key = consultationId ? labOrdersService.buildByConsultationUrl(consultationId) : null;
-  const { data, error, isLoading, mutate } = useSWR<ILabOrder[]>(key);
-  return { orders: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { orders: asList<ILabOrder>(data), isLoading, error, mutate };
 }

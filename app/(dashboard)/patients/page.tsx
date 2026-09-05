@@ -10,6 +10,7 @@ import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPagination, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import { api } from '@/helpers/axios';
+import { extractErrorMessage } from '@/helpers/errors';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
 import PatientRow from './components/patient-row';
 
@@ -65,14 +66,28 @@ export default function PatientsPage() {
       bloodType,
       ...rest
     } = values;
+    // API validators (@IsEmail, @IsDateString, @IsEnum) reject empty strings — send undefined instead.
+    const optional = (v?: string) => (v && v.trim() ? v.trim() : undefined);
     const payload = {
-      ...rest,
+      firstName: rest.firstName.trim(),
+      lastName: rest.lastName.trim(),
+      middleName: optional(rest.middleName),
+      dateOfBirth: rest.dateOfBirth,
+      gender: rest.gender,
+      type: rest.type,
+      phone: optional(rest.phone),
+      email: optional(rest.email),
+      address: optional(rest.address),
+      city: optional(rest.city),
+      nationalId: optional(rest.nationalId),
+      insuranceProvider: optional(rest.insuranceProvider),
+      insurancePolicyNumber: optional(rest.insurancePolicyNumber),
       maritalStatus: maritalStatus || undefined,
       bloodType: bloodType || undefined,
       emergencyContact: {
         name: emergencyContactName.trim(),
         phone: emergencyContactPhone.trim(),
-        relationship: emergencyContactRelationship.trim() || undefined,
+        relationship: optional(emergencyContactRelationship),
       },
     };
 
@@ -80,13 +95,13 @@ export default function PatientsPage() {
       await toast.promise(api.post<IPatient>('/patients', payload), {
         loading: 'Registering patient…',
         success: 'Patient registered',
-        error: "Couldn't save — retry",
+        error: (err) => extractErrorMessage(err, "Couldn't register — retry"),
       });
     } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
       await toast.promise(api.put(`/patients/${selected.id}`, payload), {
         loading: 'Saving patient…',
         success: 'Patient updated',
-        error: "Couldn't save — retry",
+        error: (err) => extractErrorMessage(err, "Couldn't save — retry"),
       });
     }
     await mutate();

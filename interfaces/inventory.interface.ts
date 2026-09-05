@@ -34,6 +34,10 @@ export interface IInventoryItem extends IBaseEntity {
   reorderLevel: number;
   unitPrice: number;
   manufacturer?: string | null;
+  strength?: string | null;
+  dosageForm?: string | null;
+  genericName?: string | null;
+  isControlled?: boolean;
   isActive: boolean;
 }
 
@@ -47,6 +51,10 @@ export interface ICreateInventoryItemDto {
   reorderLevel?: number;
   unitPrice?: number;
   manufacturer?: string;
+  strength?: string;
+  dosageForm?: string;
+  genericName?: string;
+  isControlled?: boolean;
   isActive?: boolean;
 }
 
@@ -83,6 +91,9 @@ export interface IInventoryTransaction extends IBaseEntity {
   performedById: string;
   performedBy?: IUser;
   notes?: string | null;
+  batchNumber?: string | null;
+  expiryDate?: string | null;
+  manufactureDate?: string | null;
 }
 
 export interface ICreateInventoryTransactionDto {
@@ -94,6 +105,9 @@ export interface ICreateInventoryTransactionDto {
   referenceType?: string;
   referenceId?: string;
   notes?: string;
+  batchNumber?: string;
+  expiryDate?: string;
+  manufactureDate?: string;
 }
 
 export interface IInventoryTransactionFilters {

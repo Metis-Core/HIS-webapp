@@ -256,22 +256,33 @@ export default function InventoryPage() {
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Item</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Type</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Qty</th>
+                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Batch</th>
+                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Expiry</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Balance</th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((t) => (
-                  <tr key={t.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 text-xs text-ink-muted tabular-nums">
-                      {new Date(t.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-ink">{t.store?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-sm text-ink">{t.item?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-sm capitalize text-ink-muted">{t.type.replaceAll('_', ' ')}</td>
-                    <td className="px-4 py-3 text-sm tabular-nums text-ink">{t.quantity}</td>
-                    <td className="px-4 py-3 text-sm tabular-nums text-ink">{t.runningBalance}</td>
-                  </tr>
-                ))}
+                {transactions.map((t) => {
+                  const expired = t.expiryDate ? new Date(t.expiryDate) < new Date() : false;
+                  return (
+                    <tr key={t.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3 text-xs text-ink-muted tabular-nums">
+                        {new Date(t.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-ink">{t.store?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-ink">{t.item?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm capitalize text-ink-muted">{t.type.replaceAll('_', ' ')}</td>
+                      <td className="px-4 py-3 text-sm tabular-nums text-ink">{t.quantity}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-ink-muted">{t.batchNumber ?? '—'}</td>
+                      <td
+                        className={`px-4 py-3 text-xs tabular-nums ${expired ? 'font-semibold text-critical' : 'text-ink-muted'}`}
+                      >
+                        {t.expiryDate ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm tabular-nums text-ink">{t.runningBalance}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

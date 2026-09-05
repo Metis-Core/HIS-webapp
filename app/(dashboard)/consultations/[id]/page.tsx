@@ -25,6 +25,7 @@ import {
   ConsultationStatusEnum,
   ConsultationTypeEnum,
   DepartmentEnum,
+  InventoryItemTypeEnum,
   LabOrderItemStatusEnum,
   LabOrderStatusEnum,
   LabPriorityEnum,
@@ -228,6 +229,24 @@ export default function ConsultationDetailPage() {
             <Pill variant={statusVariant[consultation.status] ?? PillVariantEnum.DEFAULT}>
               {consultation.status.replaceAll('_', ' ')}
             </Pill>
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL}/documents/discharge/${consultation.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
+            >
+              Discharge summary
+            </a>
+            {consultation.visitId && (
+              <a
+                href={`${process.env.NEXT_PUBLIC_API_URL}/documents/receipt/${consultation.visitId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
+              >
+                Visit receipt
+              </a>
+            )}
           </div>
         }
       />
@@ -571,33 +590,41 @@ function LabTab({
             No results yet. Results will appear here as the lab completes each test — you'll also get a notification.
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-line rounded-md border border-line">
+          <ul className="flex flex-col gap-3">
             {readyItems.map(({ order, item }) => (
-              <li key={item.id} className="flex flex-col gap-1 px-3 py-2 text-sm">
+              <li key={item.id} className="flex flex-col gap-2 rounded-md border border-line px-3 py-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-ink">
-                    {item.test ? `${item.test.code} — ${item.test.name}` : 'Test'}
-                  </span>
+                  <div>
+                    <div className="font-medium text-ink">
+                      {item.test ? `${item.test.code} — ${item.test.name}` : 'Test'}
+                    </div>
+                    <div className="text-xs text-ink-muted">
+                      {item.resultedAt && (
+                        <span className="tabular-nums">{format(new Date(item.resultedAt), 'dd MMM yyyy HH:mm')}</span>
+                      )}
+                      {' · '}
+                      <span className="capitalize">Priority {order.priority}</span>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     {item.isAbnormal && <Pill variant={PillVariantEnum.DANGER}>Abnormal</Pill>}
                     <Pill variant={PillVariantEnum.SUCCESS}>{item.status.replaceAll('_', ' ')}</Pill>
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_API_URL}/documents/lab-order/${order.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-raised"
+                    >
+                      Print / Download
+                    </a>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
-                  <span>
-                    Result:{' '}
-                    <span className="font-mono text-ink">
-                      {item.resultValue ?? '—'}
-                      {item.test?.unit ? ` ${item.test.unit}` : ''}
-                    </span>
-                  </span>
-                  {item.test?.referenceRange && <span>Ref: {item.test.referenceRange}</span>}
-                  {item.resultedAt && (
-                    <span className="tabular-nums">{format(new Date(item.resultedAt), 'dd MMM HH:mm')}</span>
-                  )}
-                  <span className="capitalize">Priority {order.priority}</span>
-                </div>
-                {item.resultNotes && <p className="text-xs text-ink-muted">Notes: {item.resultNotes}</p>}
+
+                <LabResultView item={item} />
+
+                {item.resultNotes && (
+                  <p className="rounded-md bg-surface px-2 py-1 text-xs text-ink-muted">Notes: {item.resultNotes}</p>
+                )}
               </li>
             ))}
           </ul>
@@ -721,7 +748,11 @@ function PrescriptionsPanel({
   consultation: NonNullable<ReturnType<typeof useConsultation>['consultation']>;
   readOnly: boolean;
 }) {
-  const { items: inventoryItems } = useInventoryItems({ limit: 100, isActive: true });
+  const { items: inventoryItems } = useInventoryItems({
+    limit: 100,
+    isActive: true,
+    type: InventoryItemTypeEnum.MEDICATION,
+  });
   const [rows, setRows] = useState<
     Array<{ itemId: string; dosage: string; frequency: string; duration: string; quantity: string }>
   >([]);
@@ -729,7 +760,7 @@ function PrescriptionsPanel({
   const [busy, setBusy] = useState(false);
 
   const itemOptions: IOption[] = inventoryItems.map((i) => ({
-    label: `${i.sku} — ${i.name}`,
+    label: `${i.name}${i.manufacturer ? ` (${i.manufacturer})` : ''} — ${i.sku}`,
     value: i.id,
   }));
 
@@ -786,7 +817,7 @@ function PrescriptionsPanel({
       <div className="rounded-md border border-line p-3">
         {inventoryItems.length === 0 ? (
           <p className="text-xs text-ink-muted">
-            No pharmacy items configured yet. Ask the pharmacy admin to add stock under{' '}
+            No medications configured yet. Ask the pharmacy admin to add medication stock under{' '}
             <Link href="/inventory" className="text-brand hover:underline">
               Inventory
             </Link>
@@ -800,7 +831,8 @@ function PrescriptionsPanel({
               <div key={idx} className="grid grid-cols-12 items-end gap-2">
                 <div className="col-span-4">
                   <Dropdown
-                    label="Item"
+                    label="Medication"
+                    placeholder="Search medication…"
                     options={itemOptions}
                     value={itemOptions.find((o) => o.value === row.itemId) ?? null}
                     onChange={(o) => setRow(idx, 'itemId', (o as IOption).value as string)}
@@ -873,5 +905,64 @@ function PrescriptionsPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+function LabResultView({
+  item,
+}: {
+  item: NonNullable<ReturnType<typeof useLabOrdersByConsultation>['orders']>[number]['items'][number];
+}) {
+  const schema = item.test?.resultSchema ?? null;
+  const raw = item.resultValue ?? '';
+  if (!raw) {
+    return <div className="text-xs text-ink-muted">No result value recorded.</div>;
+  }
+
+  let parsed: Record<string, string | number | boolean> | null = null;
+  try {
+    const asJson = JSON.parse(raw);
+    if (asJson && typeof asJson === 'object' && !Array.isArray(asJson)) {
+      parsed = asJson as Record<string, string | number | boolean>;
+    }
+  } catch {
+    parsed = null;
+  }
+
+  if (parsed && schema && schema.fields.length > 0) {
+    return (
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        {schema.fields.map((f) => {
+          const v = parsed?.[f.key];
+          if (v === undefined || v === null || v === '') return null;
+          const display = f.type === 'boolean' ? (v ? 'Yes' : 'No') : String(v);
+          return (
+            <div key={f.key} className="flex justify-between gap-2 border-b border-line/60 py-0.5">
+              <span className="text-ink-muted">
+                {f.label}
+                {f.unit ? ` (${f.unit})` : ''}
+              </span>
+              <span className="font-mono text-ink">
+                {display}
+                {f.referenceRange && <span className="ml-2 text-ink-muted">ref {f.referenceRange}</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+      <span>
+        Result:{' '}
+        <span className="font-mono text-ink">
+          {raw}
+          {item.test?.unit ? ` ${item.test.unit}` : ''}
+        </span>
+      </span>
+      {item.test?.referenceRange && <span className="text-ink-muted">Ref: {item.test.referenceRange}</span>}
+    </div>
   );
 }

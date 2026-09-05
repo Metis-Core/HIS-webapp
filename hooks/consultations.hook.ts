@@ -3,6 +3,7 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { ConsultationEndpointEnum } from '@/enum';
 import consultationsService from '@/helpers/consultations.service';
+import { asList } from './utils';
 import type {
   ICancelConsultationDto,
   ICompleteConsultationDto,
@@ -75,12 +76,12 @@ export function useConsultation(id: string | null | undefined) {
 
 export function useConsultationsByPatient(patientId: string | null | undefined) {
   const key = patientId ? consultationsService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<IConsultation[]>(key);
-  return { consultations: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { consultations: asList<IConsultation>(data), isLoading, error, mutate };
 }
 
 export function useConsultationsByVisit(visitId: string | null | undefined) {
   const key = visitId ? consultationsService.buildByVisitUrl(visitId) : null;
-  const { data, error, isLoading, mutate } = useSWR<IConsultation[]>(key);
-  return { consultations: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { consultations: asList<IConsultation>(data), isLoading, error, mutate };
 }

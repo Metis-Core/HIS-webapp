@@ -33,8 +33,8 @@ const schema = Yup.object({
   nationalId: Yup.string(),
   maritalStatus: Yup.string().oneOf([...Object.values(PatientMaritalStatusEnum), '']),
   bloodType: Yup.string().oneOf([...Object.values(PatientBloodTypeEnum), '']),
-  emergencyContactName: Yup.string().required('Emergency contact name is required'),
-  emergencyContactPhone: Yup.string().required('Emergency contact phone is required'),
+  emergencyContactName: Yup.string().required('Next of kin name is required'),
+  emergencyContactPhone: Yup.string().required('Next of kin phone is required'),
   emergencyContactRelationship: Yup.string().required('Relationship is required'),
   insuranceProvider: Yup.string(),
   insurancePolicyNumber: Yup.string(),
@@ -194,11 +194,11 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
             </dl>
           </FormSection>
 
-          <FormSection title="Emergency contact">
+          <FormSection title="Next of kin">
             <dl className={fieldGrid}>
-              <ViewField label="Contact name" value={patient.emergencyContactName} />
+              <ViewField label="Full name" value={patient.emergencyContactName} />
               <ViewField label="Relationship" value={patient.emergencyContactRelationship} />
-              <ViewField label="Contact phone" value={patient.emergencyContactPhone} />
+              <ViewField label="Phone" value={patient.emergencyContactPhone} />
             </dl>
           </FormSection>
 
@@ -265,16 +265,16 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
             </div>
           </FormSection>
 
-          <FormSection title="Emergency contact">
+          <FormSection title="Next of kin">
             <div className={fieldGrid}>
-              <FormInput name="emergencyContactName" label="Contact name" placeholder="Full name" required />
+              <FormInput name="emergencyContactName" label="Full name" placeholder="Next of kin full name" required />
               <FormInput
                 name="emergencyContactRelationship"
                 label="Relationship"
-                placeholder="e.g. Spouse, Parent"
+                placeholder="e.g. Spouse, Parent, Sibling"
                 required
               />
-              <FormPhoneInput name="emergencyContactPhone" label="Contact phone" />
+              <FormPhoneInput name="emergencyContactPhone" label="Phone" />
             </div>
           </FormSection>
 

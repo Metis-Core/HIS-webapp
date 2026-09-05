@@ -3,6 +3,7 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { PharmacyEndpointEnum } from '@/enum';
 import pharmacyService from '@/helpers/pharmacy.service';
+import { asList } from './utils';
 import type {
   ICreatePrescriptionDto,
   IDispense,
@@ -58,12 +59,12 @@ export function usePrescription(id: string | null | undefined) {
 
 export function usePrescriptionsByPatient(patientId: string | null | undefined) {
   const key = patientId ? pharmacyService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<IPrescription[]>(key);
-  return { prescriptions: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { prescriptions: asList<IPrescription>(data), isLoading, error, mutate };
 }
 
 export function usePrescriptionDispenses(id: string | null | undefined) {
   const key = id ? `${PharmacyEndpointEnum.PRESCRIPTIONS}/${id}/dispenses` : null;
-  const { data, error, isLoading, mutate } = useSWR<IDispense[]>(key);
-  return { dispenses: data ?? [], isLoading, error, mutate };
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  return { dispenses: asList<IDispense>(data), isLoading, error, mutate };
 }

@@ -11,6 +11,23 @@ import type { IUser } from './user.interface';
 
 export interface ILab extends IBaseEntity {}
 
+export type LabResultFieldType = 'number' | 'text' | 'select' | 'boolean';
+
+export interface ILabResultField {
+  key: string;
+  label: string;
+  type: LabResultFieldType;
+  unit?: string;
+  referenceRange?: string;
+  options?: string[];
+  required?: boolean;
+  helpText?: string;
+}
+
+export interface ILabResultSchema {
+  fields: ILabResultField[];
+}
+
 export interface ILabTest extends IBaseEntity {
   code: string;
   name: string;
@@ -21,6 +38,7 @@ export interface ILabTest extends IBaseEntity {
   referenceRange?: string | null;
   price: number;
   turnaroundHours?: number | null;
+  resultSchema?: ILabResultSchema | null;
   isActive: boolean;
 }
 
@@ -34,6 +52,7 @@ export interface ICreateLabTestDto {
   referenceRange?: string;
   price: number;
   turnaroundHours?: number;
+  resultSchema?: ILabResultSchema;
   isActive?: boolean;
 }
 
