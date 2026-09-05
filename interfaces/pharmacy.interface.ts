@@ -40,6 +40,7 @@ export interface ICreatePrescriptionItemDto {
 export interface ICreatePrescriptionDto {
   patientId: string;
   consultationId?: string;
+  visitId?: string;
   notes?: string;
   items: ICreatePrescriptionItemDto[];
 }

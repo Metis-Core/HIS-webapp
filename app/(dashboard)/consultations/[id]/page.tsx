@@ -752,6 +752,7 @@ function PrescriptionsPanel({
         pharmacyService.create({
           patientId: consultation.patientId,
           consultationId: consultation.id,
+          visitId: consultation.visitId ?? undefined,
           notes: notes.trim() || undefined,
           items: filled.map((r) => ({
             itemId: r.itemId,
