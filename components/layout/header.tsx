@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaSearch } from 'react-icons/fa';
 import NotificationsBell from './notifications-bell';
 import { useAuth } from '@/providers';
 
@@ -11,7 +10,6 @@ export default function Header() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const menuRef = useRef<HTMLDetailsElement>(null);
-  const [platform, setPlatform] = useState<'mac' | 'other'>('other');
 
   const titleFromPath = (pathname: string) => {
     const segment = pathname.split('/').filter(Boolean).pop();
@@ -24,19 +22,12 @@ export default function Header() {
   };
 
   useEffect(() => {
-    setPlatform(/mac/i.test(navigator.platform) ? 'mac' : 'other');
-
     const close = () => {
       if (menuRef.current?.open) menuRef.current.open = false;
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        // Command palette hook — wired here so every screen answers ⌘K (AGENTS.md §7).
-        document.getElementById('global-patient-search')?.focus();
-      }
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -53,24 +44,12 @@ export default function Header() {
   }, []);
 
   const initials = (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? user?.username?.[0] ?? '');
-  const shortcut = platform === 'mac' ? '⌘K' : 'Ctrl K';
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-surface-raised px-4">
       <h1 className="text-base font-semibold text-ink">{titleFromPath(pathname)}</h1>
 
-      <div className="relative ml-auto hidden md:block">
-        <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted" />
-        <input
-          id="global-patient-search"
-          type="search"
-          placeholder="Search patient, MRN, phone"
-          className="w-72 rounded-md border border-line bg-surface pl-9 pr-16 py-1.5 text-sm text-ink placeholder:text-ink-muted/70 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        />
-        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-line bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-ink-muted md:inline-flex">
-          {shortcut}
-        </kbd>
-      </div>
+      <div className="ml-auto" />
 
       <NotificationsBell />
 

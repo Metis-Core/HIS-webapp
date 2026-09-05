@@ -262,7 +262,7 @@ export default function ConsultationDrawer({
 
 function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultation; onChanged: () => void }) {
   const { orders, mutate } = useLabOrdersByConsultation(consultation.id);
-  const { tests } = useLabTests({ limit: 200, isActive: true });
+  const { tests } = useLabTests({ limit: 100, isActive: true });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [priority, setPriority] = useState<LabPriorityEnum>(LabPriorityEnum.ROUTINE);
   const [notes, setNotes] = useState('');

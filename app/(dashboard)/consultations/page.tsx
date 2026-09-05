@@ -3,21 +3,21 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaClipboardList, FaEye, FaPlay, FaPlus, FaStethoscope } from 'react-icons/fa';
+import { FaArrowRight, FaClipboardList, FaEye, FaPlay, FaPlus, FaStethoscope } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
-import CompleteStageDrawer from '@/components/drawers/complete-stage.drawer';
 import {
   ButtonVariantEnum,
   ConsultationStatusEnum,
+  ConsultationTypeEnum,
   DepartmentEnum,
   PillVariantEnum,
   QueueEntryStatusEnum,
   StatVariantEnum,
-  VisitIntentEnum,
 } from '@/enum';
 import { useConsultations, useDepartmentQueue, usePatients } from '@/hooks';
 import { extractErrorMessage } from '@/helpers/errors';
+import triageService from '@/helpers/triage.service';
 import type { IConsultation, IPatient, IQueueEntryRecord } from '@/interfaces';
 
 type TabId = 'waiting' | 'all';
@@ -41,11 +41,15 @@ export default function ConsultationsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>('waiting');
   const [search, setSearch] = useState('');
-  const [completing, setCompleting] = useState<IConsultation | null>(null);
-  const [completingBusy, setCompletingBusy] = useState(false);
 
   const { patients } = usePatients({ limit: 100 });
-  const { consultations, completeConsultation, cancelConsultation } = useConsultations({ limit: 50 });
+  const {
+    consultations,
+    createConsultation,
+    cancelConsultation,
+    isLoading: consultationsLoading,
+    error: consultationsError,
+  } = useConsultations({ limit: 100 });
 
   const {
     entries: waiting,
@@ -93,23 +97,6 @@ export default function ConsultationsPage() {
   const openAdd = () => router.push('/consultations/new');
   const openDetail = (c: IConsultation) => router.push(`/consultations/${c.id}`);
 
-  const complete = (c: IConsultation) => setCompleting(c);
-
-  const confirmComplete = async ({ nextIntents, notes }: { nextIntents: VisitIntentEnum[]; notes?: string }) => {
-    if (!completing) return;
-    setCompletingBusy(true);
-    try {
-      await toast.promise(completeConsultation(completing.id, { nextIntents, notes }), {
-        loading: 'Completing…',
-        success: nextIntents.length > 0 ? `Completed — routed to ${nextIntents.join(', ')}` : 'Consultation completed',
-        error: (err) => extractErrorMessage(err, "Couldn't complete — retry"),
-      });
-      setCompleting(null);
-    } finally {
-      setCompletingBusy(false);
-    }
-  };
-
   const cancel = async (c: IConsultation) => {
     if (!confirm('Cancel this consultation?')) return;
     await toast.promise(cancelConsultation(c.id, {}), {
@@ -126,10 +113,38 @@ export default function ConsultationsPage() {
       }
       await startEntry(entry.id);
       const patientId = entry.visit?.patient?.id ?? entry.visit?.patientId;
-      const search = new URLSearchParams();
-      if (patientId) search.set('patientId', patientId);
-      if (entry.visitId) search.set('visitId', entry.visitId);
-      router.push(`/consultations/new?${search.toString()}`);
+      if (!patientId) {
+        toast.error('Missing patient on queue entry');
+        return;
+      }
+
+      let chiefComplaint = 'To be documented';
+      try {
+        const triages = await triageService.findByPatient(patientId);
+        const latest = triages
+          .slice()
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+        if (latest?.chiefComplaint) chiefComplaint = latest.chiefComplaint;
+      } catch {
+        // triage lookup is best-effort; workspace lets the doctor edit
+      }
+
+      const consultation = await toast.promise(
+        createConsultation({
+          patientId,
+          visitId: entry.visitId ?? undefined,
+          chiefComplaint,
+          type: ConsultationTypeEnum.OUTPATIENT,
+          department: DepartmentEnum.OUTPATIENT_CLINIC,
+        }),
+        {
+          loading: 'Opening encounter…',
+          success: 'Encounter started',
+          error: (err) => extractErrorMessage(err, "Couldn't start — retry"),
+        },
+      );
+      const id = (consultation as { id?: string } | undefined)?.id;
+      if (id) router.push(`/consultations/${id}`);
     } catch (err) {
       toast.error("Couldn't start — retry");
     }
@@ -169,9 +184,19 @@ export default function ConsultationsPage() {
       />
 
       {tab === 'waiting' ? (
-        <WaitingTable entries={waiting} patients={patients} onStart={startFromQueue} onSkip={skipFromQueue} />
+        <>
+          <p className="text-xs text-ink-muted">
+            Tap <span className="font-semibold text-brand">Start</span> next to the patient at the top of the queue —
+            the encounter opens instantly and you can document it.
+          </p>
+          <WaitingTable entries={waiting} patients={patients} onStart={startFromQueue} onSkip={skipFromQueue} />
+        </>
       ) : (
         <>
+          <p className="text-xs text-ink-muted">
+            Click a row (or the <span className="font-semibold text-brand">Open</span> button) to enter the consultation
+            workspace and fill in the encounter, labs and prescriptions.
+          </p>
           <Input
             className="max-w-sm"
             placeholder="Search patient / diagnosis / complaint"
@@ -179,12 +204,29 @@ export default function ConsultationsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          {filtered.length === 0 ? (
+          {consultationsLoading ? (
+            <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-raised p-6">
+              <div className="h-4 w-40 animate-pulse rounded bg-line" />
+              <div className="h-3 w-full animate-pulse rounded bg-line/70" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-line/70" />
+              <div className="h-3 w-4/6 animate-pulse rounded bg-line/70" />
+            </div>
+          ) : consultationsError ? (
+            <div className="rounded-lg border border-critical/40 bg-critical-soft p-4 text-sm text-critical">
+              Couldn't load consultations. Check that the API is reachable and you're signed in — then refresh.
+            </div>
+          ) : filtered.length === 0 ? (
             <EmptyState
-              message="No consultations yet"
+              message={
+                search.trim()
+                  ? 'No consultations match your search'
+                  : consultations.length === 0
+                    ? 'No consultations yet'
+                    : 'No consultations match your search'
+              }
               icon={FaStethoscope}
-              actionLabel="Start consultation"
-              onAction={openAdd}
+              actionLabel={consultations.length === 0 ? 'Start consultation' : undefined}
+              onAction={consultations.length === 0 ? openAdd : undefined}
             />
           ) : (
             <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
@@ -200,42 +242,46 @@ export default function ConsultationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c) => (
-                    <tr key={c.id} className="border-b border-line last:border-0">
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-ink">
-                          {c.patient ? `${c.patient.firstName} ${c.patient.lastName}` : '—'}
-                        </div>
-                        <div className="text-xs text-ink-muted">{c.patient?.mrn}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink">{c.chiefComplaint}</td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">{c.diagnosis ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm capitalize text-ink-muted">{c.type.replaceAll('_', ' ')}</td>
-                      <td className="px-4 py-3">
-                        <Pill variant={statusVariant[c.status] ?? PillVariantEnum.DEFAULT}>
-                          {c.status.replaceAll('_', ' ')}
-                        </Pill>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
-                            onClick={() => openDetail(c)}
-                            aria-label="Open consultation"
-                            title="Open"
-                            className="text-xs font-medium text-brand hover:text-brand-hover"
-                          >
-                            <FaEye />
-                          </button>
-                          {c.status === ConsultationStatusEnum.IN_PROGRESS && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => complete(c)}
-                                className="text-xs font-medium text-normal hover:opacity-80"
-                              >
-                                Complete
-                              </button>
+                  {filtered.map((c) => {
+                    const inProgress = c.status === ConsultationStatusEnum.IN_PROGRESS;
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() => openDetail(c)}
+                        className="cursor-pointer border-b border-line last:border-0 hover:bg-surface"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-ink">
+                            {c.patient ? `${c.patient.firstName} ${c.patient.lastName}` : '—'}
+                          </div>
+                          <div className="text-xs text-ink-muted">{c.patient?.mrn}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-ink">{c.chiefComplaint}</td>
+                        <td className="px-4 py-3 text-sm text-ink-muted">{c.diagnosis ?? '—'}</td>
+                        <td className="px-4 py-3 text-sm capitalize text-ink-muted">{c.type.replaceAll('_', ' ')}</td>
+                        <td className="px-4 py-3">
+                          <Pill variant={statusVariant[c.status] ?? PillVariantEnum.DEFAULT}>
+                            {c.status.replaceAll('_', ' ')}
+                          </Pill>
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openDetail(c)}
+                              aria-label={inProgress ? 'Continue consultation' : 'Open consultation'}
+                              title={inProgress ? 'Continue documenting' : 'Open consultation'}
+                              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
+                                inProgress
+                                  ? 'bg-brand text-white ring-brand hover:bg-brand-hover'
+                                  : 'bg-surface text-ink ring-line hover:bg-surface-raised'
+                              }`}
+                            >
+                              <FaEye className="text-[11px]" />
+                              {inProgress ? 'Continue' : 'Open'}
+                              <FaArrowRight className="text-[10px]" />
+                            </button>
+                            {inProgress && (
                               <button
                                 type="button"
                                 onClick={() => cancel(c)}
@@ -243,27 +289,18 @@ export default function ConsultationsPage() {
                               >
                                 Cancel
                               </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </>
       )}
-
-      <CompleteStageDrawer
-        open={completing !== null}
-        title="Complete consultation & route"
-        patientName={completing?.patient ? `${completing.patient.firstName} ${completing.patient.lastName}` : undefined}
-        onClose={() => setCompleting(null)}
-        onConfirm={confirmComplete}
-        submitting={completingBusy}
-      />
     </div>
   );
 }
@@ -327,10 +364,11 @@ function WaitingTable({
                     <button
                       type="button"
                       onClick={() => onStart(e)}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand-hover"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1.5 text-xs font-medium text-white hover:bg-brand-hover"
                     >
                       <FaPlay className="text-[10px]" />
                       Start
+                      <FaArrowRight className="text-[10px]" />
                     </button>
                     <button
                       type="button"
