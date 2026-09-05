@@ -2,15 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaBars, FaSearch } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
 import NotificationsBell from './notifications-bell';
-import { useAuth, useSidebar } from '@/providers';
+import { useAuth } from '@/providers';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { toggle: toggleSidebar } = useSidebar();
   const menuRef = useRef<HTMLDetailsElement>(null);
   const [platform, setPlatform] = useState<'mac' | 'other'>('other');
 
@@ -58,14 +57,6 @@ export default function Header() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-surface-raised px-4">
-      <button
-        type="button"
-        aria-label="Toggle sidebar"
-        onClick={toggleSidebar}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"
-      >
-        <FaBars className="h-4 w-4" />
-      </button>
       <h1 className="text-base font-semibold text-ink">{titleFromPath(pathname)}</h1>
 
       <div className="relative ml-auto hidden md:block">

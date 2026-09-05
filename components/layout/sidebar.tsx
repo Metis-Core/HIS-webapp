@@ -19,7 +19,6 @@ import {
 } from 'react-icons/fa';
 import { UserRoleEnum } from '@/enum/user.enum';
 import { useAuth, useSidebar } from '@/providers';
-import MetisFooter from './metis-footer';
 
 interface NavItem {
   key: string;
@@ -126,15 +125,18 @@ export default function Sidebar() {
       }`}
     >
       <div
-        className={`flex items-center border-b border-line py-4 ${collapsed ? 'justify-center px-2' : 'gap-2 px-5'}`}
+        className={`flex items-center border-b border-line py-4 ${collapsed ? 'justify-center px-2' : 'justify-between px-4'}`}
       >
-        {collapsed ? (
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand text-xs font-semibold text-white">
-            M
-          </div>
-        ) : (
-          <img src="/logo2.png" alt="Metis Healthcare" className="h-10 w-auto" />
-        )}
+        {!collapsed && <img src="/logo2.png" alt="Suubi Medical Centre" className="h-10 w-auto" />}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"
+        >
+          {collapsed ? <FaAngleDoubleRight className="h-3.5 w-3.5" /> : <FaAngleDoubleLeft className="h-3.5 w-3.5" />}
+        </button>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
         {navigation.map((item) => {
@@ -155,22 +157,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className="flex items-center justify-center gap-2 border-t border-line px-3 py-2.5 text-xs font-medium text-ink-muted hover:bg-surface hover:text-ink"
-      >
-        {collapsed ? (
-          <FaAngleDoubleRight className="h-3.5 w-3.5" />
-        ) : (
-          <>
-            <FaAngleDoubleLeft className="h-3.5 w-3.5" />
-            <span>Collapse</span>
-          </>
-        )}
-      </button>
-      <MetisFooter compact={collapsed} className="border-t border-line" />
     </aside>
   );
 }

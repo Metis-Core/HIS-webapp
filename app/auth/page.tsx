@@ -49,11 +49,11 @@ export default function AuthPage() {
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
               Access patient records, clinical workflows, and day-to-day hospital operations in one secure place.
             </p>
-            <p className="mt-6 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/70">
-              <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-white/95 text-[9px] font-bold text-brand">
-                M
+            <p className="mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-white/70">
+              Powered by
+              <span className="inline-flex items-center rounded-md bg-white/95 px-2 py-1">
+                <img src="/logo-dark.png" alt="Metis Analytica" className="h-3.5 w-auto" />
               </span>
-              Powered by Metis Analytica
             </p>
           </div>
         </div>
