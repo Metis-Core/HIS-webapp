@@ -1,16 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FaBed, FaPlus, FaStethoscope, FaUserInjured, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaUserInjured } from 'react-icons/fa';
 import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
+import { toast } from 'sonner';
+import useSWR from 'swr';
 import { Button, PatientDrawer } from '@/components';
-import { ButtonVariantEnum, ModalDrawerModeEnum, StatVariantEnum } from '@/enum';
+import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPagination, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
+import { api } from '@/helpers/axios';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
 import PatientRow from './components/patient-row';
-import { publicApi } from '@/helpers/axios';
-import useSWR from 'swr';
 
 const initialFilters: PatientsFilterValue = {
   search: '',
@@ -28,7 +29,7 @@ export default function PatientsPage() {
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
 
-  const { data, isLoading, mutate, error } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', publicApi);
+  const { data, mutate } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', api);
   const patients = data?.data.data.items;
 
   const openAdd = () => {
@@ -47,43 +48,49 @@ export default function PatientsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await publicApi.delete(id);
-      mutate();
-    } catch (error) {}
+    await toast.promise(api.delete(`/patients/${id}`), {
+      loading: 'Removing patient…',
+      success: 'Patient removed',
+      error: "Couldn't remove — retry",
+    });
+    await mutate();
   };
 
   const handleSave = async (values: PatientFormValues) => {
-    try {
-      const {
-        emergencyContactName,
-        emergencyContactPhone,
-        emergencyContactRelationship,
-        maritalStatus,
-        bloodType,
-        ...rest
-      } = values;
-      const payload = {
-        ...rest,
-        maritalStatus: maritalStatus || undefined,
-        bloodType: bloodType || undefined,
-        emergencyContact: {
-          name: emergencyContactName.trim(),
-          phone: emergencyContactPhone.trim(),
-          relationship: emergencyContactRelationship.trim() || undefined,
-        },
-      };
+    const {
+      emergencyContactName,
+      emergencyContactPhone,
+      emergencyContactRelationship,
+      maritalStatus,
+      bloodType,
+      ...rest
+    } = values;
+    const payload = {
+      ...rest,
+      maritalStatus: maritalStatus || undefined,
+      bloodType: bloodType || undefined,
+      emergencyContact: {
+        name: emergencyContactName.trim(),
+        phone: emergencyContactPhone.trim(),
+        relationship: emergencyContactRelationship.trim() || undefined,
+      },
+    };
 
-      if (drawerMode === ModalDrawerModeEnum.ADD) {
-        await publicApi.post<IPatient>('/patients', payload);
-        mutate();
-        closeDrawer();
-      } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
-        await publicApi.put(`/patients/${selected.id}`, payload);
-        mutate();
-        closeDrawer();
-      }
-    } catch (error) {}
+    if (drawerMode === ModalDrawerModeEnum.ADD) {
+      await toast.promise(api.post<IPatient>('/patients', payload), {
+        loading: 'Registering patient…',
+        success: 'Patient registered',
+        error: "Couldn't save — retry",
+      });
+    } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
+      await toast.promise(api.put(`/patients/${selected.id}`, payload), {
+        loading: 'Saving patient…',
+        success: 'Patient updated',
+        error: "Couldn't save — retry",
+      });
+    }
+    await mutate();
+    closeDrawer();
   };
 
   const filtered = useMemo(() => {
@@ -128,74 +135,45 @@ export default function PatientsPage() {
       : [];
   }, [patients, filters]);
 
-  const stats = useMemo(() => {
-    // const total = patients.length;
-    // const inpatient = patients.filter((p) => p.type === PatientTypeEnum.INPATIENT).length;
-    // const outpatient = patients.filter((p) => p.type === PatientTypeEnum.OUTPATIENT).length;
-    // const share = (count: number) => (total > 0 ? `${Math.round((count / total) * 100)}% of total` : undefined);
-
-    return {
-      items: [
-        {
-          label: 'Total patients',
-          value: 100,
-          icon: FaUsers,
-          variant: StatVariantEnum.Green,
-        },
-        {
-          label: 'Inpatients',
-          value: 100,
-          icon: FaBed,
-          hint: 100,
-          variant: StatVariantEnum.Blue,
-        },
-        {
-          label: 'Outpatients',
-          value: 100,
-          icon: FaStethoscope,
-          hint: '100',
-          variant: StatVariantEnum.Emerald,
-        },
-      ],
-    };
-  }, [patients]);
-
   return (
-    <div className="flex flex-col gap-8 py-4">
-      {/* <Stats items={stats.items} /> */}
-
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <PatientsFilter value={filters} onChange={setFilters} />
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Patients</h1>
+          <p className="text-sm text-ink-muted">Register, search, and open patient records.</p>
         </div>
         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
-          <FaPlus className="text-base" />
-          <span className="font-semibold">New patient</span>
+          <FaPlus className="text-xs" />
+          New patient
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <PatientsFilter value={filters} onChange={setFilters} />
+
+      <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
+            <thead className="border-b border-line bg-surface text-ink-muted">
               <tr>
-                <th className="px-6 py-3 text-md font-bold">Patient</th>
-                <th className="px-6 py-3 text-md font-bold">Contact</th>
-                <th className="px-6 py-3 text-md font-bold">Location</th>
-                <th className="px-6 py-3 text-md font-bold">Insurance</th>
-                <th className="px-6 py-3 text-md font-bold">Type</th>
-                <th className="px-6 py-3 text-md font-bold">Registered</th>
-                <th className="px-6 py-3 text-right text-md font-bold">Actions</th>
+                <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Contact</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Location</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Insurance</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Type</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Registered</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr className="border-b border-zinc-100 last:border-0">
-                  <td colSpan={7} className="px-6 py-20 text-center">
-                    <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-zinc-500">
-                      <FaUserInjured className="text-4xl text-zinc-200" />
-                      <p className="text-lg font-bold text-zinc-700">No patients found</p>
-                      <p className="text-sm">Try adjusting your filters or add a new patient.</p>
+                <tr>
+                  <td colSpan={7} className="px-6 py-16 text-center">
+                    <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-ink-muted">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface">
+                        <FaUserInjured className="h-5 w-5" />
+                      </div>
+                      <p className="text-sm font-medium text-ink">No patients found</p>
+                      <p className="text-xs">Try adjusting your filters or add a new patient.</p>
                     </div>
                   </td>
                 </tr>

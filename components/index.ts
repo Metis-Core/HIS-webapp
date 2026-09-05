@@ -22,5 +22,8 @@ export { default as VisitReceiptDrawer } from './drawers/visit-receipt.drawer';
 export { default as Sidebar } from './layout/sidebar';
 export { default as Header } from './layout/header';
 export { default as Tabs } from './layout/tabs';
+export { default as LinkTabs } from './layout/link-tabs';
+export { default as PageHeader } from './layout/page-header';
+export { default as MetisFooter } from './layout/metis-footer';
 export { default as StatCard } from './stats/stat-card';
 export { default as Stats } from './stats/stats';

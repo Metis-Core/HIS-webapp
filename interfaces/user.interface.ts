@@ -1,5 +1,5 @@
-import type { DepartmentEnum, ModalDrawerModeEnum, UserRoleEnum, UserStatusEnum } from '@/enum';
-import type { IBaseEntity } from '.';
+import type { DepartmentEnum, ModalDrawerModeEnum, SortOrderEnum, UserRoleEnum, UserStatusEnum } from '@/enum';
+import type { IBaseEntity } from './base.interface';
 
 export interface IUser extends IBaseEntity {
   email: string;
@@ -12,6 +12,34 @@ export interface IUser extends IBaseEntity {
   lastName?: string;
   phone?: string;
   mustResetPassword?: boolean;
+}
+
+export interface ICreateUserDto {
+  email: string;
+  username: string;
+  password: string;
+  role?: UserRoleEnum;
+  department: DepartmentEnum;
+  status?: UserStatusEnum;
+}
+
+export interface IUpdateUserDto {
+  email?: string;
+  username?: string;
+  password?: string;
+  role?: UserRoleEnum;
+  department?: DepartmentEnum;
+  status?: UserStatusEnum;
+}
+
+export interface IUserFilters {
+  page?: number;
+  limit?: number;
+  role?: UserRoleEnum;
+  department?: DepartmentEnum;
+  status?: UserStatusEnum;
+  search?: string;
+  sortOrder?: SortOrderEnum;
 }
 
 export type UserFormValues = {

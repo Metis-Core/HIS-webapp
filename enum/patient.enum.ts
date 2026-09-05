@@ -7,11 +7,20 @@ export enum PatientTypeEnum {
   OUTPATIENT = 'outpatient',
 }
 
+export enum PatientStatusEnum {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DECEASED = 'deceased',
+  MERGED = 'merged',
+}
+
 export enum PatientMaritalStatusEnum {
   SINGLE = 'single',
   MARRIED = 'married',
   DIVORCED = 'divorced',
   WIDOWED = 'widowed',
+  SEPERATED = 'seperated',
+  UNKNOWN = 'unknown',
 }
 
 export enum PatientBloodTypeEnum {
@@ -23,4 +32,5 @@ export enum PatientBloodTypeEnum {
   ABNEGATIVE = 'ab-',
   OPOSITIVE = 'o+',
   ONEGATIVE = 'o-',
+  UNKNOWN = 'unknown',
 }

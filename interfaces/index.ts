@@ -4,32 +4,20 @@ import type { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum } from '@/
 import type { StatVariantEnum } from '@/enum/stat.enum';
 import type { IPatient } from './patient.interface';
 
+export * from './base.interface';
 export * from './auth.interface';
 export * from './user.interface';
 export * from './service.interface';
-
-export interface IBaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IPagination<T> {
-  items: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface IResponse<T> {
-  data: T;
-  pagination: any;
-}
-
-export interface IError {
-  message: string;
-  statusCode: number;
-}
+export * from './patient.interface';
+export * from './contact.interface';
+export * from './consultation.interface';
+export * from './triage.interface';
+export * from './queue.interfaces';
+export * from './otp.interface';
+export * from './notification.interface';
+export * from './lab.interface';
+export * from './inventory.interface';
+export * from './pharmacy.interface';
 
 export interface IOption {
   label: string;
@@ -91,6 +79,7 @@ export interface IDrawerProps {
 export interface IPillProps {
   children: ReactNode;
   variant?: PillVariantEnum;
+  icon?: ReactNode;
 }
 
 export interface ISkeletonProps {

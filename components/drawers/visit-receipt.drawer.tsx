@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Drawer, PhoneInput, PhoneOtpInput, Pill, Toggle } from '@/components';
+import { FaShieldAlt } from 'react-icons/fa';
+import { Button, Drawer, Pill } from '@/components';
 import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { QueueStageEnum } from '@/enum/queue.enum';
 import { serviceFeeMap } from '@/data/services';
 import type { IOption } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
-import { FaShieldAlt } from 'react-icons/fa';
 
 const VAT_RATE = 0.18;
 
@@ -23,29 +23,13 @@ type Props = {
 export default function VisitReceiptDrawer({ open, onClose, motives, patient, onConfirm, submitting }: Props) {
   const [insuranceVerified, setInsuranceVerified] = useState(false);
   const [verifyingInsurance, setVerifyingInsurance] = useState(false);
-  const [useAltPhone, setUseAltPhone] = useState(false);
-  const [altPhone, setAltPhone] = useState('');
-  const [altPhoneNote, setAltPhoneNote] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [sentOtp, setSentOtp] = useState('');
-  const [otpValue, setOtpValue] = useState('');
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpError, setOtpError] = useState(false);
+  const [consented, setConsented] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    // reset consent/insurance state each time the receipt drawer reopens
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInsuranceVerified(false);
     setVerifyingInsurance(false);
-    setUseAltPhone(false);
-    setAltPhone('');
-    setAltPhoneNote('');
-    setOtpSent(false);
-    setSentOtp('');
-    setOtpValue('');
-    setOtpVerified(false);
-    setOtpError(false);
+    setConsented(false);
   }, [open]);
 
   const verifyInsurance = async () => {
@@ -58,25 +42,6 @@ export default function VisitReceiptDrawer({ open, onClose, motives, patient, on
   const totalFee = motives.reduce((sum, m) => sum + (serviceFeeMap[m.value as QueueStageEnum] ?? 0), 0);
   const vatAmount = totalFee * VAT_RATE;
   const grandTotal = totalFee + vatAmount;
-
-  const sendOtp = () => {
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    setSentOtp(code);
-    setOtpSent(true);
-    setOtpVerified(false);
-    setOtpValue('');
-    setOtpError(false);
-    console.log(`OTP sent to ${useAltPhone ? altPhone : 'the registered phone number'}: ${code}`);
-  };
-
-  const verifyOtp = () => {
-    if (otpValue === sentOtp) {
-      setOtpVerified(true);
-      setOtpError(false);
-    } else {
-      setOtpError(true);
-    }
-  };
 
   return (
     <Drawer open={open} onClose={onClose} title="Visit receipt" width="w-125">
@@ -116,17 +81,6 @@ export default function VisitReceiptDrawer({ open, onClose, motives, patient, on
           </div>
         </div>
 
-        <div
-          className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${
-            otpVerified ? 'border-green-200 bg-green-50 text-green-800' : 'border-amber-200 bg-amber-50 text-amber-800'
-          }`}
-        >
-          <span className="font-medium">{otpVerified ? 'Payment consent verified' : 'Awaiting payment consent'}</span>
-          <Pill variant={otpVerified ? PillVariantEnum.SUCCESS : PillVariantEnum.WARNING}>
-            {otpVerified ? 'Verified' : 'Pending'}
-          </Pill>
-        </div>
-
         {patient?.insuranceProvider && (
           <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
             <div className="flex items-center justify-between gap-3">
@@ -157,103 +111,24 @@ export default function VisitReceiptDrawer({ open, onClose, motives, patient, on
           </div>
         )}
 
-        <div className="flex flex-col gap-4 rounded-xl border border-grey-200 p-4 text-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-bold text-zinc-800">Verify payment consent</p>
-              <p className="text-xs text-zinc-500">
-                Send a one-time code and have the patient read it back to confirm consent.
-              </p>
-            </div>
-            <Toggle
-              checked={useAltPhone}
-              onChange={(checked) => {
-                setUseAltPhone(checked);
-                setOtpSent(false);
-                setOtpVerified(false);
-                setOtpValue('');
-              }}
-              label="Use alternative number"
-            />
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
+          <input
+            type="checkbox"
+            checked={consented}
+            onChange={(e) => setConsented(e.target.checked)}
+            className="mt-0.5 h-4 w-4 cursor-pointer accent-brand"
+          />
+          <div>
+            <p className="font-bold text-zinc-800">Patient consent confirmed</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              I confirm the patient has been informed of the services above and consents to proceed at the total shown.
+            </p>
           </div>
+        </label>
 
-          {useAltPhone && (
-            <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <PhoneInput label="Alternative phone number" value={altPhone} onChange={(v) => setAltPhone(v ?? '')} />
-              <div className="flex w-full flex-col gap-1">
-                <label className="text-md font-medium tracking-wider text-slate-700">
-                  Reason for using an alternative number
-                </label>
-                <textarea
-                  value={altPhoneNote}
-                  onChange={(event) => setAltPhoneNote(event.target.value)}
-                  placeholder="e.g. patient's phone is unreachable, using a relative's number"
-                  rows={2}
-                  className="rounded-md border cursor-pointer border-slate-400 bg-white text-slate-700 px-3 py-2 text-md outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 placeholder:text-slate-500"
-                />
-              </div>
-              <p className="text-xs text-amber-700">
-                The verification code will be sent to this number instead of the patient&apos;s registered phone.
-              </p>
-            </div>
-          )}
-
-          {!otpSent ? (
-            <Button
-              type="button"
-              className="w-full justify-center"
-              disabled={useAltPhone && !altPhone}
-              onClick={sendOtp}
-            >
-              Send verification code
-            </Button>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <label className="text-md font-medium tracking-wider text-slate-700">Enter the 4-digit code</label>
-              <PhoneOtpInput
-                length={4}
-                value={otpValue}
-                onChange={(v) => {
-                  setOtpValue(v);
-                  setOtpError(false);
-                }}
-              />
-              {otpError && (
-                <span className="text-xs text-red-500">That code doesn&apos;t match. Please try again.</span>
-              )}
-
-              {otpVerified ? (
-                <span className="text-xs font-medium text-green-700">
-                  Consent verified — the patient confirmed the code.
-                </span>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    className="w-full justify-center"
-                    disabled={otpValue.length < 4}
-                    onClick={verifyOtp}
-                  >
-                    Verify consent
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={sendOtp}
-                    className="self-center text-xs font-medium text-green-800 hover:underline"
-                  >
-                    Didn&apos;t get a code? Resend
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {otpVerified && (
-          <Button type="button" onClick={onConfirm} disabled={submitting} className="w-full justify-center">
-            {submitting ? 'Adding…' : 'Confirm & add to queue'}
-          </Button>
-        )}
+        <Button type="button" onClick={onConfirm} disabled={submitting || !consented} className="w-full justify-center">
+          {submitting ? 'Adding…' : 'Confirm & add to queue'}
+        </Button>
       </div>
     </Drawer>
   );

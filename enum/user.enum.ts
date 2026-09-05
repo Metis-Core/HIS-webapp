@@ -10,6 +10,10 @@ export enum UserRoleEnum {
   ACCOUNTANT = 'accountant',
 }
 
+export enum UserEndpointEnum {
+  BASE = '/users',
+}
+
 export enum UserStatusEnum {
   ACTIVE = 'active',
   INACTIVE = 'inactive',

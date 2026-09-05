@@ -3,10 +3,21 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { FaCheckCircle, FaClipboardList, FaHourglassHalf, FaPhone, FaSearch, FaUserClock } from 'react-icons/fa';
+import { toast } from 'sonner';
+import {
+  FaCheck,
+  FaCheckCircle,
+  FaClipboardList,
+  FaEye,
+  FaHourglassHalf,
+  FaPhone,
+  FaSearch,
+  FaTrash,
+  FaUserClock,
+} from 'react-icons/fa';
 import { Dropdown, EmptyState, Input, Pill, Stats } from '@/components';
-import { StatVariantEnum } from '@/enum';
-import { QueueStageEnum, QueueStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import { QueueEntryStatusEnum, QueueStageEnum, QueueStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import { PillVariantEnum } from '@/enum';
 import {
   currentEntry,
   departmentStageMap,
@@ -18,8 +29,9 @@ import {
 } from '@/data/queue';
 import type { QueuePriority } from '@/data/queue';
 import { patientFullName } from '@/data/patients';
-import useSWR from 'swr';
-import { publicApi } from '@/helpers/axios';
+import useSWR, { useSWRConfig } from 'swr';
+import { api } from '@/helpers/axios';
+import visitsService from '@/helpers/visits.service';
 import type { IOption, IPagination } from '@/interfaces';
 import type { IVisitRecord } from '@/interfaces/queue.interfaces';
 
@@ -30,11 +42,13 @@ interface IStageStep {
 
 interface IQueueRow {
   id: string;
+  activeEntryId: string;
   patientName: string;
   phone: string;
   priority: QueuePriority;
   stage: QueueStageEnum;
   status: QueueStatusEnum;
+  rawStatus: QueueEntryStatusEnum;
   assignedTo: string;
   department: string;
   checkedInAt: Date;
@@ -49,18 +63,16 @@ function VisitPathway({ steps }: { steps: IStageStep[] }) {
         <div key={`${step.stage}-${i}`} className="flex items-center">
           <span
             title={`${stageLabel(step.stage)} · ${stageLabel(step.status)}`}
-            className={`h-2.5 w-2.5 rounded-full ${
+            className={`h-2 w-2 rounded-full ${
               step.status === QueueStatusEnum.COMPLETED
-                ? 'bg-green-600'
+                ? 'bg-normal'
                 : step.status === QueueStatusEnum.IN_PROGRESS
-                  ? 'bg-orange-500 ring-4 ring-orange-100'
-                  : 'bg-zinc-200'
+                  ? 'bg-info ring-4 ring-info/15'
+                  : 'bg-line'
             }`}
           />
           {i < steps.length - 1 && (
-            <span
-              className={`h-0.5 w-6 ${step.status === QueueStatusEnum.COMPLETED ? 'bg-green-600' : 'bg-zinc-200'}`}
-            />
+            <span className={`h-0.5 w-5 ${step.status === QueueStatusEnum.COMPLETED ? 'bg-normal' : 'bg-line'}`} />
           )}
         </div>
       ))}
@@ -78,9 +90,50 @@ const statusOptions: IOption[] = [
   ...Object.values(QueueStatusEnum).map((status) => ({ label: stageLabel(status), value: status })),
 ];
 
+/* Row status → left-edge color (AGENTS.md §7). Emergency wins over routine. */
+function rowEdge(priority: QueuePriority, status: QueueStatusEnum) {
+  if (priority === 'emergency') return 'bg-critical';
+  if (priority === 'urgent') return 'bg-watch';
+  if (status === QueueStatusEnum.IN_PROGRESS) return 'bg-info';
+  if (status === QueueStatusEnum.COMPLETED) return 'bg-normal';
+  return 'bg-line';
+}
+
+const rawStatusVariant: Record<QueueEntryStatusEnum, PillVariantEnum> = {
+  [QueueEntryStatusEnum.WAITING]: PillVariantEnum.WARNING,
+  [QueueEntryStatusEnum.CALLED]: PillVariantEnum.INFO,
+  [QueueEntryStatusEnum.IN_SERVICE]: PillVariantEnum.INFO,
+  [QueueEntryStatusEnum.COMPLETED]: PillVariantEnum.SUCCESS,
+  [QueueEntryStatusEnum.SKIPPED]: PillVariantEnum.DEFAULT,
+  [QueueEntryStatusEnum.TRANSFERRED]: PillVariantEnum.DEFAULT,
+};
+
 export default function QueuePage() {
-  const { data } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', publicApi);
+  const { mutate: globalMutate } = useSWRConfig();
+  const { data, mutate } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', api);
   const visits = useMemo(() => data?.data.data.items || [], [data]);
+
+  const removeEntry = async (entryId: string) => {
+    if (!confirm('Remove this patient from the current stage?')) return;
+    await toast.promise(visitsService.deleteEntry(entryId), {
+      loading: 'Removing…',
+      success: 'Removed from queue',
+      error: "Couldn't remove — retry",
+    });
+    await mutate();
+    await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
+  };
+
+  const completeEntry = async (entryId: string) => {
+    if (!confirm('Mark this stage as complete? The next stage will be advanced.')) return;
+    await toast.promise(visitsService.completeEntry(entryId), {
+      loading: 'Completing…',
+      success: 'Stage completed — next stage advanced',
+      error: "Couldn't complete — retry",
+    });
+    await mutate();
+    await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
+  };
 
   const rows = useMemo<IQueueRow[]>(
     () =>
@@ -91,11 +144,13 @@ export default function QueuePage() {
           const active = currentEntry(visit)!;
           return {
             id: visit.id,
+            activeEntryId: active.id,
             patientName: visit.patient ? patientFullName(visit.patient) : visit.patientId,
             phone: visit.patient?.phone ?? '—',
             priority: (visit.visitType === VisitTypeEnum.EMERGENCY ? 'emergency' : 'routine') as QueuePriority,
             stage: departmentStageMap[active.department],
             status: entryStatusMap[active.status],
+            rawStatus: active.status,
             assignedTo: active.servedById ? 'Assigned staff' : 'Unassigned',
             department: stageLabel(active.department),
             checkedInAt: visit.createdAt,
@@ -126,36 +181,38 @@ export default function QueuePage() {
 
   const stats = useMemo(
     () => [
-      { label: 'Total in queue', value: rows.length, icon: FaClipboardList, variant: StatVariantEnum.Green },
+      { label: 'Total in queue', value: rows.length, icon: FaClipboardList },
       {
         label: 'Waiting',
         value: rows.filter((e) => e.status === QueueStatusEnum.PENDING).length,
         icon: FaHourglassHalf,
-        variant: StatVariantEnum.Amber,
       },
       {
         label: 'In progress',
         value: rows.filter((e) => e.status === QueueStatusEnum.IN_PROGRESS).length,
         icon: FaUserClock,
-        variant: StatVariantEnum.Blue,
       },
       {
-        label: 'Emergency cases',
+        label: 'Emergency',
         value: rows.filter((e) => e.priority === 'emergency').length,
         icon: FaCheckCircle,
-        variant: StatVariantEnum.Emerald,
       },
     ],
     [rows],
   );
 
   return (
-    <div className="flex flex-col gap-8 py-4">
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-xl font-semibold text-ink">Queue</h1>
+        <p className="text-sm text-ink-muted">Live view of patients moving through today's visit.</p>
+      </div>
+
       <Stats items={stats} />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-60 flex-1">
-          <FaSearch className="pointer-events-none absolute top-1/2 left-3 z-10 -translate-y-1/2 text-xs text-slate-400" />
+          <FaSearch className="pointer-events-none absolute top-1/2 left-3 z-10 -translate-y-1/2 text-xs text-ink-muted" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -181,7 +238,7 @@ export default function QueuePage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-left">
             <colgroup>
@@ -190,20 +247,22 @@ export default function QueuePage() {
               <col className="w-56" />
               <col className="w-36" />
               <col className="w-32" />
+              <col className="w-20" />
             </colgroup>
-            <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
+            <thead className="border-b border-line bg-surface text-ink-muted">
               <tr>
-                <th className="px-6 py-3 text-md font-bold">Patient</th>
-                <th className="px-6 py-3 text-md font-bold">Current Stage</th>
-                <th className="px-6 py-3 text-md font-bold">Handled by</th>
-                <th className="px-6 py-3 text-md font-bold">Status</th>
-                <th className="px-6 py-3 text-right text-md font-bold">Waiting</th>
+                <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Pathway</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Handled by</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Status</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Waiting</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide" />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={6} className="p-0">
                     <div className="flex h-64 w-full items-center justify-center">
                       <EmptyState message="No patients match your filters" icon={FaClipboardList} />
                     </div>
@@ -213,42 +272,78 @@ export default function QueuePage() {
                 filtered.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-b border-zinc-100 cursor-pointer last:border-0 align-top transition hover:bg-green-50/30"
+                    className="group border-b border-line last:border-0 align-top transition hover:bg-surface"
                   >
-                    <td className="px-6 py-4">
+                    <td className="relative py-3 pl-6 pr-4">
+                      <span
+                        aria-hidden
+                        className={`absolute inset-y-0 left-0 w-0.5 ${rowEdge(entry.priority, entry.status)}`}
+                      />
                       <Link
                         href={`/queue/${entry.id}`}
-                        className="truncate font-medium text-zinc-900 hover:text-green-800 hover:underline"
+                        className="truncate text-sm font-medium text-ink group-hover:text-brand"
                       >
                         {entry.patientName}
                       </Link>
-                      <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-500">
-                        <FaPhone className="shrink-0 text-[10px] text-zinc-400" />
+                      <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                        <FaPhone className="shrink-0 text-[10px]" />
                         <span className="truncate">{entry.phone}</span>
                       </p>
-                      <div className="mt-2">
+                      <div className="mt-1.5">
                         <Pill variant={priorityVariants[entry.priority]}>{entry.priority}</Pill>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <VisitPathway steps={entry.steps} />
+                      <p className="mt-1 text-xs text-ink-muted">{stageLabel(entry.stage)}</p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand">
                           {initialsOf(entry.assignedTo)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-zinc-800">{entry.assignedTo}</p>
-                          <p className="truncate text-xs text-zinc-500">{entry.department}</p>
+                          <p className="truncate text-sm text-ink">{entry.assignedTo}</p>
+                          <p className="truncate text-xs text-ink-muted">{entry.department}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Pill variant={statusVariants[entry.status]}>{stageLabel(entry.status)}</Pill>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Pill variant={rawStatusVariant[entry.rawStatus] ?? PillVariantEnum.DEFAULT}>
+                        {entry.rawStatus.replaceAll('_', ' ')}
+                      </Pill>
                     </td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap text-zinc-500">
+                    <td className="px-4 py-3 text-right whitespace-nowrap text-sm text-ink-muted">
                       {formatDistanceToNow(entry.checkedInAt, { addSuffix: true })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-3">
+                        <Link
+                          href={`/queue/${entry.id}`}
+                          aria-label="View pathway"
+                          title="View pathway"
+                          className="text-xs font-medium text-brand hover:text-brand-hover"
+                        >
+                          <FaEye />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => completeEntry(entry.activeEntryId)}
+                          aria-label="Complete stage"
+                          title="Complete stage & advance"
+                          className="text-xs font-medium text-normal hover:opacity-80"
+                        >
+                          <FaCheck />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeEntry(entry.activeEntryId)}
+                          aria-label="Remove from queue"
+                          className="text-xs font-medium text-critical hover:opacity-80"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

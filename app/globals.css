@@ -1,28 +1,61 @@
 @import 'tailwindcss';
 
+/* Clear Round design tokens — see AGENTS.md §2 */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  --surface: #f7f9f8;
+  --surface-raised: #ffffff;
+  --ink: #111827;
+  --ink-muted: #5b6572;
+  --brand: #0e6b5c;
+  --brand-hover: #0a5449;
+  --line: #e3e8e6;
+
+  --status-critical: #d0342c;
+  --status-watch: #b8790a;
+  --status-normal: #1e8a5f;
+  --status-info: #2563a8;
+
+  /* Low-saturation backgrounds paired with the status foregrounds above. */
+  --status-critical-soft: #fdecea;
+  --status-watch-soft: #fbf1de;
+  --status-normal-soft: #e3f3ec;
+  --status-info-soft: #e4edf7;
+  --brand-soft: #e2f0ed;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito-sans);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-line: var(--line);
+
+  --color-critical: var(--status-critical);
+  --color-critical-soft: var(--status-critical-soft);
+  --color-watch: var(--status-watch);
+  --color-watch-soft: var(--status-watch-soft);
+  --color-normal: var(--status-normal);
+  --color-normal-soft: var(--status-normal-soft);
+  --color-info: var(--status-info);
+  --color-info-soft: var(--status-info-soft);
+
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #0a0a0a;
-  }
+/* Clinical UI is always light for consistency across screens/devices. */
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--surface);
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 input,
@@ -30,8 +63,13 @@ button {
   cursor: pointer;
 }
 
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 .patient-activity-timeline .vertical-timeline::before {
-  background: #e4e4e7;
+  background: var(--line);
 }
 
 .patient-activity-timeline .vertical-timeline-element-content {
@@ -39,6 +77,6 @@ button {
 }
 
 .patient-activity-timeline .vertical-timeline-element-date {
-  color: #166534;
+  color: var(--brand);
   font-weight: 600;
 }

@@ -1,11 +1,28 @@
-import type { ModalDrawerModeEnum } from '@/enum';
-import type { IBaseEntity } from '.';
+import type { ModalDrawerModeEnum, SortOrderEnum } from '@/enum';
+import type { IBaseEntity } from './base.interface';
 
 export interface IService extends IBaseEntity {
   name: string;
   fee: number;
   description?: string | null;
   isActive: boolean;
+}
+
+export interface ICreateServiceDto {
+  name: string;
+  fee: number;
+  description?: string;
+  isActive?: boolean;
+}
+
+export type IUpdateServiceDto = Partial<ICreateServiceDto>;
+
+export interface IServiceFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  sortOrder?: SortOrderEnum;
 }
 
 export type ServiceFormValues = {

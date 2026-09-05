@@ -1,56 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import {
-  FaCalendarCheck,
-  FaEdit,
-  FaEnvelope,
-  FaFileMedical,
-  FaHeartbeat,
-  FaHistory,
-  FaIdCard,
-  FaMapMarkerAlt,
-  FaPhone,
-  FaShieldAlt,
-  FaUserFriends,
-} from 'react-icons/fa';
-import { Button, PatientDrawer, PatientTimeline, Tabs, VisitDrawer } from '@/components';
-import type { TabItem } from '@/components/layout/tabs';
-import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
-import { PatientTypeEnum } from '@/enum/patient.enum';
-import { getPatientHistory } from '@/data/patient-history';
-import type { IPatientHistoryEvent } from '@/data/patient-history';
-import { patientFullName } from '@/data/patients';
-import type { IPagination, PatientFormValues } from '@/interfaces';
-import type { IPatient } from '@/interfaces/patient.interface';
-import { PatientBloodTypeEnum, PatientMaritalStatusEnum } from '@/enum/patient.enum';
-import { GenderEnum } from '@/enum';
-import PatientAvatar from '../components/patient-avatar';
-import PatientTypePill from '../components/patient-type-pill';
-import PatientTreatmentsTab from '../components/patient-treatments-tab';
-import PatientAppointmentsTab from '../components/patient-appointments-tab';
-import PatientTriageTab from '../components/patient-triage-tab';
-import { publicApi } from '@/helpers/axios';
 import useSWR from 'swr';
-
-type PatientDetailTab = 'details' | 'treatments' | 'appointments' | 'triage' | 'visits';
-
-const patientTabs: TabItem<PatientDetailTab>[] = [
-  { id: 'details', label: 'Details', icon: FaIdCard },
-  { id: 'treatments', label: 'Treatments', icon: FaFileMedical },
-  { id: 'appointments', label: 'Appointments', icon: FaCalendarCheck },
-  { id: 'triage', label: 'Triage', icon: FaHeartbeat },
-  { id: 'visits', label: 'Visits', icon: FaHistory },
-];
+import { toast } from 'sonner';
+import { FaEdit, FaShieldAlt } from 'react-icons/fa';
+import { Button, PatientDrawer } from '@/components';
+import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
+import { PatientBloodTypeEnum, PatientMaritalStatusEnum, PatientTypeEnum } from '@/enum/patient.enum';
+import { GenderEnum } from '@/enum';
+import { api } from '@/helpers/axios';
+import type { PatientFormValues } from '@/interfaces';
+import type { IPatient } from '@/interfaces/patient.interface';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-zinc-300 bg-white p-5">
-      <h2 className="mb-4 border-b border-zinc-300 pb-2 text-xs font-bold uppercase tracking-wide text-green-800">
-        {title}
-      </h2>
+    <section className="rounded-lg border border-line bg-surface-raised p-5">
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h2>
       {children}
     </section>
   );
@@ -59,41 +26,23 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 function DetailField({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</dt>
-      <dd className="mt-1 capitalize text-zinc-900">{value?.trim() ? value : '—'}</dd>
+      <dt className="text-xs font-medium text-ink-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm text-ink">{value?.trim() ? value : '—'}</dd>
     </div>
   );
 }
 
-function ProfileRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) {
-  if (!value?.trim()) return null;
-
-  return (
-    <div className="flex items-start gap-3 text-sm text-zinc-700">
-      <span className="mt-0.5 text-zinc-500">{icon}</span>
-      <div>
-        <p className="text-xs uppercase tracking-wide text-grey-300">{label}</p>
-        <p className="mt-0.5 font-semibold text-zinc-900">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-export default function PatientDetailPage() {
+export default function PatientOverviewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { data, isLoading, mutate, error } = useSWR<{ data: { data: IPatient } }>(`/patients/${params.id}`, publicApi);
+  const { data, mutate } = useSWR<{ data: { data: IPatient } }>(`/patients/${params.id}`, api);
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
-  const [selectedVisit, setSelectedVisit] = useState<IPatientHistoryEvent | null>(null);
-  const [tab, setTab] = useState<PatientDetailTab>('details');
-
   const patient = data?.data.data;
-  const history = useMemo(() => (patient ? getPatientHistory(patient.id) : []), [patient]);
 
   if (!patient) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20 text-center">
-        <p className="text-lg font-semibold text-zinc-800">Patient not found</p>
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <p className="text-sm text-ink-muted">Patient not found</p>
         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={() => router.push('/patients')}>
           Back to patients
         </Button>
@@ -101,13 +50,12 @@ export default function PatientDetailPage() {
     );
   }
 
-  const handleSave = (values: PatientFormValues) => {
-    const now = new Date();
+  const handleSave = async (values: PatientFormValues) => {
     const payload: Partial<IPatient> = {
       firstName: values.firstName,
       lastName: values.lastName,
       middleName: values.middleName || undefined,
-      dateOfBirth: values.dateOfBirth ? new Date(values.dateOfBirth) : undefined,
+      dateOfBirth: values.dateOfBirth || undefined,
       phone: values.phone,
       email: values.email || undefined,
       gender: values.gender as GenderEnum,
@@ -122,134 +70,76 @@ export default function PatientDetailPage() {
       emergencyContactRelationship: values.emergencyContactRelationship,
       insuranceProvider: values.insuranceProvider || undefined,
       insurancePolicyNumber: values.insurancePolicyNumber || undefined,
-      updatedAt: now,
     };
 
+    await toast.promise(api.put(`/patients/${patient.id}`, payload), {
+      loading: 'Saving patient…',
+      success: 'Patient updated',
+      error: "Couldn't save — retry",
+    });
+    await mutate();
     setDrawerMode(null);
   };
 
   return (
-    <div className="flex flex-col gap-6 py-4">
-      <section className="p-6">
-        <div className="flex flex-col items-center text-center">
-          <PatientAvatar patient={patient} className="h-24 w-24 text-3xl" />
-          <h1 className="mt-4 text-2xl font-bold text-zinc-900">{patientFullName(patient)}</h1>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <PatientTypePill type={patient.type} />
-            {patient.bloodType && (
-              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold uppercase text-zinc-700">
-                {patient.bloodType}
-              </span>
-            )}
-            <Button
-              type="button"
-              variant={ButtonVariantEnum.GHOST}
-              onClick={() => setDrawerMode(ModalDrawerModeEnum.EDIT)}
-            >
-              <FaEdit />
-              Edit patient
-            </Button>
-          </div>
-          <div className="mt-5 grid w-full gap-3 border-t border-zinc-100 pt-5 text-left sm:grid-cols-2">
-            <ProfileRow icon={<FaPhone />} label="Phone" value={patient.phone} />
-            <ProfileRow icon={<FaEnvelope />} label="Email" value={patient.email} />
-            <ProfileRow
-              icon={<FaMapMarkerAlt />}
-              label="Location"
-              value={
-                patient.city && patient.address
-                  ? `${patient.city} · ${patient.address}`
-                  : (patient.city ?? patient.address)
-              }
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-end">
+        <Button
+          type="button"
+          variant={ButtonVariantEnum.SECONDARY}
+          onClick={() => setDrawerMode(ModalDrawerModeEnum.EDIT)}
+        >
+          <FaEdit /> Edit patient
+        </Button>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DetailSection title="Personal details">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <DetailField
+              label="Date of birth"
+              value={patient.dateOfBirth ? format(new Date(patient.dateOfBirth), 'dd MMM yyyy') : undefined}
             />
-            <ProfileRow
-              icon={<FaUserFriends />}
-              label="Emergency contact"
-              value={
-                patient.emergencyContactName
-                  ? `${patient.emergencyContactName} (${patient.emergencyContactRelationship})`
-                  : undefined
-              }
-            />
-          </div>
-        </div>
-      </section>
+            <DetailField label="Gender" value={patient.gender} />
+            <DetailField label="National ID" value={patient.nationalId} />
+            <DetailField label="Marital status" value={patient.maritalStatus} />
+            <DetailField label="Registered" value={format(new Date(patient.createdAt), 'dd MMM yyyy')} />
+          </dl>
+        </DetailSection>
 
-      <Tabs tabs={patientTabs} active={tab} onChange={setTab} />
+        <DetailSection title="Contact information">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <DetailField label="Phone" value={patient.phone} />
+            <DetailField label="Email" value={patient.email} />
+            <DetailField label="Address" value={patient.address} />
+            <DetailField label="City" value={patient.city} />
+          </dl>
+        </DetailSection>
 
-      {tab === 'details' && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <DetailSection title="Personal details">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField
-                label="Date of birth"
-                value={patient.dateOfBirth ? format(new Date(patient.dateOfBirth), 'dd MMM yyyy') : undefined}
-              />
-              <DetailField label="Gender" value={patient.gender} />
-              <DetailField label="National ID" value={patient.nationalId} />
-              <DetailField label="Marital status" value={patient.maritalStatus} />
-              <DetailField label="Registered" value={format(new Date(patient.createdAt), 'dd MMM yyyy')} />
-            </dl>
-          </DetailSection>
+        <DetailSection title="Emergency contact">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <DetailField label="Contact name" value={patient.emergencyContactName} />
+            <DetailField label="Relationship" value={patient.emergencyContactRelationship} />
+            <DetailField label="Contact phone" value={patient.emergencyContactPhone} />
+          </dl>
+        </DetailSection>
 
-          <DetailSection title="Contact information">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Phone" value={patient.phone} />
-              <DetailField label="Email" value={patient.email} />
-              <DetailField label="Address" value={patient.address} />
-              <DetailField label="City" value={patient.city} />
-            </dl>
-          </DetailSection>
-
-          <DetailSection title="Emergency contact">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <DetailField label="Contact name" value={patient.emergencyContactName} />
-              <DetailField label="Relationship" value={patient.emergencyContactRelationship} />
-              <DetailField label="Contact phone" value={patient.emergencyContactPhone} />
-            </dl>
-          </DetailSection>
-
-          <DetailSection title="Insurance policy">
-            {patient.insuranceProvider ? (
-              <div className="rounded-lg border border-green-100 bg-green-50/50 p-5">
-                <div className="flex items-start gap-3">
-                  <FaShieldAlt className="mt-1 text-green-700" />
-                  <div className="grid flex-1 gap-4 sm:grid-cols-2">
-                    <DetailField label="Provider" value={patient.insuranceProvider} />
-                    <DetailField label="Policy / member ID" value={patient.insurancePolicyNumber} />
-                  </div>
+        <DetailSection title="Insurance policy">
+          {patient.insuranceProvider ? (
+            <div className="rounded-md border border-line bg-surface p-4">
+              <div className="flex items-start gap-3">
+                <FaShieldAlt className="mt-1 text-brand" />
+                <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                  <DetailField label="Provider" value={patient.insuranceProvider} />
+                  <DetailField label="Policy / member ID" value={patient.insurancePolicyNumber} />
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-zinc-500">No insurance on file. Patient is self-pay.</p>
-            )}
-          </DetailSection>
-        </div>
-      )}
-
-      {tab === 'treatments' && (
-        <DetailSection title="Treatments">
-          <PatientTreatmentsTab patientId={patient.id} />
+            </div>
+          ) : (
+            <p className="text-sm text-ink-muted">No insurance on file. Patient is self-pay.</p>
+          )}
         </DetailSection>
-      )}
-
-      {tab === 'appointments' && (
-        <DetailSection title="Appointments">
-          <PatientAppointmentsTab patientId={patient.id} />
-        </DetailSection>
-      )}
-
-      {tab === 'triage' && (
-        <DetailSection title="Triage">
-          <PatientTriageTab patientId={patient.id} />
-        </DetailSection>
-      )}
-
-      {tab === 'visits' && (
-        <DetailSection title="Activity timeline">
-          <PatientTimeline events={history} onSelect={setSelectedVisit} />
-        </DetailSection>
-      )}
+      </div>
 
       <PatientDrawer
         mode={drawerMode}
@@ -258,8 +148,6 @@ export default function PatientDetailPage() {
         onSave={handleSave}
         onEdit={() => setDrawerMode(ModalDrawerModeEnum.EDIT)}
       />
-
-      <VisitDrawer visit={selectedVisit} onClose={() => setSelectedVisit(null)} />
     </div>
   );
 }

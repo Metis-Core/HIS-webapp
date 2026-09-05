@@ -4,21 +4,21 @@ import type { IInputProps } from '@/interfaces';
 export default function Input({ label, error, className = '', id, required, ...props }: IInputProps) {
   const inputId = id || props.name;
   return (
-    <div className="flex w-full flex-col gap-1">
+    <div className="flex w-full flex-col gap-1.5">
       {label && (
-        <div className="flex items-center gap-1">
-          <label htmlFor={inputId} className="text-md font-medium tracking-wider text-slate-700">
-            {label}
-          </label>
-          {required && <span className="text-md font-bold text-red-500">*</span>}
-        </div>
+        <label htmlFor={inputId} className="text-xs font-medium text-ink-muted">
+          {label}
+          {required && <span className="ml-0.5 text-critical">*</span>}
+        </label>
       )}
       <input
         id={inputId}
-        className={`rounded-md border cursor-pointer border-slate-400 bg-white text-slate-700 px-3 py-2 text-md outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 placeholder:text-slate-500 ${error ? 'border border-red-500' : ''} ${className}`}
+        className={`w-full rounded-md border bg-surface-raised px-3 py-2 text-sm text-ink placeholder:text-ink-muted/70 outline-none transition focus:border-brand focus:ring-1 focus:ring-brand ${
+          error ? 'border-critical focus:border-critical focus:ring-critical' : 'border-line'
+        } ${className}`}
         {...props}
       />
-      {/* {error && <span className="text-md text-red-500">{error}</span>} */}
+      {error && <span className="text-xs text-critical">{error}</span>}
     </div>
   );
 }

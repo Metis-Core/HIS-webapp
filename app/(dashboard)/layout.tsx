@@ -6,14 +6,22 @@ export const metadata: Metadata = {
   description: 'Metis Healthcare',
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+/* Dashboard shell mounts once per session — sidebar, header, notification bell,
+   and the @modal parallel slot survive navigation (AGENTS.md §5). */
+export default function DashboardLayout({
+  children,
+  modal,
+}: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden bg-surface">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="min-h-0 flex-1 overflow-auto p-4">{children}</main>
+        <main className="min-h-0 flex-1 overflow-auto">
+          <div className="mx-auto max-w-[1600px] p-6">{children}</div>
+        </main>
       </div>
+      {modal}
     </div>
   );
 }

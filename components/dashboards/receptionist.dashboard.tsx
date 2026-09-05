@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { FaCalendarCheck, FaClipboardList, FaFileInvoiceDollar, FaPlus, FaUserInjured } from 'react-icons/fa';
+import { FaBell, FaClipboardList, FaPlus, FaStethoscope, FaUserInjured } from 'react-icons/fa';
 import { Button, Dropdown, EmptyState, PatientDrawer, Pill, Stats, VisitReceiptDrawer } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
 import { QueueStageEnum, QueueEntryStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
@@ -13,22 +13,9 @@ import { currentEntry, departmentStageMap, entryStatusMap, statusVariants } from
 import type { IOption, IPagination } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import type { IVisitRecord } from '@/interfaces/queue.interfaces';
-import { FaClockRotateLeft } from 'react-icons/fa6';
+import { useConsultations, useUnreadNotificationsCount } from '@/hooks';
 import useSWR from 'swr';
-import { publicApi } from '@/helpers/axios';
-
-interface IAppointment {
-  id: string;
-  patientName: string;
-  doctor: string;
-  time: string;
-}
-
-const appointments: IAppointment[] = [
-  { id: 'a1', patientName: 'Grace Nabirye', doctor: 'Dr. Kiwanuka', time: '09:30 AM' },
-  { id: 'a2', patientName: 'Moses Ssekandi', doctor: 'Dr. Namutebi', time: '11:00 AM' },
-  { id: 'a3', patientName: 'Ruth Achieng', doctor: 'Dr. Byaruhanga', time: '02:15 PM' },
-];
+import { api } from '@/helpers/axios';
 
 const stageOptions: IOption[] = Object.values(QueueStageEnum).map((stage) => ({
   label: stage.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -42,14 +29,17 @@ const visitTypeOptions: IOption[] = Object.values(VisitTypeEnum).map((type) => (
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
-  const { data } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', publicApi);
+  const { data } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', api);
   const patients = useMemo(() => data?.data.data.items || [], [data]);
 
   const { data: visitsData, mutate: mutateVisits } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>(
     '/visits/queues',
-    publicApi,
+    api,
   );
   const visits = useMemo(() => visitsData?.data.data.items || [], [visitsData]);
+
+  const { consultations } = useConsultations({ limit: 10 });
+  const { unread } = useUnreadNotificationsCount();
 
   const activeQueue = useMemo(
     () =>
@@ -90,7 +80,7 @@ export default function ReceptionistDashboard() {
 
   const stats = useMemo(
     () => [
-      { label: "Today's registrations", value: patients.length, icon: FaUserInjured, variant: StatVariantEnum.Green },
+      { label: 'Registered patients', value: patients.length, icon: FaUserInjured, variant: StatVariantEnum.Green },
       {
         label: 'Patients in queue',
         value: activeQueue.length,
@@ -98,14 +88,14 @@ export default function ReceptionistDashboard() {
         variant: StatVariantEnum.Blue,
       },
       {
-        label: "Today's appointments",
-        value: appointments.length,
-        icon: FaCalendarCheck,
+        label: 'Active consultations',
+        value: consultations.length,
+        icon: FaStethoscope,
         variant: StatVariantEnum.Emerald,
       },
-      { label: 'Pending invoices', value: 6, icon: FaFileInvoiceDollar, variant: StatVariantEnum.Amber },
+      { label: 'Unread alerts', value: unread, icon: FaBell, variant: StatVariantEnum.Amber },
     ],
-    [patients, activeQueue],
+    [patients, activeQueue, consultations, unread],
   );
 
   const handleSavePatient = () => {
@@ -121,7 +111,7 @@ export default function ReceptionistDashboard() {
     if (!walkInPatient || effectiveMotives.length === 0 || submitting) return;
     try {
       setSubmitting(true);
-      await publicApi.post('/visits', {
+      await api.post('/visits', {
         patientId: walkInPatient.value,
         visitType: visitType.value,
         intent: effectiveMotives.map((m) => m.value),
@@ -288,24 +278,38 @@ export default function ReceptionistDashboard() {
 
         <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5">
           <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-            <h3 className="text-md font-bold text-zinc-800">Today&apos;s appointments</h3>
-            <Button type="button" onClick={() => router.push('/patients')} variant={ButtonVariantEnum.GHOST}>
+            <h3 className="text-md font-bold text-zinc-800">Recent consultations</h3>
+            <Button type="button" onClick={() => router.push('/consultations')} variant={ButtonVariantEnum.GHOST}>
               View all
             </Button>
           </div>
           <div className="flex flex-col divide-y divide-zinc-100">
-            {appointments.length === 0 ? (
+            {consultations.length === 0 ? (
               <div className="flex h-64 w-full items-center justify-center">
-                <EmptyState message="No patients appointments today" icon={FaClockRotateLeft} />
+                <EmptyState message="No consultations yet" icon={FaStethoscope} />
               </div>
             ) : (
-              appointments.map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between gap-3 py-3">
+              consultations.slice(0, 5).map((consultation) => (
+                <div key={consultation.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-zinc-900">{appointment.patientName}</p>
-                    <p className="text-xs text-zinc-500">{appointment.doctor}</p>
+                    <p className="truncate font-medium text-zinc-900">
+                      {consultation.patient
+                        ? `${consultation.patient.firstName} ${consultation.patient.lastName}`
+                        : consultation.patientId}
+                    </p>
+                    <p className="text-xs text-zinc-500">{consultation.chiefComplaint}</p>
                   </div>
-                  <Pill>{appointment.time}</Pill>
+                  <Pill
+                    variant={
+                      consultation.status === 'completed'
+                        ? PillVariantEnum.SUCCESS
+                        : consultation.status === 'cancelled'
+                          ? PillVariantEnum.DEFAULT
+                          : PillVariantEnum.INFO
+                    }
+                  >
+                    {consultation.status.replaceAll('_', ' ')}
+                  </Pill>
                 </div>
               ))
             )}

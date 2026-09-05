@@ -1,4 +1,5 @@
 'use client';
+import { useId } from 'react';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
 import type { IOption, ISelectProps } from '@/interfaces';
@@ -16,6 +17,8 @@ export default function Dropdown({
   isDisabled,
   compact,
 }: ISelectProps) {
+  // Stable id matching between server/client render, avoiding react-select's auto-incremented id mismatch
+  const instanceId = useId();
   const styles: StylesConfig<IOption, boolean> = {
     control: (base, state) => ({
       ...base,
@@ -75,6 +78,7 @@ export default function Dropdown({
     <div className="flex w-full flex-col gap-1">
       {label && <label className="text-md font-medium tracking-wider text-slate-700">{label}</label>}
       <Select
+        instanceId={instanceId}
         options={options}
         value={value}
         onChange={(val) => onChange((val as ISelectProps['value']) ?? null)}
