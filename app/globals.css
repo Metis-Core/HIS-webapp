@@ -1,13 +1,18 @@
 @import 'tailwindcss';
 
-/* Clear Round design tokens — see AGENTS.md §2 */
 :root {
   --surface: #f7f9f8;
   --surface-raised: #ffffff;
   --ink: #111827;
   --ink-muted: #5b6572;
-  --brand: #0e6b5c;
-  --brand-hover: #0a5449;
+  --primary: #0e6b5c;
+  --primary-hover: #0a5449;
+  --primary-soft: #e2f0ed;
+  --secondary: #2563a8;
+  --secondary-hover: #1d4f87;
+  --secondary-soft: #e4edf7;
+  --brand: var(--primary);
+  --brand-hover: var(--primary-hover);
   --line: #e3e8e6;
 
   --status-critical: #d0342c;
@@ -15,12 +20,11 @@
   --status-normal: #1e8a5f;
   --status-info: #2563a8;
 
-  /* Low-saturation backgrounds paired with the status foregrounds above. */
   --status-critical-soft: #fdecea;
   --status-watch-soft: #fbf1de;
   --status-normal-soft: #e3f3ec;
-  --status-info-soft: #e4edf7;
-  --brand-soft: #e2f0ed;
+  --status-info-soft: var(--secondary-soft);
+  --brand-soft: var(--primary-soft);
 }
 
 @theme inline {
@@ -28,6 +32,12 @@
   --color-surface-raised: var(--surface-raised);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-soft: var(--secondary-soft);
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-soft: var(--brand-soft);
@@ -46,7 +56,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Clinical UI is always light for consistency across screens/devices. */
 html {
   color-scheme: light;
 }
@@ -55,6 +64,7 @@ body {
   background: var(--surface);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 

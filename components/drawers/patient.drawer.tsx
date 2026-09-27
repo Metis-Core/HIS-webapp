@@ -127,9 +127,7 @@ function toFormValues(patient?: IPatient | null): PatientFormValues {
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
-      <h3 className="border-b border-zinc-100 pb-2 text-xs font-semibold uppercase tracking-wide text-green-800">
-        {title}
-      </h3>
+      <h3 className="border-b border-line pb-2 text-xs font-semibold uppercase tracking-wide text-primary">{title}</h3>
       {children}
     </section>
   );

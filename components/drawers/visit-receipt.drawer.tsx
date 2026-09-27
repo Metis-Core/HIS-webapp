@@ -48,7 +48,7 @@ export default function VisitReceiptDrawer({ open, onClose, motives, patient, on
       <div className="flex flex-col gap-6">
         <div className="overflow-hidden rounded-xl border border-zinc-200">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
+            <thead className="border-b border-line bg-primary-soft text-primary">
               <tr>
                 <th className="px-4 py-2 font-bold">Service</th>
                 <th className="px-4 py-2 font-bold">Unit cost</th>
@@ -85,7 +85,7 @@ export default function VisitReceiptDrawer({ open, onClose, motives, patient, on
           <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <FaShieldAlt className="text-green-700" />
+                <FaShieldAlt className="text-primary" />
                 <div>
                   <p className="font-bold text-zinc-800">{patient.insuranceProvider}</p>
                   {patient.insurancePolicyNumber && (

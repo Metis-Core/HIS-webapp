@@ -25,11 +25,9 @@ export default function VisitDrawer({ visit, onClose }: VisitDrawerProps) {
     <Drawer open={visit !== null} onClose={onClose} title={visit?.title ?? 'Visit details'}>
       {visit && (
         <div className="flex flex-col gap-6">
-          <div className="rounded-lg bg-green-50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-green-800">
-              {visit.type.replace('-', ' ')}
-            </p>
-            <p className="mt-1 text-sm text-green-900">{format(visit.date, 'EEEE, dd MMM yyyy · HH:mm')}</p>
+          <div className="rounded-lg bg-primary-soft px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">{visit.type.replace('-', ' ')}</p>
+            <p className="mt-1 text-sm text-primary">{format(visit.date, 'EEEE, dd MMM yyyy · HH:mm')}</p>
           </div>
 
           <dl className="grid gap-4 sm:grid-cols-2">

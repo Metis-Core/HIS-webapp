@@ -311,7 +311,7 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
       </div>
 
       {orders.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line rounded-md border border-line">
+        <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
           {orders.map((o) => (
             <li key={o.id} className="flex items-center justify-between px-3 py-2 text-sm">
               <span className="text-ink">{o.items?.map((i) => i.test?.code).join(', ') || 'Tests'}</span>
@@ -323,7 +323,7 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
         </ul>
       )}
 
-      <div className="rounded-md border border-line p-3">
+      <div className="rounded-lg border border-line p-3">
         <p className="mb-2 text-xs font-medium text-ink-muted">Order new tests</p>
         <div className="flex flex-wrap gap-1.5">
           {testOptions.map((o) => {
@@ -425,7 +425,7 @@ function PrescriptionsPanel({ consultation, onChanged }: { consultation: IConsul
         <h3 className="text-sm font-semibold text-ink">Prescriptions</h3>
       </div>
 
-      <div className="rounded-md border border-line p-3">
+      <div className="rounded-lg border border-line p-3">
         <div className="flex gap-2">
           <Input
             label="Add item (inventory item UUID or name)"

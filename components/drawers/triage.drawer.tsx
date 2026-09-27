@@ -336,7 +336,7 @@ function NextStagePicker({ value, onChange }: { value: VisitIntentEnum[]; onChan
     onChange(value.includes(intent) ? value.filter((x) => x !== intent) : [...value, intent]);
 
   return (
-    <section className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+    <section className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-3">
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Route patient to next stage(s)</p>
         <p className="text-xs text-ink-muted">

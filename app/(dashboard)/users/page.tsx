@@ -164,7 +164,7 @@ export default function UsersPage() {
                       <button
                         type="button"
                         onClick={() => openEdit(u)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Edit
                       </button>

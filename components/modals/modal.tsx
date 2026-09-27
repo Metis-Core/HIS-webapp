@@ -21,17 +21,29 @@ export default function Modal({ open, onClose, title, children }: IModalProps) {
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-lg bg-white shadow-lg">
-        <header className="flex items-center justify-between bg-blue-600 px-4 py-3">
-          <h2 className="text-base font-semibold text-white">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-white/80 hover:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+      <button type="button" aria-label="Close dialog" className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-surface-raised shadow-2xl"
+      >
+        <header className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 id="modal-title" className="text-lg font-semibold text-ink">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1 text-ink-muted transition hover:bg-surface hover:text-ink"
+          >
             ✕
           </button>
         </header>
-        <div className="p-4">{children}</div>
-      </div>
+        <div className="p-5">{children}</div>
+      </section>
     </div>,
     document.body,
   );

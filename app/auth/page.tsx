@@ -31,7 +31,6 @@ export default function AuthPage() {
       await login(values);
       toast.success('Signed in');
     } catch (err: any) {
-      // Login failures NEVER use a toast — they need an inline banner (AGENTS.md §6).
       setSubmitError(err?.message ?? 'Invalid credentials. Try again.');
     } finally {
       setLoading(false);
@@ -103,7 +102,7 @@ export default function AuthPage() {
               </div>
             )}
             <div className="flex justify-end">
-              <button type="button" className="text-sm font-medium text-brand hover:text-brand-hover">
+              <button type="button" className="text-sm font-medium text-primary hover:text-primary-hover">
                 Forgot password?
               </button>
             </div>

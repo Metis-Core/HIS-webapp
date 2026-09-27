@@ -1,4 +1,3 @@
-/* Skeleton shape matches the actual list layout (AGENTS.md §5). */
 export default function PatientsLoading() {
   return (
     <div className="flex flex-col gap-5">

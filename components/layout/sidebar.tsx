@@ -1,21 +1,23 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   FaAngleDoubleLeft,
   FaAngleDoubleRight,
   FaBell,
-  FaBoxes,
-  FaClipboardList,
-  FaConciergeBell,
   FaCog,
-  FaFlask,
-  FaHome,
+  FaHandHoldingMedical,
+  FaMicroscope,
+  FaNotesMedical,
   FaPills,
-  FaStethoscope,
+  FaProcedures,
+  FaTachometerAlt,
+  FaTasks,
   FaUserInjured,
-  FaUsersCog,
+  FaUserShield,
+  FaWarehouse,
 } from 'react-icons/fa';
 import { UserRoleEnum } from '@/enum/user.enum';
 import { useAuth, useSidebar } from '@/providers';
@@ -28,28 +30,53 @@ interface NavItem {
 }
 
 const NAV: Record<string, NavItem> = {
-  dashboard: { key: 'dashboard', label: 'Dashboard', href: '/', icon: <FaHome className="w-5 h-5" /> },
-  patients: { key: 'patients', label: 'Patients', href: '/patients', icon: <FaUserInjured className="w-5 h-5" /> },
-  queue: { key: 'queue', label: 'Queue', href: '/queue', icon: <FaClipboardList className="w-5 h-5" /> },
-  triage: { key: 'triage', label: 'Triage', href: '/triage', icon: <FaStethoscope className="w-5 h-5" /> },
+  dashboard: {
+    key: 'dashboard',
+    label: 'Dashboard',
+    href: '/',
+    icon: <FaTachometerAlt aria-hidden className="h-5 w-5" />,
+  },
+  patients: {
+    key: 'patients',
+    label: 'Patients',
+    href: '/patients',
+    icon: <FaUserInjured aria-hidden className="h-5 w-5" />,
+  },
+  queue: { key: 'queue', label: 'Queue', href: '/queue', icon: <FaTasks aria-hidden className="h-5 w-5" /> },
+  triage: { key: 'triage', label: 'Triage', href: '/triage', icon: <FaProcedures aria-hidden className="h-5 w-5" /> },
   consultations: {
     key: 'consultations',
     label: 'Consultations',
     href: '/consultations',
-    icon: <FaStethoscope className="w-5 h-5" />,
+    icon: <FaNotesMedical aria-hidden className="h-5 w-5" />,
   },
-  lab: { key: 'lab', label: 'Lab', href: '/lab', icon: <FaFlask className="w-5 h-5" /> },
-  pharmacy: { key: 'pharmacy', label: 'Pharmacy', href: '/pharmacy', icon: <FaPills className="w-5 h-5" /> },
-  inventory: { key: 'inventory', label: 'Inventory', href: '/inventory', icon: <FaBoxes className="w-5 h-5" /> },
-  services: { key: 'services', label: 'Services', href: '/services', icon: <FaConciergeBell className="w-5 h-5" /> },
+  lab: { key: 'lab', label: 'Lab', href: '/lab', icon: <FaMicroscope aria-hidden className="h-5 w-5" /> },
+  pharmacy: {
+    key: 'pharmacy',
+    label: 'Pharmacy',
+    href: '/pharmacy',
+    icon: <FaPills aria-hidden className="h-5 w-5" />,
+  },
+  inventory: {
+    key: 'inventory',
+    label: 'Inventory',
+    href: '/inventory',
+    icon: <FaWarehouse aria-hidden className="h-5 w-5" />,
+  },
+  services: {
+    key: 'services',
+    label: 'Services',
+    href: '/services',
+    icon: <FaHandHoldingMedical aria-hidden className="h-5 w-5" />,
+  },
   notifications: {
     key: 'notifications',
     label: 'Notifications',
     href: '/notifications',
-    icon: <FaBell className="w-5 h-5" />,
+    icon: <FaBell aria-hidden className="h-5 w-5" />,
   },
-  users: { key: 'users', label: 'Users', href: '/users', icon: <FaUsersCog className="w-5 h-5" /> },
-  settings: { key: 'settings', label: 'Settings', href: '/settings', icon: <FaCog className="w-5 h-5" /> },
+  users: { key: 'users', label: 'Users', href: '/users', icon: <FaUserShield aria-hidden className="h-5 w-5" /> },
+  settings: { key: 'settings', label: 'Settings', href: '/settings', icon: <FaCog aria-hidden className="h-5 w-5" /> },
 };
 
 const ALL_NAV: NavItem[] = [
@@ -120,25 +147,34 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex h-full shrink-0 flex-col border-r border-line bg-surface-raised transition-[width] duration-200 ${
+      className={`flex h-full shrink-0 flex-col border rounded-lg drop-shadow-md border-line bg-surface-raised transition-[width] duration-200 ${
         collapsed ? 'w-16' : 'w-64'
       }`}
     >
-      <div
-        className={`flex items-center border-b border-line py-4 ${collapsed ? 'justify-center px-2' : 'justify-between px-4'}`}
-      >
-        {!collapsed && <img src="/logo2.png" alt="Suubi Medical Centre" className="h-10 w-auto" />}
+      <div className="relative flex h-32 items-center justify-center border-b border-line">
+        <Image
+          src="/logo.png"
+          alt="Suubi Medical Centre"
+          width={192}
+          height={128}
+          priority
+          className={`object-contain transition-all duration-200 ${
+            collapsed ? 'h-12 w-12' : 'h-28 w-auto max-w-[12rem]'
+          }`}
+        />
         <button
           type="button"
           onClick={toggle}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"
+          className={`absolute flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-muted transition hover:bg-surface hover:text-ink ${
+            collapsed ? 'bottom-2 right-2' : 'right-4 top-1/2 -translate-y-1/2'
+          }`}
         >
           {collapsed ? <FaAngleDoubleRight className="h-3.5 w-3.5" /> : <FaAngleDoubleLeft className="h-3.5 w-3.5" />}
         </button>
       </div>
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3 space-y-4">
         {navigation.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
 
@@ -147,11 +183,11 @@ export default function Sidebar() {
               key={item.key}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 collapsed ? 'justify-center' : ''
-              } ${active ? 'bg-brand-soft text-brand' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}
+              } ${active ? 'bg-primary-soft text-primary' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}
             >
-              <span className={active ? 'text-brand' : 'text-ink-muted'}>{item.icon}</span>
+              <span className={active ? 'text-primary' : 'text-ink-muted'}>{item.icon}</span>
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
           );

@@ -35,7 +35,7 @@ const visitStyles: Record<PatientVisitType, { icon: ReactNode; color: string }> 
 export default function PatientTimeline({ events, onSelect }: PatientTimelineProps) {
   if (events.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+      <p className="rounded-lg border border-dashed border-line px-4 py-8 text-center text-sm text-ink-muted">
         No visits or activity recorded for this patient yet.
       </p>
     );
@@ -62,7 +62,7 @@ export default function PatientTimeline({ events, onSelect }: PatientTimelinePro
               contentArrowStyle={{ borderRight: '7px solid #e4e4e7' }}
             >
               <button type="button" className="w-full cursor-pointer text-left" onClick={() => onSelect(event)}>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-800">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">
                   {event.type.replace('-', ' ')}
                 </p>
                 <h3 className="text-base font-semibold text-zinc-900">{event.title}</h3>
@@ -70,7 +70,7 @@ export default function PatientTimeline({ events, onSelect }: PatientTimelinePro
                 <p className="mt-2 text-xs text-zinc-400">
                   Handled by {event.handledBy} · {event.department}
                 </p>
-                <p className="mt-2 text-xs font-medium text-green-700">View details</p>
+                <p className="mt-2 text-xs font-medium text-primary">View details</p>
               </button>
             </VerticalTimelineElement>
           );

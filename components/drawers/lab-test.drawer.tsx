@@ -231,7 +231,7 @@ function ResultSchemaBuilder({
     onChange(fields.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">Result form fields</p>
@@ -252,7 +252,7 @@ function ResultSchemaBuilder({
       ) : (
         <div className="flex flex-col gap-3">
           {fields.map((f, idx) => (
-            <div key={idx} className="flex flex-col gap-2 rounded-md border border-line bg-surface-raised p-3">
+            <div key={idx} className="flex flex-col gap-2 rounded-lg border border-line bg-surface-raised p-3">
               <div className="grid grid-cols-12 gap-2">
                 <div className="col-span-3">
                   <Input

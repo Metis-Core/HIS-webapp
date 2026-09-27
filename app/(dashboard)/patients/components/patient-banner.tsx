@@ -7,10 +7,8 @@ import type { IPatient } from '@/interfaces/patient.interface';
 import PatientAvatar from './patient-avatar';
 import PatientTypePill from './patient-type-pill';
 
-/* Pinned banner — highest-value nested layout in the app (AGENTS.md §5).
-   Name, MRN, allergy flags stay visible while staff tab between vitals/labs/meds. */
 export default function PatientBanner({ patient }: { patient: IPatient }) {
-  const hasAllergy = false; // wire once allergy field lands on IPatient
+  const hasAllergy = false;
 
   return (
     <section className="rounded-lg border border-line bg-surface-raised p-4">

@@ -324,7 +324,7 @@ function WaitingLabQueue({
                       <button
                         type="button"
                         onClick={() => onCall(e)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Call
                       </button>
@@ -333,7 +333,7 @@ function WaitingLabQueue({
                       <button
                         type="button"
                         onClick={() => onStart(e)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Start
                       </button>
@@ -342,7 +342,7 @@ function WaitingLabQueue({
                       <button
                         type="button"
                         onClick={() => onOpen(activeOrder)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Enter results
                       </button>
@@ -414,7 +414,7 @@ function OrdersTable({ orders, onOpen }: { orders: ILabOrder[]; onOpen: (o: ILab
                 <button
                   type="button"
                   onClick={() => onOpen(o)}
-                  className="text-xs font-medium text-brand hover:text-brand-hover"
+                  className="text-xs font-medium text-primary hover:text-primary-hover"
                 >
                   Open
                 </button>
@@ -485,7 +485,7 @@ function TestsTable({
                     <button
                       type="button"
                       onClick={() => onEdit(t)}
-                      className="text-xs font-medium text-brand hover:text-brand-hover"
+                      className="text-xs font-medium text-primary hover:text-primary-hover"
                     >
                       Edit
                     </button>

@@ -66,7 +66,6 @@ export default function PatientsPage() {
       bloodType,
       ...rest
     } = values;
-    // API validators (@IsEmail, @IsDateString, @IsEnum) reject empty strings — send undefined instead.
     const optional = (v?: string) => (v && v.trim() ? v.trim() : undefined);
     const payload = {
       firstName: rest.firstName.trim(),
@@ -154,7 +153,7 @@ export default function PatientsPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Patients</h1>
+          <h1 className="text-xl font-semibold text-primary">Patients</h1>
           <p className="text-sm text-ink-muted">Register, search, and open patient records.</p>
         </div>
         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
@@ -168,7 +167,7 @@ export default function PatientsPage() {
       <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="border-b border-line bg-surface text-ink-muted">
+            <thead className="border-b border-line bg-surface text-primary">
               <tr>
                 <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Contact</th>

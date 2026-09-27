@@ -22,22 +22,29 @@ export default function Drawer({ open, onClose, title, children, width = 'w-225'
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/40 cursor-pointer" onClick={onClose} />
-      <div className={`relative z-10 flex h-full max-w-full flex-col bg-white shadow-xl ${width}`}>
-        <header className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-green-900 px-4 py-4">
-          <h2 className="text-md font-semibold text-white">{title}</h2>
+    <div className="fixed inset-0 z-50 flex justify-end" role="presentation">
+      <button type="button" aria-label="Close drawer" className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-title"
+        className={`relative z-10 flex h-full max-w-full flex-col bg-surface-raised shadow-2xl ${width}`}
+      >
+        <header className="flex shrink-0 items-center justify-between border-b border-line bg-brand px-5 py-4">
+          <h2 id="drawer-title" className="text-lg font-semibold text-white">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-red-500 hover:text-white cursor-pointer"
+            className="rounded-lg p-1 text-white/80 transition hover:bg-white/10 hover:text-white"
           >
-            <FaTimes className="w-5 h-5" />
+            <FaTimes className="h-5 w-5" />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8">{children}</div>
-      </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">{children}</div>
+      </section>
     </div>,
     document.body,
   );

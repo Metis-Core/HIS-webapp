@@ -41,7 +41,7 @@ export default function PhoneOtpInput({
   };
 
   return (
-    <div className="flex  justify-between">
+    <div className="flex justify-between gap-2">
       {digits.map((digit, index) => (
         <input
           key={index}
@@ -54,7 +54,8 @@ export default function PhoneOtpInput({
           onPaste={handlePaste}
           inputMode="numeric"
           maxLength={1}
-          className="h-12 w-12 rounded-md border border-slate-500 text-center text-lg font-bold text-slate-700 outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
+          aria-label={`Verification digit ${index + 1}`}
+          className="h-12 w-12 rounded-lg border border-line bg-surface-raised text-center text-lg font-semibold text-ink outline-none transition focus:border-brand focus:ring-1 focus:ring-brand"
         />
       ))}
     </div>

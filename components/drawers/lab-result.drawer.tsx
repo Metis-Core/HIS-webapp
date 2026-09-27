@@ -38,9 +38,7 @@ function parseExisting(item: ILabOrderItem): { plain: string; schema: SchemaValu
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return { plain: '', schema: parsed as SchemaValues };
     }
-  } catch {
-    // fall through to plain value
-  }
+  } catch {}
   return { plain: raw, schema: {} };
 }
 
@@ -137,7 +135,7 @@ export default function LabResultDrawer({ open, order, onClose, onSaved }: LabRe
   return (
     <Drawer open={open} onClose={onClose} title="Lab results" width="w-[820px]">
       <div className="flex flex-col gap-4">
-        <header className="rounded-md border border-line bg-surface p-3 text-sm">
+        <header className="rounded-lg border border-line bg-surface p-3 text-sm">
           <p className="font-semibold text-ink">
             {order.patient ? `${order.patient.firstName} ${order.patient.lastName}` : 'Patient'}
           </p>
@@ -152,7 +150,7 @@ export default function LabResultDrawer({ open, order, onClose, onSaved }: LabRe
           const schema = item.test?.resultSchema ?? null;
           const hasSchema = Boolean(schema && schema.fields.length > 0);
           return (
-            <section key={item.id} className="flex flex-col gap-3 rounded-md border border-line bg-surface-raised p-3">
+            <section key={item.id} className="flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-ink">

@@ -90,7 +90,6 @@ const statusOptions: IOption[] = [
   ...Object.values(QueueStatusEnum).map((status) => ({ label: stageLabel(status), value: status })),
 ];
 
-/* Row status → left-edge color (AGENTS.md §7). Emergency wins over routine. */
 function rowEdge(priority: QueuePriority, status: QueueStatusEnum) {
   if (priority === 'emergency') return 'bg-critical';
   if (priority === 'urgent') return 'bg-watch';
@@ -204,8 +203,8 @@ export default function QueuePage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Queue</h1>
-        <p className="text-sm text-ink-muted">Live view of patients moving through today's visit.</p>
+        <h1 className="text-xl font-semibold text-primary">Queue</h1>
+        <p className="text-sm text-primary-muted">Live view of patients moving through today's visit.</p>
       </div>
 
       <Stats items={stats} />
@@ -249,7 +248,7 @@ export default function QueuePage() {
               <col className="w-32" />
               <col className="w-20" />
             </colgroup>
-            <thead className="border-b border-line bg-surface text-ink-muted">
+            <thead className="border-b border-line bg-surface text-primary">
               <tr>
                 <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Pathway</th>
@@ -299,7 +298,7 @@ export default function QueuePage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
                           {initialsOf(entry.assignedTo)}
                         </div>
                         <div className="min-w-0">
@@ -322,7 +321,7 @@ export default function QueuePage() {
                           href={`/queue/${entry.id}`}
                           aria-label="View pathway"
                           title="View pathway"
-                          className="text-xs font-medium text-brand hover:text-brand-hover"
+                          className="text-xs font-medium text-primary hover:text-primary-hover"
                         >
                           <FaEye />
                         </Link>

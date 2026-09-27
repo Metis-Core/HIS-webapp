@@ -83,7 +83,7 @@ export default function PatientContextPanel({ patient, visitId, consultationId }
     <div className="flex flex-col gap-4">
       <section className="rounded-lg border border-line bg-surface-raised p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand text-sm font-semibold">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary text-sm font-semibold">
             {initialsOf(`${patient.firstName} ${patient.lastName}`)}
           </div>
           <div>
@@ -114,7 +114,7 @@ export default function PatientContextPanel({ patient, visitId, consultationId }
           )}
         </dl>
         {patient.allergies && (
-          <p className="mt-3 rounded-md bg-critical-soft px-3 py-2 text-xs font-medium text-critical">
+          <p className="mt-3 rounded-lg bg-critical-soft px-3 py-2 text-xs font-medium text-critical">
             Allergies: {patient.allergies}
           </p>
         )}
@@ -213,7 +213,7 @@ function TriageCard({ triage }: { triage: ITriage }) {
       </header>
       <div className="flex flex-col gap-2 px-5 py-3">
         <p className="text-sm text-ink">{triage.chiefComplaint}</p>
-        <div className="grid grid-cols-3 gap-2 rounded-md bg-surface p-2 font-mono text-xs text-ink-muted">
+        <div className="grid grid-cols-3 gap-2 rounded-lg bg-surface p-2 font-mono text-xs text-ink-muted">
           {triage.temperatureC != null && <span>Temp {triage.temperatureC}°C</span>}
           {triage.heartRate != null && <span>HR {triage.heartRate}</span>}
           {triage.respiratoryRate != null && <span>RR {triage.respiratoryRate}</span>}
@@ -228,7 +228,7 @@ function TriageCard({ triage }: { triage: ITriage }) {
           {triage.heightCm != null && <span>Ht {triage.heightCm} cm</span>}
         </div>
         {triage.allergiesNoted && (
-          <p className="rounded-md bg-critical-soft px-2 py-1 text-xs text-critical">{triage.allergiesNoted}</p>
+          <p className="rounded-lg bg-critical-soft px-2 py-1 text-xs text-critical">{triage.allergiesNoted}</p>
         )}
         {triage.assessmentNotes && (
           <p className="text-xs text-ink-muted">

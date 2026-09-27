@@ -101,7 +101,7 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-line bg-surface-raised">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed text-left">
             <colgroup>
@@ -111,7 +111,7 @@ export default function AppointmentsPage() {
               <col className="w-40" />
               <col className="w-36" />
             </colgroup>
-            <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
+            <thead className="border-b border-line bg-primary-soft text-primary">
               <tr>
                 <th className="px-6 py-3 text-md font-bold">Patient</th>
                 <th className="px-6 py-3 text-md font-bold">Date & Time</th>
@@ -133,26 +133,26 @@ export default function AppointmentsPage() {
                 filtered.map((appointment) => (
                   <tr
                     key={appointment.id}
-                    className="border-b border-zinc-100 last:border-0 align-top transition hover:bg-green-50/30"
+                    className="border-b border-line last:border-0 align-top transition hover:bg-primary-soft/30"
                   >
                     <td className="px-6 py-4">
-                      <p className="truncate font-medium text-zinc-900">{appointment.patientName}</p>
-                      <p className="mt-1 truncate text-xs text-zinc-500">{appointment.phone}</p>
+                      <p className="truncate font-medium text-ink">{appointment.patientName}</p>
+                      <p className="mt-1 truncate text-xs text-ink-muted">{appointment.phone}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <p className="font-medium text-zinc-800">{format(appointment.date, 'dd MMM yyyy')}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="font-medium text-ink">{format(appointment.date, 'dd MMM yyyy')}</p>
+                      <p className="text-xs text-ink-muted">
                         {format(appointment.date, 'HH:mm')} · {appointment.duration} min
                       </p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-white">
                           {initialsOf(appointment.doctor)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-zinc-800">{appointment.doctor}</p>
-                          <p className="truncate text-xs text-zinc-500">{appointment.department}</p>
+                          <p className="truncate font-medium text-ink">{appointment.doctor}</p>
+                          <p className="truncate text-xs text-ink-muted">{appointment.department}</p>
                         </div>
                       </div>
                     </td>

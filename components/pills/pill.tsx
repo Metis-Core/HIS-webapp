@@ -3,8 +3,6 @@ import type { ReactNode } from 'react';
 import { PillVariantEnum } from '@/enum';
 import type { IPillProps } from '@/interfaces';
 
-/* Status pill — colored dot + label. Never rely on hue alone (AGENTS.md §7).
-   Pass an optional icon when the pill communicates clinical state. */
 const styles: Record<PillVariantEnum, { chip: string; dot: string }> = {
   [PillVariantEnum.DEFAULT]: {
     chip: 'bg-surface text-ink-muted ring-1 ring-line',

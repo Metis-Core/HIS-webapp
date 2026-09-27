@@ -24,7 +24,7 @@ type PatientsFilterProps = {
 };
 
 const controlClass =
-  'h-10 rounded-md border border-slate-400 bg-white px-3 py-0 text-sm leading-10 text-slate-700 outline-none transition hover:border-green-600 focus:border-green-600 focus:ring-1 focus:ring-green-600';
+  'h-10 rounded-lg border border-line bg-surface-raised px-3 py-0 text-sm leading-10 text-ink outline-none transition hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary';
 
 const typeOptions: IOption[] = [
   { label: 'All types', value: 'all' },
@@ -75,7 +75,7 @@ export default function PatientsFilter({ value, onChange }: PatientsFilterProps)
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative min-w-[240px] flex-1 [&_input]:h-10 [&_input]:py-0 [&_input]:text-sm [&_input]:leading-10">
-        <FaSearch className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-slate-400" />
+        <FaSearch className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-ink-muted" />
         <Input
           value={value.search}
           onChange={(event) => onChange({ ...value, search: event.target.value })}
@@ -103,27 +103,27 @@ export default function PatientsFilter({ value, onChange }: PatientsFilterProps)
           type="button"
           onClick={() => setOpen((prev) => !prev)}
           className={`flex w-full items-center gap-2 px-3 text-left ${controlClass} ${
-            value.dateActive ? 'border-green-600 text-slate-900' : ''
+            value.dateActive ? 'border-primary text-ink' : ''
           }`}
         >
-          <FaCalendarAlt className="shrink-0 text-slate-400" />
+          <FaCalendarAlt className="shrink-0 text-ink-muted" />
           <span className="truncate">{rangeLabel}</span>
         </button>
 
         {open && (
-          <div className="absolute top-full right-0 z-40 mt-2 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl">
+          <div className="absolute top-full right-0 z-40 mt-2 overflow-hidden rounded-lg border border-line bg-surface-raised shadow-xl">
             <DateRange
               ranges={[displayRange]}
               onChange={onRangeChange}
               moveRangeOnFirstSelection={false}
               months={1}
               direction="horizontal"
-              rangeColors={['#166534']}
+              rangeColors={['var(--primary)']}
             />
-            <div className="flex justify-end border-t border-zinc-100 px-3 py-2">
+            <div className="flex justify-end border-t border-line px-3 py-2">
               <button
                 type="button"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                className="text-sm font-medium text-ink-muted hover:text-ink"
                 onClick={() =>
                   onChange({
                     ...value,

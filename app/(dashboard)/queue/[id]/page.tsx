@@ -177,7 +177,7 @@ export default function QueueDetailPage() {
         <aside className="flex flex-col gap-4 lg:col-span-4">
           <section className="rounded-lg border border-line bg-surface-raised p-5">
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-soft text-brand text-lg font-semibold">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-soft text-primary text-lg font-semibold">
                 {patient ? initialsOf(`${patient.firstName} ${patient.lastName}`) : '?'}
               </div>
               <h2 className="mt-3 text-sm font-semibold text-ink">
@@ -336,7 +336,7 @@ function PathwayRow({
             <button
               type="button"
               onClick={onComplete}
-              className="text-xs font-medium text-brand hover:text-brand-hover"
+              className="text-xs font-medium text-primary hover:text-primary-hover"
             >
               Mark complete
             </button>

@@ -11,8 +11,6 @@ export type LinkTabItem = {
   matchExact?: boolean;
 };
 
-/* Link-based tabs used inside a nested layout so tab navigation is a URL change,
-   deep-linkable, and the parent layout (patient banner) never remounts. */
 export default function LinkTabs({ tabs }: { tabs: LinkTabItem[] }) {
   const pathname = usePathname();
 

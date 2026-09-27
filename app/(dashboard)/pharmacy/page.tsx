@@ -36,7 +36,6 @@ export default function PharmacyPage() {
     isActive: true,
     type: InventoryItemTypeEnum.MEDICATION,
   });
-  // Prefer the pharmacy department store, then any other active store — pharmacists rarely pick manually.
   const pharmacyStore = stores.find((s) => s.department === DepartmentEnum.MAIN_PHARMACY);
   const defaultStoreId = pharmacyStore?.id ?? stores[0]?.id ?? '';
   const hasStore = Boolean(defaultStoreId);
@@ -256,7 +255,7 @@ function MedicationsCatalog({
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        <Link href="/inventory" className="text-xs font-medium text-brand hover:text-brand-hover">
+        <Link href="/inventory" className="text-xs font-medium text-primary hover:text-primary-hover">
           Manage in inventory →
         </Link>
       </div>
@@ -392,7 +391,7 @@ function WaitingPharmacyQueue({
                       <button
                         type="button"
                         onClick={() => onCall(e)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Call
                       </button>
@@ -401,7 +400,7 @@ function WaitingPharmacyQueue({
                       <button
                         type="button"
                         onClick={() => onStart(e)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Start
                       </button>
@@ -410,7 +409,7 @@ function WaitingPharmacyQueue({
                       <button
                         type="button"
                         onClick={() => onDispenseAll(primary)}
-                        className="text-xs font-medium text-brand hover:text-brand-hover"
+                        className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Dispense
                       </button>

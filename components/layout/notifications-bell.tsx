@@ -51,7 +51,7 @@ export default function NotificationsBell() {
       type="button"
       aria-label={`Notifications${badge ? ` (${badge})` : ''}`}
       onClick={() => router.push('/notifications')}
-      className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"
+      className="relative flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition hover:bg-surface hover:text-ink"
     >
       <FaBell className="h-4 w-4" />
       {badge && (

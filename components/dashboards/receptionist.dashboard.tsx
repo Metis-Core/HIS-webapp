@@ -131,7 +131,7 @@ export default function ReceptionistDashboard() {
       <Stats items={stats} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-zinc-800">Front desk</h2>
+        <h2 className="text-lg font-bold text-primary">Front desk</h2>
         <div className="flex flex-wrap gap-3">
           <Button type="button" onClick={() => router.push('/patients')} variant={ButtonVariantEnum.SECONDARY}>
             View all patients
@@ -144,8 +144,10 @@ export default function ReceptionistDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-1">
-          <h3 className="text-md font-bold text-zinc-800">Add walk-in to queue</h3>
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface-raised p-5 lg:col-span-1">
+          <div className="py-2 border-b border-line">
+            <h3 className="text-md font-bold text-primary">Add walk-in to queue</h3>
+          </div>
           <Dropdown
             label="Visit type"
             placeholder="Select visit type"
@@ -158,11 +160,11 @@ export default function ReceptionistDashboard() {
           />
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <label className="text-md font-medium tracking-wider text-slate-700">Patient</label>
+              <label className="text-xs font-medium text-ink-muted">Patient</label>
               <button
                 type="button"
                 onClick={() => setDrawerMode(ModalDrawerModeEnum.ADD)}
-                className="text-xs font-medium text-green-700 hover:underline"
+                className="text-xs font-medium text-primary hover:underline"
               >
                 Add new patient
               </button>
@@ -189,10 +191,10 @@ export default function ReceptionistDashboard() {
           </Button>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white lg:col-span-2">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface-raised lg:col-span-2">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="border-b border-zinc-200 bg-green-50 text-green-900">
+              <thead className="border-b border-line bg-surface text-primary">
                 <tr>
                   <th className="px-6 py-3 text-md font-bold">Patient</th>
                   <th className="px-6 py-3 text-md font-bold">Stage</th>
@@ -216,7 +218,7 @@ export default function ReceptionistDashboard() {
                     return (
                       <tr
                         key={entry!.id}
-                        className="border-b border-zinc-100 last:border-0 transition hover:bg-green-50/30"
+                        className="border-b border-line last:border-0 transition hover:bg-primary-soft/30"
                       >
                         <td className="px-6 py-4 font-medium text-zinc-900">
                           {visit.patient ? patientFullName(visit.patient) : visit.patientId}
@@ -239,9 +241,9 @@ export default function ReceptionistDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-            <h3 className="text-md font-bold text-zinc-800">Recent patients</h3>
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface-raised p-5">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <h3 className="text-md font-bold text-primary">Recent patients</h3>
             <Button type="button" onClick={() => router.push('/patients')} variant={ButtonVariantEnum.GHOST}>
               View all
             </Button>
@@ -276,9 +278,9 @@ export default function ReceptionistDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-            <h3 className="text-md font-bold text-zinc-800">Recent consultations</h3>
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface-raised p-5">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <h3 className="text-md font-bold text-primary">Recent consultations</h3>
             <Button type="button" onClick={() => router.push('/consultations')} variant={ButtonVariantEnum.GHOST}>
               View all
             </Button>

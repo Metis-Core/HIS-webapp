@@ -94,7 +94,7 @@ export default function CompleteStageDrawer({
         )}
 
         {summary && (
-          <section className="rounded-md border border-line bg-surface p-3">
+          <section className="rounded-lg border border-line bg-surface p-3">
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">Encounter summary</p>
             {summary}
           </section>
@@ -105,7 +105,7 @@ export default function CompleteStageDrawer({
             {criticalWarnings.map((w, i) => (
               <div
                 key={`c-${i}`}
-                className="flex items-start gap-2 rounded-md border border-critical/40 bg-critical-soft p-3 text-sm text-critical"
+                className="flex items-start gap-2 rounded-lg border border-critical/40 bg-critical-soft p-3 text-sm text-critical"
               >
                 <FaExclamationTriangle className="mt-0.5 shrink-0" />
                 <span>{w.message}</span>
@@ -114,7 +114,7 @@ export default function CompleteStageDrawer({
             {softWarnings.map((w, i) => (
               <div
                 key={`s-${i}`}
-                className="flex items-start gap-2 rounded-md border border-status-watch/40 bg-status-watch/10 p-3 text-sm text-status-watch"
+                className="flex items-start gap-2 rounded-lg border border-watch/40 bg-watch-soft p-3 text-sm text-watch"
               >
                 <FaExclamationTriangle className="mt-0.5 shrink-0" />
                 <span>{w.message}</span>
@@ -175,7 +175,7 @@ export default function CompleteStageDrawer({
           placeholder="Optional context for the next handler"
         />
 
-        <section className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+        <section className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-3">
           <div className="flex items-start gap-2">
             <FaSignature className="mt-1 text-brand" />
             <div className="flex-1">
@@ -186,7 +186,7 @@ export default function CompleteStageDrawer({
               </p>
             </div>
           </div>
-          <label className="flex cursor-pointer items-start gap-2 rounded-md bg-surface-raised p-2 text-sm text-ink">
+          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-surface-raised p-2 text-sm text-ink">
             <input
               type="checkbox"
               checked={attested}

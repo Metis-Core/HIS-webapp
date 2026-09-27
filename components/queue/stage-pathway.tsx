@@ -18,7 +18,6 @@ import type { IconType } from 'react-icons';
 import { QueueStageEnum } from '@/enum/queue.enum';
 import { stageLabel } from '@/data/queue';
 
-// The primary in-hospital care pathway a patient walks through, end to end.
 export const mainPathway: QueueStageEnum[] = [
   QueueStageEnum.REGISTRATION,
   QueueStageEnum.CONSULTATION,
@@ -67,17 +66,15 @@ export default function StagePathway({ stage }: { stage: QueueStageEnum }) {
             <span
               title={stageLabel(step)}
               className={`h-2.5 w-2.5 rounded-full ${
-                i < index ? 'bg-green-600' : i === index ? 'bg-blue-600 ring-4 ring-blue-100' : 'bg-zinc-200'
+                i < index ? 'bg-normal' : i === index ? 'bg-info ring-4 ring-info/20' : 'bg-line'
               }`}
             />
-            {i < mainPathway.length - 1 && (
-              <span className={`h-0.5 w-4 ${i < index ? 'bg-green-600' : 'bg-zinc-200'}`} />
-            )}
+            {i < mainPathway.length - 1 && <span className={`h-0.5 w-4 ${i < index ? 'bg-primary' : 'bg-line'}`} />}
           </div>
         ))}
       </div>
       <div className="flex items-center gap-1.5">
-        <Icon className="text-xs text-blue-700" aria-hidden />
+        <Icon className="text-xs text-secondary" aria-hidden />
         <span className="text-sm font-medium text-zinc-800">{stageLabel(stage)}</span>
       </div>
     </div>

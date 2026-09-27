@@ -208,7 +208,7 @@ export default function ConsultationDetailPage() {
     ? `${consultation.patient.firstName} ${consultation.patient.lastName}`
     : 'Consultation';
 
-  const prescriptionsCount = 0; // Populated via useConsultation.prescriptions if backend attaches — safe fallback.
+  const prescriptionsCount = 0;
   const isInProgress = consultation.status === ConsultationStatusEnum.IN_PROGRESS;
 
   return (

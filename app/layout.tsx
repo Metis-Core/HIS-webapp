@@ -32,7 +32,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <SidebarProvider>{children}</SidebarProvider>
           </SwrProvider>
         </AuthProvider>
-        {/* Single Toaster mounted once — modules must not add their own. See AGENTS.md §6. */}
         <Toaster
           position="bottom-right"
           mobileOffset={{ bottom: 16, left: 16, right: 16 }}

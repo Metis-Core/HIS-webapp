@@ -125,9 +125,7 @@ export default function ConsultationsPage() {
           .slice()
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
         if (latest?.chiefComplaint) chiefComplaint = latest.chiefComplaint;
-      } catch {
-        // triage lookup is best-effort; workspace lets the doctor edit
-      }
+      } catch {}
 
       const consultation = await toast.promise(
         createConsultation({
@@ -273,7 +271,7 @@ export default function ConsultationsPage() {
                               title={inProgress ? 'Continue documenting' : 'Open consultation'}
                               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
                                 inProgress
-                                  ? 'bg-brand text-white ring-brand hover:bg-brand-hover'
+                                  ? 'bg-primary text-white ring-primary hover:bg-primary-hover'
                                   : 'bg-surface text-ink ring-line hover:bg-surface-raised'
                               }`}
                             >
@@ -364,7 +362,7 @@ function WaitingTable({
                     <button
                       type="button"
                       onClick={() => onStart(e)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-brand px-2.5 py-1.5 text-xs font-medium text-white hover:bg-brand-hover"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-hover"
                     >
                       <FaPlay className="text-[10px]" />
                       Start

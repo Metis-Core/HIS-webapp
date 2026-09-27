@@ -162,7 +162,7 @@ export default function InventoryPage() {
                             <button
                               type="button"
                               onClick={() => openEdit(i)}
-                              className="text-xs font-medium text-brand hover:text-brand-hover"
+                              className="text-xs font-medium text-primary hover:text-primary-hover"
                             >
                               Edit
                             </button>

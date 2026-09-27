@@ -38,9 +38,7 @@ class AuthService {
     const refreshToken = tokenStore.getRefreshToken();
     try {
       await api.post(AuthEndpointEnum.LOGOUT, { refreshToken });
-    } catch {
-      // best-effort
-    }
+    } catch {}
     tokenStore.clear();
   }
 }

@@ -165,7 +165,7 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         <Input label="Manufacturer" value={values.manufacturer} onChange={(e) => set('manufacturer', e.target.value)} />
 
         {values.type === InventoryItemTypeEnum.MEDICATION && (
-          <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3">
+          <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Medication details</p>
             <div className="grid grid-cols-2 gap-3">
               <Input
