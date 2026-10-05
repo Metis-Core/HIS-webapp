@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  FaBaby,
   FaBed,
   FaCalendarCheck,
   FaClipboardCheck,
@@ -11,6 +12,7 @@ import {
   FaProcedures,
   FaShareSquare,
   FaStethoscope,
+  FaTooth,
   FaUserPlus,
   FaXRay,
 } from 'react-icons/fa';
@@ -36,6 +38,8 @@ const stageIcons: Record<QueueStageEnum, IconType> = {
   [QueueStageEnum.EXAMINATION]: FaClipboardCheck,
   [QueueStageEnum.LAB]: FaFlask,
   [QueueStageEnum.RADIOLOGY]: FaXRay,
+  [QueueStageEnum.DENTAL]: FaTooth,
+  [QueueStageEnum.ANTENATAL]: FaBaby,
   [QueueStageEnum.PHARMACY]: FaPills,
   [QueueStageEnum.SURGERY]: FaProcedures,
   [QueueStageEnum.POSTOPERATIVE]: FaBed,

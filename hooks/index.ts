@@ -9,6 +9,7 @@ export {
 export { useTriage, useTriageItem, useTriageQueue, useTriageByPatient } from './triage.hook';
 export { useVisits, useVisit, useVisitQueues, useDepartmentQueue } from './visits.hook';
 export { useServices, useService } from './services.hook';
+export { useVisitBill } from './billing.hook';
 export { useOtp } from './otp.hook';
 export { useRoles } from './roles.hook';
 export { useUser } from './user.hook';

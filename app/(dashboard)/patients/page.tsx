@@ -1,18 +1,24 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FaPlus, FaUserInjured } from 'react-icons/fa';
+import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
 import useSWR from 'swr';
-import { Button, PatientDrawer } from '@/components';
+import { Button, PatientDrawer, Tabs } from '@/components';
+import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPagination, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import { api } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
+import { toPatientPayload } from '@/helpers/patients.service';
+import { roleInGroup } from '@/helpers/role-groups';
+import { useAuth } from '@/providers';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
 import PatientRow from './components/patient-row';
+
+type PatientsTab = 'registry' | 'triage';
 
 const initialFilters: PatientsFilterValue = {
   search: '',
@@ -26,6 +32,9 @@ const initialFilters: PatientsFilterValue = {
 };
 
 export default function PatientsPage() {
+  const { user } = useAuth();
+  const canTriage = roleInGroup(user?.role, 'CHECK_IN_STAFF');
+  const [tab, setTab] = useState<PatientsTab>('registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
@@ -58,37 +67,7 @@ export default function PatientsPage() {
   };
 
   const handleSave = async (values: PatientFormValues) => {
-    const {
-      emergencyContactName,
-      emergencyContactPhone,
-      emergencyContactRelationship,
-      maritalStatus,
-      bloodType,
-      ...rest
-    } = values;
-    const optional = (v?: string) => (v && v.trim() ? v.trim() : undefined);
-    const payload = {
-      firstName: rest.firstName.trim(),
-      lastName: rest.lastName.trim(),
-      middleName: optional(rest.middleName),
-      dateOfBirth: rest.dateOfBirth,
-      gender: rest.gender,
-      type: rest.type,
-      phone: optional(rest.phone),
-      email: optional(rest.email),
-      address: optional(rest.address),
-      city: optional(rest.city),
-      nationalId: optional(rest.nationalId),
-      insuranceProvider: optional(rest.insuranceProvider),
-      insurancePolicyNumber: optional(rest.insurancePolicyNumber),
-      maritalStatus: maritalStatus || undefined,
-      bloodType: bloodType || undefined,
-      emergencyContact: {
-        name: emergencyContactName.trim(),
-        phone: emergencyContactPhone.trim(),
-        relationship: optional(emergencyContactRelationship),
-      },
-    };
+    const payload = toPatientPayload(values);
 
     if (drawerMode === ModalDrawerModeEnum.ADD) {
       await toast.promise(api.post<IPatient>('/patients', payload), {
@@ -97,7 +76,7 @@ export default function PatientsPage() {
         error: (err) => extractErrorMessage(err, "Couldn't register — retry"),
       });
     } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
-      await toast.promise(api.put(`/patients/${selected.id}`, payload), {
+      await toast.promise(api.patch(`/patients/${selected.id}`, payload), {
         loading: 'Saving patient…',
         success: 'Patient updated',
         error: (err) => extractErrorMessage(err, "Couldn't save — retry"),
@@ -154,7 +133,7 @@ export default function PatientsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-primary">Patients</h1>
-          <p className="text-sm text-ink-muted">Register, search, and open patient records.</p>
+          <p className="text-sm text-ink-muted">Register, search, check in and triage patients.</p>
         </div>
         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
           <FaPlus className="text-xs" />
@@ -162,44 +141,61 @@ export default function PatientsPage() {
         </Button>
       </div>
 
-      <PatientsFilter value={filters} onChange={setFilters} />
+      {canTriage && (
+        <Tabs<PatientsTab>
+          tabs={[
+            { id: 'registry', label: 'All patients', icon: FaUserInjured },
+            { id: 'triage', label: 'Triage & check-in', icon: FaProcedures },
+          ]}
+          active={tab}
+          onChange={setTab}
+        />
+      )}
 
-      <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="border-b border-line bg-surface text-primary">
-              <tr>
-                <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
-                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Contact</th>
-                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Location</th>
-                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Insurance</th>
-                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Type</th>
-                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Registered</th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
-                    <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-ink-muted">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface">
-                        <FaUserInjured className="h-5 w-5" />
-                      </div>
-                      <p className="text-sm font-medium text-ink">No patients found</p>
-                      <p className="text-xs">Try adjusting your filters or add a new patient.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((patient) => (
-                  <PatientRow key={patient.id} patient={patient} onEdit={openEdit} onDelete={handleDelete} />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {canTriage && tab === 'triage' ? (
+        <TriageWorkspace />
+      ) : (
+        <>
+          <PatientsFilter value={filters} onChange={setFilters} />
+
+          <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="border-b border-line bg-surface text-primary">
+                  <tr>
+                    <th className="px-6 py-2.5 text-xs font-medium uppercase tracking-wide">Patient</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Contact</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Location</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Insurance</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Type</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Registered</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-16 text-center">
+                        <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-ink-muted">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface">
+                            <FaUserInjured className="h-5 w-5" />
+                          </div>
+                          <p className="text-sm font-medium text-ink">No patients found</p>
+                          <p className="text-xs">Try adjusting your filters or add a new patient.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((patient) => (
+                      <PatientRow key={patient.id} patient={patient} onEdit={openEdit} onDelete={handleDelete} />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       <PatientDrawer mode={drawerMode} patient={selected} onClose={closeDrawer} onSave={handleSave} onEdit={openEdit} />
     </div>

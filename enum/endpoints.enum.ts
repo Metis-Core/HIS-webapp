@@ -18,3 +18,8 @@ export enum OtpEndpointEnum {
   GENERATE = '/otp/generate',
   VERIFY = '/otp/verify',
 }
+
+export enum ChargeEndpointEnum {
+  BASE = '/charges',
+  BY_VISIT = '/charges/visit',
+}

@@ -30,9 +30,6 @@ export interface IPatient extends IBaseEntity {
   notes?: string | null;
   userId?: string | null;
   contact?: IContact | null;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  emergencyContactRelationship?: string;
 }
 
 export interface ICreatePatientDto {

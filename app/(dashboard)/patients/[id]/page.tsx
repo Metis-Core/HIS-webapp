@@ -8,9 +8,9 @@ import { toast } from 'sonner';
 import { FaEdit, FaShieldAlt } from 'react-icons/fa';
 import { Button, PatientDrawer } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
-import { PatientBloodTypeEnum, PatientMaritalStatusEnum, PatientTypeEnum } from '@/enum/patient.enum';
-import { GenderEnum } from '@/enum';
 import { api } from '@/helpers/axios';
+import { extractErrorMessage } from '@/helpers/errors';
+import { toPatientPayload } from '@/helpers/patients.service';
 import type { PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 
@@ -51,31 +51,10 @@ export default function PatientOverviewPage() {
   }
 
   const handleSave = async (values: PatientFormValues) => {
-    const payload: Partial<IPatient> = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      middleName: values.middleName || undefined,
-      dateOfBirth: values.dateOfBirth || undefined,
-      phone: values.phone,
-      email: values.email || undefined,
-      gender: values.gender as GenderEnum,
-      type: values.type as PatientTypeEnum,
-      address: values.address,
-      city: values.city,
-      nationalId: values.nationalId || undefined,
-      maritalStatus: (values.maritalStatus as PatientMaritalStatusEnum) || undefined,
-      bloodType: (values.bloodType as PatientBloodTypeEnum) || undefined,
-      emergencyContactName: values.emergencyContactName,
-      emergencyContactPhone: values.emergencyContactPhone,
-      emergencyContactRelationship: values.emergencyContactRelationship,
-      insuranceProvider: values.insuranceProvider || undefined,
-      insurancePolicyNumber: values.insurancePolicyNumber || undefined,
-    };
-
-    await toast.promise(api.put(`/patients/${patient.id}`, payload), {
+    await toast.promise(api.patch(`/patients/${patient.id}`, toPatientPayload(values)), {
       loading: 'Saving patient…',
       success: 'Patient updated',
-      error: "Couldn't save — retry",
+      error: (err) => extractErrorMessage(err, "Couldn't save — retry"),
     });
     await mutate();
     setDrawerMode(null);
@@ -118,9 +97,9 @@ export default function PatientOverviewPage() {
 
         <DetailSection title="Emergency contact">
           <dl className="grid gap-4 sm:grid-cols-2">
-            <DetailField label="Contact name" value={patient.emergencyContactName} />
-            <DetailField label="Relationship" value={patient.emergencyContactRelationship} />
-            <DetailField label="Contact phone" value={patient.emergencyContactPhone} />
+            <DetailField label="Contact name" value={patient.contact?.name} />
+            <DetailField label="Relationship" value={patient.contact?.relationship} />
+            <DetailField label="Contact phone" value={patient.contact?.phone} />
           </dl>
         </DetailSection>
 

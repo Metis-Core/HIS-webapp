@@ -18,6 +18,7 @@ export * from './notification.interface';
 export * from './lab.interface';
 export * from './inventory.interface';
 export * from './pharmacy.interface';
+export * from './billing.interface';
 
 export interface IOption {
   label: string;
@@ -130,6 +131,6 @@ export interface IPatientDrawerProps {
   mode: ModalDrawerModeEnum | null;
   patient: IPatient | null;
   onClose: () => void;
-  onSave: (values: PatientFormValues) => void;
+  onSave: (values: PatientFormValues) => Promise<void> | void;
   onEdit: (patient: IPatient) => void;
 }

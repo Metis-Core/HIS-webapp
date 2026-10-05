@@ -1,3 +1,74 @@
+<!-- Design standards -->
+
+Web
+
+## IMS UI Standards
+
+### Shell and Navigation
+
+- Use a white, fixed `w-64` desktop sidebar with `border-r border-slate-200`.
+- Center `/logo.png` in the sidebar brand area at `h-32 w-auto`, with a bottom rule.
+- Sidebar links: `rounded-lg px-3 py-2.5 text-sm font-medium gap-3`.
+- Active navigation: `bg-green-50 text-green-700`; active icons: `text-green-600`.
+- Inactive navigation: `text-slate-600`; hover uses `bg-green-50 text-green-700`.
+- Mobile navigation is an overlay with `bg-black/40`; retain the same sidebar content.
+- Header: sticky `h-16`, `border-b border-slate-200/80`, `bg-white/95 backdrop-blur-sm`.
+- App content padding: `px-6 py-4`; a feature page may use `p-6`, but do not stack both without intent.
+
+### Color and Borders
+
+- Base canvas: `bg-slate-50` / semantic `bg-surface`; working surfaces are `bg-white`.
+- Default boundary: `border border-slate-200`.
+- Interior dividers: `border-slate-100`; page/section separators: `border-slate-200`.
+- Selected state: `border-green-300 bg-green-50`.
+- Primary action: `bg-green-600 text-white hover:bg-green-700`.
+- Secondary action: `border border-slate-200 bg-white text-slate-600 hover:bg-slate-50`.
+- Destructive action: `border-red-200 text-red-600 hover:bg-red-50`; confirmation uses `bg-red-600`.
+- Use blue or sky for links and informational panels, green for success, amber/green for warning, and rose/red for error. Never rely on color alone for status.
+
+### Radius, Elevation, and Spacing
+
+- Default controls and working panels: `rounded-lg`.
+- Selectable rows/list cards and empty states: `rounded-xl`.
+- Dashboard metrics, analytic cards, and large modal shells: `rounded-2xl`.
+- Default panel padding: `p-5`; compact toolbars/filters: `px-4 py-3` or `p-4`.
+- Dashboard cards use `p-5`, `shadow-sm`; interactive cards may add `hover:-translate-y-0.5 hover:shadow-md`.
+- Do not nest decorative cards. Use one white outer surface with interior dividers where possible.
+
+### Typography
+
+- Use Roboto for UI copy and Nunito only where a display treatment is intentional.
+- Page title: `text-3xl font-semibold tracking-tight text-slate-900`.
+- Section heading: `text-base` or `text-lg font-semibold text-slate-800/900`.
+- Field/table labels: `text-xs font-semibold uppercase tracking-wide text-slate-400/500`.
+- Body text: `text-sm`; supporting metadata: `text-xs text-slate-400/500`.
+
+### Tabs, Filters, and Segmented Controls
+
+- Tabs use a shared bottom-rule treatment:
+  `flex gap-1 border-b border-slate-200`.
+- Each tab: `-mb-px border-b-2 px-3 py-2 text-sm font-medium`.
+- Active tab: `border-green-500 text-green-700`; inactive: transparent border, slate text.
+- Segmented controls use `rounded-lg border border-slate-200 bg-slate-50 p-0.5`; active option is white with green text.
+- Filter bars are white `rounded-lg border border-slate-200 p-4`, responsive with wrapped controls.
+
+### Forms, Drawers, and Dialogs
+
+- Inputs/selects: `rounded-lg border border-slate-200 px-3 py-2 text-sm`.
+- Focus state: green in incident/roster flows; standardize on `focus:border-green-400 focus:outline-none`.
+- Labels: `mb-1 block text-xs font-medium text-slate-600`.
+- Prefer the shared right-side `Drawer` for create/edit workflows. Use centered modals only for compact, focused tasks or confirmations.
+- Dialog headers/footers use `border-slate-200`/`border-slate-100`; dialogs use white surfaces and `shadow-2xl`.
+
+### Tables, States, and Status
+
+- Tables sit in a bordered white container with `overflow-x-auto`.
+- Header row uses `bg-slate-50`, `text-xs font-semibold uppercase tracking-wide text-slate-500`.
+- Body rows use `divide-y divide-slate-100`; optional hover is `hover:bg-green-50/40`.
+- Use the shared `Pill` for compact statuses and tags.
+- Use `EmptyState` for empty page/list sections and `EmptyTableState` inside tables.
+- Error blocks use `rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700`.
+
 # HIS-webapp — Agent Guide
 
 This project is a hospital information system for clinical staff who have **seconds, not minutes**, per screen. Every UI and routing decision must serve **clarity** and **round-trip speed**. This file is the source of truth for the "Clear Round" design system — follow it for every change.

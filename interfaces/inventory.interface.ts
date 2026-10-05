@@ -31,7 +31,6 @@ export interface IInventoryItem extends IBaseEntity {
   type: InventoryItemTypeEnum;
   unitOfMeasure: UnitOfMeasureEnum;
   minStockLevel: number;
-  reorderLevel: number;
   unitPrice: number;
   manufacturer?: string | null;
   strength?: string | null;
@@ -48,7 +47,6 @@ export interface ICreateInventoryItemDto {
   type: InventoryItemTypeEnum;
   unitOfMeasure: UnitOfMeasureEnum;
   minStockLevel?: number;
-  reorderLevel?: number;
   unitPrice?: number;
   manufacturer?: string;
   strength?: string;

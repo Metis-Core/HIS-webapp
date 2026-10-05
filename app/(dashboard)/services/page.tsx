@@ -36,10 +36,11 @@ export default function ServicesPage() {
         variant: StatVariantEnum.Amber,
       },
       {
-        label: 'Avg fee',
-        value: services.length
-          ? `UGX ${Math.round(services.reduce((a, s) => a + s.fee, 0) / services.length).toLocaleString()}`
-          : '—',
+        label: 'Consultation fee',
+        value: (() => {
+          const consultation = services.find((s) => s.isActive && s.name.toLowerCase().startsWith('consultation'));
+          return consultation ? `UGX ${consultation.fee.toLocaleString()}` : 'Not set';
+        })(),
         icon: FaConciergeBell,
         variant: StatVariantEnum.Blue,
       },

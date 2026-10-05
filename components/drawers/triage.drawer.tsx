@@ -10,7 +10,6 @@ import {
   ModalDrawerModeEnum,
   TriageAcuityEnum,
   TriageStatusEnum,
-  VisitIntentEnum,
 } from '@/enum';
 import type { ICreateTriageDto, IOption, IPatient, ITriage, IUpdateTriageDto } from '@/interfaces';
 
@@ -59,10 +58,6 @@ const consciousnessOptions: IOption[] = Object.values(ConsciousnessLevelEnum).ma
   label: v,
   value: v,
 }));
-const departmentOptions: IOption[] = [
-  { label: 'Not referred', value: '' },
-  ...Object.values(DepartmentEnum).map((v) => ({ label: v.replaceAll('_', ' '), value: v })),
-];
 
 const toNum = (v: string) => (v === '' ? undefined : Number(v));
 
@@ -79,7 +74,6 @@ export default function TriageDrawer({
   const open = mode !== null;
   const isEdit = mode === ModalDrawerModeEnum.EDIT;
   const [values, setValues] = useState<FormState>(emptyValues);
-  const [nextIntents, setNextIntents] = useState<VisitIntentEnum[]>([]);
   const [busy, setBusy] = useState(false);
 
   const patientOptions: IOption[] = useMemo(() => {
@@ -101,7 +95,6 @@ export default function TriageDrawer({
 
   useEffect(() => {
     if (!open) return;
-    setNextIntents([]);
     if (isEdit && triage) {
       setValues({
         patientId: triage.patientId,
@@ -158,7 +151,6 @@ export default function TriageDrawer({
         allergiesNoted: values.allergiesNoted.trim() || undefined,
         assessmentNotes: values.assessmentNotes.trim() || undefined,
         referredToDepartment: values.referredToDepartment || undefined,
-        nextIntents: nextIntents.length > 0 ? nextIntents : undefined,
       };
       await onSave(payload, triage?.id);
       onClose();
@@ -291,14 +283,12 @@ export default function TriageDrawer({
           onChange={(e) => set('assessmentNotes', e.target.value)}
         />
 
-        <Dropdown
-          label="Refer to department"
-          options={departmentOptions}
-          value={departmentOptions.find((o) => o.value === values.referredToDepartment) ?? null}
-          onChange={(o) => set('referredToDepartment', (o as IOption).value as DepartmentEnum | '')}
-        />
-
-        {prefillVisitId && <NextStagePicker value={nextIntents} onChange={setNextIntents} />}
+        {prefillVisitId && (
+          <p className="rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink-muted">
+            When triage is completed the patient joins the doctor&apos;s queue. The doctor decides on lab, radiology or
+            other services.
+          </p>
+        )}
 
         <div className="mt-2 flex justify-end gap-2">
           <Button type="button" variant={ButtonVariantEnum.GHOST} onClick={onClose}>
@@ -310,64 +300,5 @@ export default function TriageDrawer({
         </div>
       </form>
     </Drawer>
-  );
-}
-
-const INTENT_LABEL: Record<VisitIntentEnum, string> = {
-  [VisitIntentEnum.CONSULTATION]: 'Consultation',
-  [VisitIntentEnum.EXAMINATION]: 'Triage',
-  [VisitIntentEnum.LAB]: 'Laboratory',
-  [VisitIntentEnum.RADIOLOGY]: 'Radiology',
-  [VisitIntentEnum.PHARMACY]: 'Pharmacy',
-  [VisitIntentEnum.SURGERY]: 'Surgery',
-  [VisitIntentEnum.POSTOPERATIVE]: 'Post-op',
-  [VisitIntentEnum.FOLLOWUP]: 'Follow-up',
-};
-
-const INTENT_OPTIONS: VisitIntentEnum[] = [
-  VisitIntentEnum.CONSULTATION,
-  VisitIntentEnum.LAB,
-  VisitIntentEnum.RADIOLOGY,
-  VisitIntentEnum.PHARMACY,
-];
-
-function NextStagePicker({ value, onChange }: { value: VisitIntentEnum[]; onChange: (v: VisitIntentEnum[]) => void }) {
-  const toggle = (intent: VisitIntentEnum) =>
-    onChange(value.includes(intent) ? value.filter((x) => x !== intent) : [...value, intent]);
-
-  return (
-    <section className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-3">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Route patient to next stage(s)</p>
-        <p className="text-xs text-ink-muted">
-          Pick where the patient goes next. They&apos;ll be queued in the order you select.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {INTENT_OPTIONS.map((intent) => {
-          const active = value.includes(intent);
-          const idx = value.indexOf(intent);
-          return (
-            <button
-              key={intent}
-              type="button"
-              onClick={() => toggle(intent)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition ${
-                active
-                  ? 'bg-brand text-white ring-brand'
-                  : 'bg-surface-raised text-ink-muted ring-line hover:bg-surface'
-              }`}
-            >
-              {active && (
-                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/25 text-[10px]">
-                  {idx + 1}
-                </span>
-              )}
-              {INTENT_LABEL[intent]}
-            </button>
-          );
-        })}
-      </div>
-    </section>
   );
 }

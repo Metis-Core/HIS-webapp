@@ -11,6 +11,7 @@ import {
   FaCheckCircle,
   FaClipboardList,
   FaFlask,
+  FaHandHoldingMedical,
   FaPills,
   FaPlus,
   FaStethoscope,
@@ -20,6 +21,7 @@ import { useSWRConfig } from 'swr';
 import { Button, Dropdown, Input, PageHeader, Pill, Tabs } from '@/components';
 import CompleteStageDrawer from '@/components/drawers/complete-stage.drawer';
 import PatientContextPanel from '@/components/consultation/patient-context.panel';
+import VisitChargesPanel from '@/components/consultation/visit-charges.panel';
 import {
   ButtonVariantEnum,
   ConsultationStatusEnum,
@@ -38,7 +40,7 @@ import pharmacyService from '@/helpers/pharmacy.service';
 import { useConsultation, useConsultations, useInventoryItems, useLabOrdersByConsultation, useLabTests } from '@/hooks';
 import type { IOption, IUpdateConsultationDto } from '@/interfaces';
 
-type ConsultationTab = 'encounter' | 'lab' | 'prescriptions';
+type ConsultationTab = 'encounter' | 'lab' | 'prescriptions' | 'charges';
 
 const orderStatusVariant: Record<LabOrderStatusEnum, PillVariantEnum> = {
   [LabOrderStatusEnum.PENDING]: PillVariantEnum.WARNING,
@@ -265,6 +267,7 @@ export default function ConsultationDetailPage() {
             icon: FaFlask,
           },
           { id: 'prescriptions', label: 'Prescriptions', icon: FaPills },
+          { id: 'charges', label: 'Services & charges', icon: FaHandHoldingMedical },
         ]}
         active={tab}
         onChange={setTab}
@@ -363,6 +366,8 @@ export default function ConsultationDetailPage() {
           )}
 
           {tab === 'prescriptions' && <PrescriptionsPanel consultation={consultation} readOnly={readOnly} />}
+
+          {tab === 'charges' && <VisitChargesPanel visitId={consultation.visitId ?? null} readOnly={readOnly} />}
         </div>
 
         <aside className="flex flex-col gap-4 lg:col-span-4 xl:col-span-3">
@@ -510,6 +515,11 @@ function LabTab({
   const [search, setSearch] = useState('');
 
   const toggle = (id: string) => setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const selectedTotal = useMemo(
+    () => tests.filter((t) => selectedIds.includes(t.id)).reduce((sum, t) => sum + t.price, 0),
+    [tests, selectedIds],
+  );
 
   const filteredTests = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -711,7 +721,7 @@ function LabTab({
                           : 'bg-surface text-ink-muted ring-line hover:bg-surface-raised'
                       }`}
                     >
-                      {t.code} — {t.name}
+                      {t.code} — {t.name} · UGX {t.price.toLocaleString()}
                     </button>
                   );
                 })}
@@ -728,7 +738,12 @@ function LabTab({
             />
             <Input label="Clinical notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-4">
+            {selectedIds.length > 0 && (
+              <span className="text-sm text-ink-muted">
+                Total <span className="font-semibold tabular-nums text-ink">UGX {selectedTotal.toLocaleString()}</span>
+              </span>
+            )}
             <Button type="button" variant={ButtonVariantEnum.PRIMARY} loading={busy} onClick={submit}>
               <FaPlus className="text-xs" />
               Order{' '}

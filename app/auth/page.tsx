@@ -14,7 +14,7 @@ interface LoginFormValues {
 
 const schema = Yup.object({
   identifier: Yup.string().trim().required('Username or email is required'),
-  password: Yup.string().required('Password is required').min(12, 'Password must be at least 12 characters'),
+  password: Yup.string().required('Password is required'),
 });
 
 const initialValues: LoginFormValues = { identifier: '', password: '' };

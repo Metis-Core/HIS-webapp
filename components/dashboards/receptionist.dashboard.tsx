@@ -1,31 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { FaBell, FaClipboardList, FaPlus, FaStethoscope, FaUserInjured } from 'react-icons/fa';
-import { Button, Dropdown, EmptyState, PatientDrawer, Pill, Stats, VisitReceiptDrawer } from '@/components';
-import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
-import { QueueStageEnum, QueueEntryStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import { FaBell, FaClipboardList, FaStethoscope, FaUserInjured } from 'react-icons/fa';
+import { Button, EmptyState, Pill, Stats, WalkInCheckIn } from '@/components';
+import { ButtonVariantEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
+import { QueueEntryStatusEnum } from '@/enum/queue.enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
 import { patientFullName, patientInitials } from '@/data/patients';
 import { currentEntry, departmentStageMap, entryStatusMap, statusVariants } from '@/data/queue';
-import type { IOption, IPagination } from '@/interfaces';
+import type { IPagination } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import type { IVisitRecord } from '@/interfaces/queue.interfaces';
 import { useConsultations, useUnreadNotificationsCount } from '@/hooks';
 import useSWR from 'swr';
 import { api } from '@/helpers/axios';
-
-const stageOptions: IOption[] = Object.values(QueueStageEnum).map((stage) => ({
-  label: stage.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-  value: stage,
-}));
-
-const visitTypeOptions: IOption[] = Object.values(VisitTypeEnum).map((type) => ({
-  label: type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-  value: type,
-}));
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
@@ -48,29 +38,6 @@ export default function ReceptionistDashboard() {
         .filter((row) => row.entry && row.entry.status !== QueueEntryStatusEnum.COMPLETED)
         .sort((a, b) => a.entry!.sequenceNumber - b.entry!.sequenceNumber),
     [visits],
-  );
-
-  const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
-  const [visitType, setVisitType] = useState<IOption>(visitTypeOptions[0]);
-  const [walkInPatient, setWalkInPatient] = useState<IOption | null>(null);
-  const [walkInMotives, setWalkInMotives] = useState<IOption[]>([]);
-  const [receiptOpen, setReceiptOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const isWalkIn = visitType.value === VisitTypeEnum.WALK_IN;
-  const fixedMotive = stageOptions.find(
-    (option) =>
-      option.value ===
-      (visitType.value === VisitTypeEnum.EMERGENCY ? QueueStageEnum.EXAMINATION : QueueStageEnum.CONSULTATION),
-  )!;
-  const effectiveMotives = isWalkIn ? walkInMotives : [fixedMotive];
-
-  const patientOptions = useMemo<IOption[]>(
-    () =>
-      patients && patients.length > 0
-        ? patients.map((patient) => ({ label: `${patientFullName(patient)} - ${patient.mrn}`, value: patient.id }))
-        : [],
-    [patients],
   );
 
   const recentPatients = useMemo(
@@ -98,97 +65,22 @@ export default function ReceptionistDashboard() {
     [patients, activeQueue, consultations, unread],
   );
 
-  const handleSavePatient = () => {
-    setDrawerMode(null);
-  };
-
-  const openReceipt = () => {
-    if (!walkInPatient || effectiveMotives.length === 0) return;
-    setReceiptOpen(true);
-  };
-
-  const confirmWalkIn = async () => {
-    if (!walkInPatient || effectiveMotives.length === 0 || submitting) return;
-    try {
-      setSubmitting(true);
-      await api.post('/visits', {
-        patientId: walkInPatient.value,
-        visitType: visitType.value,
-        intent: effectiveMotives.map((m) => m.value),
-      });
-      await mutateVisits();
-      setVisitType(visitTypeOptions[0]);
-      setWalkInPatient(null);
-      setWalkInMotives([]);
-      setReceiptOpen(false);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-8 py-4">
       <Stats items={stats} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-primary">Front desk</h2>
+        <h2 className="text-lg font-bold text-primary">Patient flow</h2>
         <div className="flex flex-wrap gap-3">
           <Button type="button" onClick={() => router.push('/patients')} variant={ButtonVariantEnum.SECONDARY}>
             View all patients
-          </Button>
-          <Button type="button" onClick={() => setDrawerMode(ModalDrawerModeEnum.ADD)}>
-            <FaPlus className="text-base" />
-            <span className="font-semibold">Register patient</span>
           </Button>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface-raised p-5 lg:col-span-1">
-          <div className="py-2 border-b border-line">
-            <h3 className="text-md font-bold text-primary">Add walk-in to queue</h3>
-          </div>
-          <Dropdown
-            label="Visit type"
-            placeholder="Select visit type"
-            options={visitTypeOptions}
-            value={visitType}
-            onChange={(value) => {
-              const next = Array.isArray(value) ? value[0] : value;
-              if (next) setVisitType(next);
-            }}
-          />
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-ink-muted">Patient</label>
-              <button
-                type="button"
-                onClick={() => setDrawerMode(ModalDrawerModeEnum.ADD)}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Add new patient
-              </button>
-            </div>
-            <Dropdown
-              placeholder="Search existing patients"
-              options={patientOptions}
-              value={walkInPatient}
-              onChange={(value) => setWalkInPatient(Array.isArray(value) ? (value[0] ?? null) : value)}
-            />
-          </div>
-          {isWalkIn && (
-            <Dropdown
-              label="Motive"
-              isMulti
-              placeholder="Consultation, lab..."
-              options={stageOptions}
-              value={walkInMotives}
-              onChange={(value) => setWalkInMotives(Array.isArray(value) ? value : value ? [value] : [])}
-            />
-          )}
-          <Button type="button" onClick={openReceipt} className="w-full justify-center">
-            Add to queue
-          </Button>
+        <div className="lg:col-span-1">
+          <WalkInCheckIn patients={patients} onCheckedIn={mutateVisits} />
         </div>
 
         <div className="overflow-hidden rounded-xl border border-line bg-surface-raised lg:col-span-2">
@@ -318,23 +210,6 @@ export default function ReceptionistDashboard() {
           </div>
         </div>
       </div>
-
-      <PatientDrawer
-        mode={drawerMode}
-        patient={null}
-        onClose={() => setDrawerMode(null)}
-        onSave={handleSavePatient}
-        onEdit={() => {}}
-      />
-
-      <VisitReceiptDrawer
-        open={receiptOpen}
-        onClose={() => setReceiptOpen(false)}
-        motives={effectiveMotives}
-        patient={patients.find((patient) => patient.id === walkInPatient?.value) ?? null}
-        onConfirm={confirmWalkIn}
-        submitting={submitting}
-      />
     </div>
   );
 }

@@ -116,9 +116,9 @@ function toFormValues(patient?: IPatient | null): PatientFormValues {
     nationalId: patient.nationalId ?? '',
     maritalStatus: patient.maritalStatus ?? '',
     bloodType: patient.bloodType ?? '',
-    emergencyContactName: patient.emergencyContactName ?? '',
-    emergencyContactPhone: patient.emergencyContactPhone ?? '',
-    emergencyContactRelationship: patient.emergencyContactRelationship ?? '',
+    emergencyContactName: patient.contact?.name ?? '',
+    emergencyContactPhone: patient.contact?.phone ?? '',
+    emergencyContactRelationship: patient.contact?.relationship ?? '',
     insuranceProvider: patient.insuranceProvider ?? '',
     insurancePolicyNumber: patient.insurancePolicyNumber ?? '',
   };
@@ -194,9 +194,9 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
 
           <FormSection title="Next of kin">
             <dl className={fieldGrid}>
-              <ViewField label="Full name" value={patient.emergencyContactName} />
-              <ViewField label="Relationship" value={patient.emergencyContactRelationship} />
-              <ViewField label="Phone" value={patient.emergencyContactPhone} />
+              <ViewField label="Full name" value={patient.contact?.name} />
+              <ViewField label="Relationship" value={patient.contact?.relationship} />
+              <ViewField label="Phone" value={patient.contact?.phone} />
             </dl>
           </FormSection>
 
@@ -222,8 +222,8 @@ export default function PatientDrawer({ mode, patient, onClose, onSave, onEdit }
           key={patient?.id ?? 'new'}
           initialValues={toFormValues(patient)}
           validationSchema={schema}
-          onSubmit={(values, { resetForm }) => {
-            onSave(values);
+          onSubmit={async (values, { resetForm }) => {
+            await onSave(values);
             resetForm();
           }}
           className="flex h-full flex-col gap-8"

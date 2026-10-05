@@ -7,6 +7,7 @@ import { Button, EmptyState, Input, PageHeader, Pill, Tabs } from '@/components'
 import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { useAuth } from '@/providers';
 import usersService from '@/helpers/users.service';
+import PasswordChecklist, { isValidPassword, PASSWORD_MIN_LENGTH } from '@/components/forms/password-checklist';
 
 type TabId = 'profile' | 'security' | 'preferences';
 
@@ -154,8 +155,8 @@ function SecurityCard() {
   if (!user) return null;
 
   const submit = async () => {
-    if (values.next.length < 12) {
-      toast.error('New password must be at least 12 characters');
+    if (!isValidPassword(values.next)) {
+      toast.error('New password does not meet the rules');
       return;
     }
     if (values.next !== values.confirm) {
@@ -180,7 +181,8 @@ function SecurityCard() {
       <header>
         <h2 className="text-sm font-semibold text-ink">Change password</h2>
         <p className="text-xs text-ink-muted">
-          Use at least 12 characters. Sign out from other devices after changing.
+          Use at least {PASSWORD_MIN_LENGTH} characters with a letter and a number. Sign out from other devices after
+          changing.
         </p>
       </header>
 
@@ -207,6 +209,7 @@ function SecurityCard() {
           value={values.confirm}
           onChange={(e) => setValues((s) => ({ ...s, confirm: e.target.value }))}
         />
+        <PasswordChecklist value={values.next} />
       </div>
 
       <div className="flex justify-end">
