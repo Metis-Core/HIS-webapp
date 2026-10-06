@@ -1,11 +1,6 @@
 import type { IBaseEntity } from './base.interface';
-import {
-  DepartmentEnum,
-  QueueEntryStatusEnum,
-  VisitIntentEnum,
-  VisitStatusEnum,
-  VisitTypeEnum,
-} from '@/enum/queue.enum';
+import { DepartmentEnum, QueueEntryStatusEnum, VisitStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import type { InsuranceVerificationMethodEnum } from '@/enum/billing.enum';
 import type { IPatient } from './patient.interface';
 
 export type IQueue = IBaseEntity;
@@ -34,10 +29,15 @@ export interface IVisitRecord extends IBaseEntity {
   queueEntries: IQueueEntryRecord[];
 }
 
+export interface IInsuranceVerification {
+  method: InsuranceVerificationMethodEnum;
+  reference: string;
+}
+
 export interface ICreateVisitDto {
   patientId: string;
   visitType?: VisitTypeEnum;
-  intent: VisitIntentEnum[];
+  insuranceVerification?: IInsuranceVerification;
 }
 
 export interface IUpdateVisitDto {

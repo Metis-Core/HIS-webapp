@@ -19,6 +19,7 @@ export { default as ServiceDrawer } from './drawers/service.drawer';
 export { default as PatientTimeline } from './timeline/patient-timeline';
 export { default as VisitDrawer } from './drawers/visit.drawer';
 export { default as VisitReceiptDrawer } from './drawers/visit-receipt.drawer';
+export { default as WalkInCheckIn } from './queue/walk-in-check-in';
 export { default as Sidebar } from './layout/sidebar';
 export { default as Header } from './layout/header';
 export { default as Tabs } from './layout/tabs';

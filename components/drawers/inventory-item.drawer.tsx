@@ -13,7 +13,6 @@ const emptyValues = {
   type: InventoryItemTypeEnum.CONSUMABLE,
   unitOfMeasure: UnitOfMeasureEnum.PCS,
   minStockLevel: '0',
-  reorderLevel: '0',
   unitPrice: '0',
   manufacturer: '',
   strength: '',
@@ -57,7 +56,6 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         type: item.type,
         unitOfMeasure: item.unitOfMeasure,
         minStockLevel: String(item.minStockLevel),
-        reorderLevel: String(item.reorderLevel),
         unitPrice: String(item.unitPrice),
         manufacturer: item.manufacturer ?? '',
         strength: item.strength ?? '',
@@ -87,7 +85,6 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         type: values.type,
         unitOfMeasure: values.unitOfMeasure,
         minStockLevel: Number(values.minStockLevel),
-        reorderLevel: Number(values.reorderLevel),
         unitPrice: Number(values.unitPrice),
         manufacturer: values.manufacturer.trim() || undefined,
         strength: values.strength.trim() || undefined,
@@ -150,17 +147,14 @@ export default function InventoryItemDrawer({ mode, item, onClose, onSave }: Inv
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label="Min stock level"
+            label="Reorder / min level"
             type="number"
             value={values.minStockLevel}
             onChange={(e) => set('minStockLevel', e.target.value)}
           />
-          <Input
-            label="Reorder level"
-            type="number"
-            value={values.reorderLevel}
-            onChange={(e) => set('reorderLevel', e.target.value)}
-          />
+          <p className="self-end pb-2 text-xs text-ink-muted">
+            A low-stock warning appears when available quantity drops to this level.
+          </p>
         </div>
         <Input label="Manufacturer" value={values.manufacturer} onChange={(e) => set('manufacturer', e.target.value)} />
 

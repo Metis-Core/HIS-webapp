@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   FaArrowLeft,
+  FaBaby,
   FaCheckCircle,
   FaEnvelope,
   FaFlask,
@@ -14,6 +15,7 @@ import {
   FaPills,
   FaShieldAlt,
   FaStethoscope,
+  FaTooth,
   FaTrash,
   FaUserInjured,
 } from 'react-icons/fa';
@@ -33,6 +35,8 @@ const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.INPATIENT_WARD]: 'Inpatient ward',
   [DepartmentEnum.MAIN_LABORATORY]: 'Laboratory',
   [DepartmentEnum.RADIOLOGY]: 'Radiology',
+  [DepartmentEnum.DENTAL]: 'Dental',
+  [DepartmentEnum.ANTENATAL]: 'Antenatal (ANC)',
   [DepartmentEnum.MAIN_PHARMACY]: 'Pharmacy',
   [DepartmentEnum.FINANCE]: 'Finance',
   [DepartmentEnum.ADMINISTRATION]: 'Administration',
@@ -45,6 +49,8 @@ const DEPT_ICON: Record<DepartmentEnum, React.ReactNode> = {
   [DepartmentEnum.INPATIENT_WARD]: <FaStethoscope className="h-3.5 w-3.5" />,
   [DepartmentEnum.MAIN_LABORATORY]: <FaFlask className="h-3.5 w-3.5" />,
   [DepartmentEnum.RADIOLOGY]: <FaFlask className="h-3.5 w-3.5" />,
+  [DepartmentEnum.DENTAL]: <FaTooth className="h-3.5 w-3.5" />,
+  [DepartmentEnum.ANTENATAL]: <FaBaby className="h-3.5 w-3.5" />,
   [DepartmentEnum.MAIN_PHARMACY]: <FaPills className="h-3.5 w-3.5" />,
   [DepartmentEnum.FINANCE]: <FaCheckCircle className="h-3.5 w-3.5" />,
   [DepartmentEnum.ADMINISTRATION]: <FaCheckCircle className="h-3.5 w-3.5" />,

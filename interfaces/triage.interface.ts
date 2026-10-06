@@ -61,7 +61,6 @@ export interface ICreateTriageDto {
   arrivedAt?: string;
   triagedAt?: string;
   queueNumber?: string;
-  nextIntents?: string[];
 }
 
 export type IUpdateTriageDto = Partial<ICreateTriageDto>;

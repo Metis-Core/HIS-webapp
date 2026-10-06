@@ -56,8 +56,15 @@ export {
   ConsciousnessLevelEnum,
   TriageSortByEnum,
 } from './triage.enum';
-export { ServiceEndpointEnum, PatientEndpointEnum, VisitEndpointEnum, OtpEndpointEnum } from './endpoints.enum';
+export {
+  ServiceEndpointEnum,
+  PatientEndpointEnum,
+  VisitEndpointEnum,
+  OtpEndpointEnum,
+  ChargeEndpointEnum,
+} from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
+export { ChargeSourceEnum, ChargeStatusEnum, InsuranceVerificationMethodEnum } from './billing.enum';
 export {
   NotificationEndpointEnum,
   NotificationTypeEnum,

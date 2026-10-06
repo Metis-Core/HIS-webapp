@@ -300,7 +300,7 @@ function MedicationsCatalog({
                   <td className="px-4 py-3 text-sm text-ink-muted">{i.manufacturer ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-ink-muted">{i.unitOfMeasure}</td>
                   <td className="px-4 py-3 text-sm tabular-nums text-ink">{i.unitPrice.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{i.reorderLevel}</td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{i.minStockLevel}</td>
                   <td className="px-4 py-3">
                     <Pill variant={i.isActive ? PillVariantEnum.SUCCESS : PillVariantEnum.DEFAULT}>
                       {i.isActive ? 'active' : 'inactive'}

@@ -7,6 +7,7 @@ import Button from '../buttons/button';
 import Form from '../forms/form';
 import FormDropdown from '../forms/form-dropdown';
 import FormInput from '../forms/form-input';
+import { FormPasswordChecklist, isValidPassword } from '../forms/password-checklist';
 import Pill from '../pills/pill';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import { DepartmentEnum, UserRoleEnum, UserStatusEnum } from '@/enum/user.enum';
@@ -37,8 +38,14 @@ function buildSchema(mode: ModalDrawerModeEnum | null) {
     email: Yup.string().email('Enter a valid email').required('Email is required'),
     password:
       mode === ModalDrawerModeEnum.ADD
-        ? Yup.string().min(12, 'Password must be at least 12 characters').required('Password is required')
-        : Yup.string().test('len', 'Password must be at least 12 characters', (value) => !value || value.length >= 12),
+        ? Yup.string()
+            .required('Password is required')
+            .test('policy', 'Password does not meet the rules below', (value) => isValidPassword(value ?? ''))
+        : Yup.string().test(
+            'policy',
+            'Password does not meet the rules below',
+            (value) => !value || isValidPassword(value),
+          ),
     role: Yup.string().oneOf(Object.values(UserRoleEnum)).required('Role is required'),
     department: Yup.string().oneOf(Object.values(DepartmentEnum)).required('Department is required'),
     status: Yup.string().oneOf(Object.values(UserStatusEnum)).required('Status is required'),
@@ -122,6 +129,7 @@ export default function UserDrawer({ mode, user, onClose, onSave, onEdit }: IUse
             placeholder={mode === ModalDrawerModeEnum.EDIT ? 'Leave blank to keep current password' : 'Password'}
             required={mode === ModalDrawerModeEnum.ADD}
           />
+          <FormPasswordChecklist name="password" />
           <FormDropdown name="role" label="Role" options={roleOptions} placeholder="Select role" />
           <FormDropdown
             name="department"

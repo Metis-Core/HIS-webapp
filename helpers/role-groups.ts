@@ -38,6 +38,8 @@ export const RoleGroups = {
   PRIORITY_MANAGERS: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.NURSE, UserRoleEnum.DOCTOR] as const,
 
   NURSING_ADMIN: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.NURSE] as const,
+
+  BILLING: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.ACCOUNTANT, UserRoleEnum.RECEPTIONIST] as const,
 } as const;
 
 export type RoleGroupName = keyof typeof RoleGroups;

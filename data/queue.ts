@@ -422,6 +422,8 @@ export const departmentStageMap: Record<DepartmentEnum, QueueStageEnum> = {
   [DepartmentEnum.INPATIENT_WARD]: QueueStageEnum.POSTOPERATIVE,
   [DepartmentEnum.MAIN_LABORATORY]: QueueStageEnum.LAB,
   [DepartmentEnum.RADIOLOGY]: QueueStageEnum.RADIOLOGY,
+  [DepartmentEnum.DENTAL]: QueueStageEnum.DENTAL,
+  [DepartmentEnum.ANTENATAL]: QueueStageEnum.ANTENATAL,
   [DepartmentEnum.MAIN_PHARMACY]: QueueStageEnum.PHARMACY,
   [DepartmentEnum.FINANCE]: QueueStageEnum.DISCHARGE,
   [DepartmentEnum.ADMINISTRATION]: QueueStageEnum.DISCHARGE,

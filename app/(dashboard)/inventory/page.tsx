@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FaBoxes, FaPlus } from 'react-icons/fa';
+import { FaBoxes, FaExclamationTriangle, FaPlus } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
 import InventoryItemDrawer from '@/components/drawers/inventory-item.drawer';
@@ -136,7 +136,7 @@ export default function InventoryPage() {
                     <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Name</th>
                     <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Type</th>
                     <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Unit</th>
-                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Min</th>
+                    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Reorder at</th>
                     <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Status</th>
                     {canManage && (
                       <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Actions</th>
@@ -195,21 +195,34 @@ export default function InventoryPage() {
                 <tr>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Store</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Item</th>
-                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Qty</th>
+                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Available</th>
+                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Reorder at</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Last restock</th>
                 </tr>
               </thead>
               <tbody>
-                {stock.map((s) => (
-                  <tr key={s.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 text-sm text-ink">{s.store?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-sm text-ink">{s.item ? `${s.item.name} (${s.item.sku})` : '—'}</td>
-                    <td className="px-4 py-3 text-sm tabular-nums text-ink">{s.quantity}</td>
-                    <td className="px-4 py-3 text-xs text-ink-muted tabular-nums">
-                      {s.lastRestockedAt ? new Date(s.lastRestockedAt).toLocaleDateString() : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {stock.map((s) => {
+                  const low = s.item != null && s.quantity <= s.item.minStockLevel;
+                  return (
+                    <tr key={s.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-3 text-sm text-ink">{s.store?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-ink">{s.item ? `${s.item.name} (${s.item.sku})` : '—'}</td>
+                      <td className="px-4 py-3 text-sm tabular-nums text-ink">
+                        {low ? (
+                          <Pill variant={PillVariantEnum.WARNING} icon={<FaExclamationTriangle aria-hidden />}>
+                            {s.quantity} · low
+                          </Pill>
+                        ) : (
+                          s.quantity
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{s.item?.minStockLevel ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-ink-muted tabular-nums">
+                        {s.lastRestockedAt ? new Date(s.lastRestockedAt).toLocaleDateString() : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -226,7 +239,7 @@ export default function InventoryPage() {
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Store</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Item</th>
                   <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">On hand</th>
-                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Min</th>
+                  <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Reorder at</th>
                 </tr>
               </thead>
               <tbody>

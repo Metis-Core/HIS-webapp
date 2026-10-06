@@ -111,8 +111,6 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.NURSE]: [
     NAV.dashboard,
     NAV.patients,
-    NAV.queue,
-    NAV.triage,
     NAV.consultations,
     NAV.lab,
     NAV.pharmacy,
@@ -128,7 +126,7 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
     NAV.notifications,
     NAV.settings,
   ],
-  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.queue, NAV.services, NAV.notifications, NAV.settings],
+  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
   [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
   [UserRoleEnum.PATIENT]: [
     NAV.dashboard,
