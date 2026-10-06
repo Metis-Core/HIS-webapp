@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FaBoxes, FaClipboardList, FaPills, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
+import { API_URL } from '@/helpers/axios';
 import {
   ButtonVariantEnum,
   DepartmentEnum,
@@ -492,7 +493,7 @@ function PrescriptionsTable({
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-3">
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}/documents/prescription/${p.id}`}
+                      href={`${API_URL}/documents/prescription/${p.id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-raised"

@@ -34,6 +34,7 @@ import {
   PillVariantEnum,
   VisitIntentEnum,
 } from '@/enum';
+import { API_URL } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { labOrdersService } from '@/helpers/lab.service';
 import pharmacyService from '@/helpers/pharmacy.service';
@@ -232,7 +233,7 @@ export default function ConsultationDetailPage() {
               {consultation.status.replaceAll('_', ' ')}
             </Pill>
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL}/documents/discharge/${consultation.id}`}
+              href={`${API_URL}/documents/discharge/${consultation.id}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
@@ -241,7 +242,7 @@ export default function ConsultationDetailPage() {
             </a>
             {consultation.visitId && (
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL}/documents/receipt/${consultation.visitId}`}
+                href={`${API_URL}/documents/receipt/${consultation.visitId}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
@@ -620,7 +621,7 @@ function LabTab({
                     {item.isAbnormal && <Pill variant={PillVariantEnum.DANGER}>Abnormal</Pill>}
                     <Pill variant={PillVariantEnum.SUCCESS}>{item.status.replaceAll('_', ' ')}</Pill>
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}/documents/lab-order/${order.id}`}
+                      href={`${API_URL}/documents/lab-order/${order.id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-raised"

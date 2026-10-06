@@ -111,7 +111,7 @@ export default function AuthPage() {
             </Button>
           </Form>
 
-          <p className="text-center text-xs text-ink-muted">Authorized staff only · A Metis Analytica product</p>
+          <p className="text-center text-xs text-ink-muted">Authorized staff only.</p>
         </div>
       </div>
       <MetisFooter />
