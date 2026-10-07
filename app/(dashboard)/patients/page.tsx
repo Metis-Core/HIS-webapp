@@ -32,8 +32,8 @@ const initialFilters: PatientsFilterValue = {
 };
 
 export default function PatientsPage() {
-  const { user } = useAuth();
-  const canTriage = roleInGroup(user?.role, 'CHECK_IN_STAFF');
+  const { effectiveRole } = useAuth();
+  const canTriage = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
   const [tab, setTab] = useState<PatientsTab>('registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);

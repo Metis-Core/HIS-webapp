@@ -33,7 +33,7 @@ const NAV: Record<string, NavItem> = {
   dashboard: {
     key: 'dashboard',
     label: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: <FaTachometerAlt aria-hidden className="h-5 w-5" />,
   },
   patients: {
@@ -146,8 +146,7 @@ function SidebarContent({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const role = user?.role;
+  const { effectiveRole: role } = useAuth();
   const navigation = role ? (navigations[role] ?? ALL_NAV) : ALL_NAV;
 
   return (
@@ -164,7 +163,7 @@ function SidebarContent({
       </div>
       <nav aria-label="Primary" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {navigation.map((item) => {
-          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          const active = pathname.startsWith(item.href);
 
           return (
             <Link

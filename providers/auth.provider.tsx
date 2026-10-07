@@ -3,11 +3,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { IAuthContext, IAuthState, ILoginDto, ISignupDto, IUser } from '@/interfaces';
-import { AuthStatusEnum } from '@/enum';
+import { AuthStatusEnum, UserRoleEnum } from '@/enum';
 import authService from '@/helpers/auth.service';
+import { roleInGroup } from '@/helpers/role-groups';
 import tokenStore from '@/helpers/tokens';
 
 const AuthContext = createContext<IAuthContext | null>(null);
+
+const VIEW_AS_KEY = 'metis.viewAsRole';
+
+const readViewAs = (): UserRoleEnum | null => {
+  if (typeof window === 'undefined') return null;
+  const stored = window.sessionStorage.getItem(VIEW_AS_KEY);
+  return Object.values(UserRoleEnum).find((r) => r === stored) ?? null;
+};
 
 const INITIAL_STATE: IAuthState = {
   status: AuthStatusEnum.IDLE,
@@ -19,6 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<IAuthState>(INITIAL_STATE);
   const bootstrapped = useRef(false);
+  const [viewAs, setViewAs] = useState<UserRoleEnum | null>(readViewAs);
+
+  const viewAsRole = useCallback((role: UserRoleEnum | null) => {
+    if (role) window.sessionStorage.setItem(VIEW_AS_KEY, role);
+    else window.sessionStorage.removeItem(VIEW_AS_KEY);
+    setViewAs(role);
+  }, []);
+
+  const isAdminUser = roleInGroup(state.user?.role, 'ADMINS');
+  const effectiveRole = state.user ? (isAdminUser && viewAs ? viewAs : state.user.role) : null;
+  const isRolePicked = !isAdminUser || viewAs !== null;
 
   const isAuthenticated = state.status === AuthStatusEnum.AUTHENTICATED;
   const isLoading = state.status === AuthStatusEnum.IDLE || state.status === AuthStatusEnum.LOADING;
@@ -54,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((s) => ({ ...s, status: AuthStatusEnum.LOADING, error: null }));
       try {
         const { user } = await authService.login(dto);
+        viewAsRole(null);
         setState({ status: AuthStatusEnum.AUTHENTICATED, user, error: null });
         router.replace('/');
         return user;
@@ -64,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    [router],
+    [router, viewAsRole],
   );
 
   const signup = useCallback(
@@ -88,10 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(
     async (options?: { allDevices?: boolean }) => {
       await authService.logout(options?.allDevices);
+      viewAsRole(null);
       setState({ status: AuthStatusEnum.UNAUTHENTICATED, user: null, error: null });
       router.replace('/auth');
     },
-    [router],
+    [router, viewAsRole],
   );
 
   const refreshUser = useCallback(async () => {
@@ -105,8 +127,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<IAuthContext>(
-    () => ({ ...state, isAuthenticated, isLoading, login, signup, logout, refreshUser }),
-    [state, isAuthenticated, isLoading, login, signup, logout, refreshUser],
+    () => ({
+      ...state,
+      isAuthenticated,
+      isLoading,
+      effectiveRole,
+      isRolePicked,
+      viewAsRole,
+      login,
+      signup,
+      logout,
+      refreshUser,
+    }),
+    [state, isAuthenticated, isLoading, effectiveRole, isRolePicked, viewAsRole, login, signup, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

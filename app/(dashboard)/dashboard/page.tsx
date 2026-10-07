@@ -12,7 +12,7 @@ export default function Dashboard() {
   const mustPickRole = Boolean(user) && !isRolePicked;
 
   useEffect(() => {
-    if (mustPickRole) router.replace('/roles');
+    if (mustPickRole) router.replace('/');
   }, [mustPickRole, router]);
 
   if (mustPickRole) return null;

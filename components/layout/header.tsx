@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaBars } from 'react-icons/fa';
 import NotificationsBell from './notifications-bell';
 import { useAuth, useSidebar } from '@/providers';
+import { roleInGroup } from '@/helpers/role-groups';
 
-export default function Header() {
+export default function Header({ standalone = false }: { standalone?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, effectiveRole, logout } = useAuth();
   const { toggle } = useSidebar();
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const isAdmin = roleInGroup(user?.role, 'ADMINS');
 
   const titleFromPath = (pathname: string) => {
+    if (standalone) return 'Home';
     const segment = pathname.split('/').filter(Boolean)[0];
     if (!segment) return 'Dashboard';
     return segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -53,10 +57,15 @@ export default function Header() {
         type="button"
         onClick={toggle}
         aria-label="Open navigation"
-        className="-ml-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-700 lg:hidden"
+        className={`-ml-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-700 lg:hidden ${
+          standalone ? 'hidden' : ''
+        }`}
       >
         <FaBars aria-hidden className="h-4 w-4" />
       </button>
+      {standalone && (
+        <Image src="/logo.png" alt="Suubi Medical Centre" width={192} height={128} priority className="h-10 w-auto" />
+      )}
       <h1 className="text-lg font-semibold tracking-tight text-slate-900">{titleFromPath(pathname)}</h1>
 
       <div className="ml-auto" />
@@ -75,8 +84,21 @@ export default function Header() {
             <p className="truncate text-sm font-medium text-ink">
               {user?.firstName} {user?.lastName || user?.username}
             </p>
-            <p className="truncate text-xs text-ink-muted">{user?.role}</p>
+            <p className="truncate text-xs text-ink-muted">
+              {effectiveRole && effectiveRole !== user?.role
+                ? `Viewing as ${effectiveRole.replaceAll('_', ' ')}`
+                : user?.role}
+            </p>
           </div>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-surface"
+            >
+              Switch role
+            </button>
+          )}
           <button
             type="button"
             onClick={() => router.push('/settings')}

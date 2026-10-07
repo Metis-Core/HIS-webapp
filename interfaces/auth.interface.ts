@@ -45,6 +45,11 @@ export interface IAuthState {
 export interface IAuthContext extends IAuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Role the UI renders for; differs from user.role when an admin is viewing as another role. */
+  effectiveRole: UserRoleEnum | null;
+  /** False for an admin who hasn't chosen a role this session. */
+  isRolePicked: boolean;
+  viewAsRole: (role: UserRoleEnum | null) => void;
   login: (dto: ILoginDto) => Promise<IUser>;
   signup: (dto: ISignupDto) => Promise<IUser>;
   logout: (options?: { allDevices?: boolean }) => Promise<void>;

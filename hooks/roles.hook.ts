@@ -6,8 +6,8 @@ import { UserRoleEnum } from '@/enum';
 import { RoleGroups, roleInAny, roleInGroup, type RoleGroupName } from '@/helpers/role-groups';
 
 export function useRoles() {
-  const { user } = useAuth();
-  const role = user?.role;
+  const { effectiveRole } = useAuth();
+  const role = effectiveRole ?? undefined;
 
   return useMemo(
     () => ({
