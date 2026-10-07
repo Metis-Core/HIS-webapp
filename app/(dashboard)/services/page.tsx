@@ -97,7 +97,6 @@ export default function ServicesPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Services"
         description="Billable services offered — consultation, procedures, admissions."
         action={
           <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>

@@ -132,7 +132,6 @@ export default function PatientsPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-primary">Patients</h1>
           <p className="text-sm text-ink-muted">Register, search, check in and triage patients.</p>
         </div>
         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>

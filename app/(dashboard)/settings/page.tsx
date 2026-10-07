@@ -33,10 +33,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        title="Settings"
-        description="Your profile, password, and notification preferences. Manage staff on the Users page."
-      />
+      <PageHeader description="Your profile, password, and notification preferences. Manage staff on the Users page." />
 
       <Tabs<TabId>
         tabs={[

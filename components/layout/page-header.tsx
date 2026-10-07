@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 
 interface PageHeaderProps {
-  title: string;
+  title?: string;
   description?: string;
   action?: ReactNode;
 }
@@ -12,8 +12,8 @@ export default function PageHeader({ title, description, action }: PageHeaderPro
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-ink-muted">{description}</p>}
+        {title && <h2 className="text-2xl font-semibold tracking-tight text-ink">{title}</h2>}
+        {description && <p className={`max-w-2xl text-sm text-ink-muted ${title ? 'mt-1' : ''}`}>{description}</p>}
       </div>
       {action && <div className="flex items-center gap-2">{action}</div>}
     </div>

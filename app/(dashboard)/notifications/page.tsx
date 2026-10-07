@@ -79,7 +79,6 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Notifications"
         description="Recent lab results, prescriptions, and system alerts for you."
         action={
           <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={readAll}>

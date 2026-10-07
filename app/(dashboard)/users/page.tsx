@@ -111,7 +111,6 @@ export default function UsersPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Users"
         description="Staff accounts with roles and department assignment."
         action={
           <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>

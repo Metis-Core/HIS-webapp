@@ -123,10 +123,7 @@ export default function PharmacyPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        title="Pharmacy"
-        description="Prescription queue — dispense from active stores and record cancellations."
-      />
+      <PageHeader description="Prescription queue — dispense from active stores and record cancellations." />
 
       {!hasStore && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-status-watch/40 bg-status-watch/10 p-3 text-sm text-status-watch">

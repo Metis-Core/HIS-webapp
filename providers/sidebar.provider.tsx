@@ -4,35 +4,36 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 interface SidebarContextValue {
   collapsed: boolean;
+  setCollapsed: (value: boolean) => void;
+  mobileOpen: boolean;
   toggle: () => void;
-  setCollapsed: (v: boolean) => void;
+  setMobileOpen: (v: boolean) => void;
 }
 
-const STORAGE_KEY = 'his:sidebar-collapsed';
+const COLLAPSED_STORAGE_KEY = 'his:sidebar-collapsed';
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsedState] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw === '1') setCollapsed(true);
-  }, []);
-
-  const setCollapsedPersisted = useCallback((v: boolean) => {
-    setCollapsed(v);
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, v ? '1' : '0');
+      setCollapsedState(window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === '1');
     }
   }, []);
 
-  const toggle = useCallback(() => setCollapsedPersisted(!collapsed), [collapsed, setCollapsedPersisted]);
+  const setCollapsed = useCallback((value: boolean) => {
+    setCollapsedState(value);
+    window.localStorage.setItem(COLLAPSED_STORAGE_KEY, value ? '1' : '0');
+  }, []);
+
+  const toggle = useCallback(() => setMobileOpen((v) => !v), []);
 
   const value = useMemo(
-    () => ({ collapsed, toggle, setCollapsed: setCollapsedPersisted }),
-    [collapsed, toggle, setCollapsedPersisted],
+    () => ({ collapsed, setCollapsed, mobileOpen, toggle, setMobileOpen }),
+    [collapsed, setCollapsed, mobileOpen, toggle],
   );
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;

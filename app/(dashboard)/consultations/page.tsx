@@ -160,7 +160,6 @@ export default function ConsultationsPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Consultations"
         description="Doctor visits — chief complaint, assessment, diagnosis, plan. Order labs and prescriptions inline."
         action={
           <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>

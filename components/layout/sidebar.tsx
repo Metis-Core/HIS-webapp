@@ -136,43 +136,33 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
   ],
 };
 
-export default function Sidebar() {
+function SidebarContent({
+  onNavigate,
+  onToggleCollapse,
+  collapsed = false,
+}: {
+  onNavigate?: () => void;
+  onToggleCollapse?: () => void;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { collapsed, toggle } = useSidebar();
   const role = user?.role;
   const navigation = role ? (navigations[role] ?? ALL_NAV) : ALL_NAV;
 
   return (
-    <aside
-      className={`flex h-full shrink-0 flex-col border rounded-lg drop-shadow-md border-line bg-surface-raised transition-[width] duration-200 ${
-        collapsed ? 'w-16' : 'w-64'
-      }`}
-    >
-      <div className="relative flex h-32 items-center justify-center border-b border-line">
+    <>
+      <div className="flex h-32 shrink-0 items-center justify-center border-b border-slate-200">
         <Image
           src="/logo.png"
           alt="Suubi Medical Centre"
           width={192}
           height={128}
           priority
-          className={`object-contain transition-all duration-200 ${
-            collapsed ? 'h-12 w-12' : 'h-28 w-auto max-w-[12rem]'
-          }`}
+          className={collapsed ? 'h-auto w-12 object-contain' : 'h-20 w-auto max-w-[13rem] object-contain'}
         />
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`absolute flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-muted transition hover:bg-surface hover:text-ink ${
-            collapsed ? 'bottom-2 right-2' : 'right-4 top-1/2 -translate-y-1/2'
-          }`}
-        >
-          {collapsed ? <FaAngleDoubleRight className="h-3.5 w-3.5" /> : <FaAngleDoubleLeft className="h-3.5 w-3.5" />}
-        </button>
       </div>
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3 space-y-4">
+      <nav aria-label="Primary" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {navigation.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
 
@@ -180,17 +170,68 @@ export default function Sidebar() {
             <Link
               key={item.key}
               href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 collapsed ? 'justify-center' : ''
-              } ${active ? 'bg-primary-soft text-primary' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}
+              } ${active ? 'bg-green-100 text-green-800' : 'text-slate-900 hover:bg-amber-50 hover:text-amber-800'}`}
             >
-              <span className={active ? 'text-primary' : 'text-ink-muted'}>{item.icon}</span>
+              <span className={active ? 'text-green-700' : 'text-slate-900'}>{item.icon}</span>
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
-    </aside>
+      {!onNavigate && (
+        <div className="shrink-0 border-t border-slate-200 p-3">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={`flex h-10 w-full items-center rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-800 ${
+              collapsed ? 'justify-center' : 'justify-end px-3'
+            }`}
+          >
+            {collapsed ? (
+              <FaAngleDoubleRight aria-hidden className="h-4 w-4" />
+            ) : (
+              <FaAngleDoubleLeft aria-hidden className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function Sidebar() {
+  const { collapsed, setCollapsed, mobileOpen, setMobileOpen } = useSidebar();
+
+  return (
+    <>
+      <aside
+        className={`hidden h-full shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 lg:flex ${
+          collapsed ? 'w-16' : 'w-64'
+        }`}
+      >
+        <SidebarContent collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      </aside>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 flex lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <aside className="relative flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

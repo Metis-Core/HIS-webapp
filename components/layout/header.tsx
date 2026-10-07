@@ -2,17 +2,19 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { FaBars } from 'react-icons/fa';
 import NotificationsBell from './notifications-bell';
-import { useAuth } from '@/providers';
+import { useAuth, useSidebar } from '@/providers';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { toggle } = useSidebar();
   const menuRef = useRef<HTMLDetailsElement>(null);
 
   const titleFromPath = (pathname: string) => {
-    const segment = pathname.split('/').filter(Boolean).pop();
+    const segment = pathname.split('/').filter(Boolean)[0];
     if (!segment) return 'Dashboard';
     return segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
@@ -46,8 +48,16 @@ export default function Header() {
   const initials = (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? user?.username?.[0] ?? '');
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-slate-300 rounded-lg shadow-lg bg-white px-6 backdrop-blur-xs">
-      <h1 className="text-lg font-semibold tracking-tight text-primary">{titleFromPath(pathname)}</h1>
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-slate-200/80 bg-white/95 px-6 backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label="Open navigation"
+        className="-ml-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-green-50 hover:text-green-700 lg:hidden"
+      >
+        <FaBars aria-hidden className="h-4 w-4" />
+      </button>
+      <h1 className="text-lg font-semibold tracking-tight text-slate-900">{titleFromPath(pathname)}</h1>
 
       <div className="ml-auto" />
 

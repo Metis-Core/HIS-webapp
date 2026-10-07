@@ -87,7 +87,6 @@ export default function InventoryPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Inventory"
         description="Medications, consumables, and equipment across stores."
         action={
           tab === 'items' && canManage ? (

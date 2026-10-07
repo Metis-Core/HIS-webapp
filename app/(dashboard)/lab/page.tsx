@@ -147,7 +147,6 @@ export default function LabPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Laboratory"
         description="Track lab orders and manage the tests the lab can run."
         action={
           tab === 'tests' && canManageCatalog ? (
