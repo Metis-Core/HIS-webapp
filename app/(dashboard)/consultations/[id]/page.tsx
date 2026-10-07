@@ -22,6 +22,7 @@ import { Button, Dropdown, Input, PageHeader, Pill, Tabs } from '@/components';
 import CompleteStageDrawer from '@/components/drawers/complete-stage.drawer';
 import PatientContextPanel from '@/components/consultation/patient-context.panel';
 import VisitChargesPanel from '@/components/consultation/visit-charges.panel';
+import ConsultationPrescriptionsList from '@/components/consultation/consultation-prescriptions.list';
 import {
   ButtonVariantEnum,
   ConsultationStatusEnum,
@@ -38,7 +39,14 @@ import { API_URL } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { labOrdersService } from '@/helpers/lab.service';
 import pharmacyService from '@/helpers/pharmacy.service';
-import { useConsultation, useConsultations, useInventoryItems, useLabOrdersByConsultation, useLabTests } from '@/hooks';
+import {
+  useConsultation,
+  useConsultations,
+  useInventoryItems,
+  useLabOrdersByConsultation,
+  useLabTests,
+  usePrescriptionsByConsultation,
+} from '@/hooks';
 import type { IOption, IUpdateConsultationDto } from '@/interfaces';
 
 type ConsultationTab = 'encounter' | 'lab' | 'prescriptions' | 'charges';
@@ -97,6 +105,8 @@ export default function ConsultationDetailPage() {
   const [tab, setTab] = useState<ConsultationTab>('encounter');
 
   const { orders: labOrders, mutate: mutateLabOrders } = useLabOrdersByConsultation(params.id);
+  const { prescriptions } = usePrescriptionsByConsultation(params.id);
+  const prescriptionsCount = prescriptions.length;
   const resultReadyCount = labOrders.reduce(
     (n, o) => n + o.items.filter((i) => i.status === LabOrderItemStatusEnum.RESULT_READY).length,
     0,
@@ -211,7 +221,6 @@ export default function ConsultationDetailPage() {
     ? `${consultation.patient.firstName} ${consultation.patient.lastName}`
     : 'Consultation';
 
-  const prescriptionsCount = 0;
   const isInProgress = consultation.status === ConsultationStatusEnum.IN_PROGRESS;
 
   return (
@@ -769,6 +778,7 @@ function PrescriptionsPanel({
     isActive: true,
     type: InventoryItemTypeEnum.MEDICATION,
   });
+  const { mutate: globalMutate } = useSWRConfig();
   const [rows, setRows] = useState<
     Array<{ itemId: string; dosage: string; frequency: string; duration: string; quantity: string }>
   >([]);
@@ -817,110 +827,121 @@ function PrescriptionsPanel({
       );
       setRows([]);
       setNotes('');
+      await globalMutate((key) => typeof key === 'string' && key.startsWith('/pharmacy'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-5">
-      <div className="flex items-center gap-2">
-        <FaPills className="text-brand" />
-        <h3 className="text-sm font-semibold text-ink">Prescriptions</h3>
-        <span className="ml-auto text-xs text-ink-muted">Sent directly to the pharmacy queue on save.</span>
-      </div>
+    <div className="flex flex-col gap-4">
+      <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-5">
+        <div className="flex items-center gap-2">
+          <FaClipboardList className="text-brand" />
+          <h3 className="text-sm font-semibold text-ink">Prescribed medication</h3>
+        </div>
+        <ConsultationPrescriptionsList consultationId={consultation.id} />
+      </section>
 
-      <div className="rounded-md border border-line p-3">
-        {inventoryItems.length === 0 ? (
-          <p className="text-xs text-ink-muted">
-            No medications configured yet. Ask the pharmacy admin to add medication stock under{' '}
-            <Link href="/inventory" className="text-brand hover:underline">
-              Inventory
-            </Link>
-            .
-          </p>
-        ) : rows.length === 0 ? (
-          <p className="text-xs text-ink-muted">No items yet. Click "Add item" to prescribe.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {rows.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-12 items-end gap-2">
-                <div className="col-span-4">
-                  <Dropdown
-                    label="Medication"
-                    placeholder="Search medication…"
-                    options={itemOptions}
-                    value={itemOptions.find((o) => o.value === row.itemId) ?? null}
-                    onChange={(o) => setRow(idx, 'itemId', (o as IOption).value as string)}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Input
-                    label="Dosage"
-                    value={row.dosage}
-                    onChange={(e) => setRow(idx, 'dosage', e.target.value)}
-                    placeholder="500mg"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Input
-                    label="Frequency"
-                    value={row.frequency}
-                    onChange={(e) => setRow(idx, 'frequency', e.target.value)}
-                    placeholder="TDS"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Input
-                    label="Duration"
-                    value={row.duration}
-                    onChange={(e) => setRow(idx, 'duration', e.target.value)}
-                    placeholder="5 days"
-                  />
-                </div>
-                <div className="col-span-1">
-                  <Input
-                    label="Qty"
-                    type="number"
-                    value={row.quantity}
-                    onChange={(e) => setRow(idx, 'quantity', e.target.value)}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeRow(idx)}
-                  className="col-span-1 mb-1 text-critical hover:opacity-80"
-                  aria-label="Remove"
-                >
-                  <FaTrash className="text-sm" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface-raised p-5">
+        <div className="flex items-center gap-2">
+          <FaPills className="text-brand" />
+          <h3 className="text-sm font-semibold text-ink">New prescription</h3>
+          <span className="ml-auto text-xs text-ink-muted">Sent directly to the pharmacy queue on save.</span>
+        </div>
 
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-          <div className="min-w-[240px] flex-1">
-            <Input label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={readOnly} />
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={addRow} disabled={readOnly}>
-              <FaPlus className="text-xs" />
-              Add item
-            </Button>
-            <Button
-              type="button"
-              variant={ButtonVariantEnum.PRIMARY}
-              loading={busy}
-              onClick={submit}
-              disabled={rows.length === 0 || readOnly}
-            >
-              Prescribe
-            </Button>
+        <div className="rounded-md border border-line p-3">
+          {inventoryItems.length === 0 ? (
+            <p className="text-xs text-ink-muted">
+              No medications configured yet. Ask the pharmacy admin to add medication stock under{' '}
+              <Link href="/inventory" className="text-brand hover:underline">
+                Inventory
+              </Link>
+              .
+            </p>
+          ) : rows.length === 0 ? (
+            <p className="text-xs text-ink-muted">No items yet. Click "Add item" to prescribe.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {rows.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-12 items-end gap-2">
+                  <div className="col-span-4">
+                    <Dropdown
+                      label="Medication"
+                      placeholder="Search medication…"
+                      options={itemOptions}
+                      value={itemOptions.find((o) => o.value === row.itemId) ?? null}
+                      onChange={(o) => setRow(idx, 'itemId', (o as IOption).value as string)}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Input
+                      label="Dosage"
+                      value={row.dosage}
+                      onChange={(e) => setRow(idx, 'dosage', e.target.value)}
+                      placeholder="500mg"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Input
+                      label="Frequency"
+                      value={row.frequency}
+                      onChange={(e) => setRow(idx, 'frequency', e.target.value)}
+                      placeholder="TDS"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Input
+                      label="Duration"
+                      value={row.duration}
+                      onChange={(e) => setRow(idx, 'duration', e.target.value)}
+                      placeholder="5 days"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Input
+                      label="Qty"
+                      type="number"
+                      value={row.quantity}
+                      onChange={(e) => setRow(idx, 'quantity', e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeRow(idx)}
+                    className="col-span-1 mb-1 text-critical hover:opacity-80"
+                    aria-label="Remove"
+                  >
+                    <FaTrash className="text-sm" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-[240px] flex-1">
+              <Input label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={readOnly} />
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={addRow} disabled={readOnly}>
+                <FaPlus className="text-xs" />
+                Add item
+              </Button>
+              <Button
+                type="button"
+                variant={ButtonVariantEnum.PRIMARY}
+                loading={busy}
+                onClick={submit}
+                disabled={rows.length === 0 || readOnly}
+              >
+                Prescribe
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
 

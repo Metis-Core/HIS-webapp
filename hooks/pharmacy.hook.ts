@@ -64,6 +64,12 @@ export function usePrescriptionsByPatient(patientId: string | null | undefined) 
   return { prescriptions: asList<IPrescription>(data), isLoading, error, mutate };
 }
 
+export function usePrescriptionsByConsultation(consultationId: string | null | undefined) {
+  const key = consultationId ? pharmacyService.buildListUrl({ consultationId, limit: 100 }) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IPrescription>>(key, { refreshInterval: 15_000 });
+  return { prescriptions: data?.items ?? [], isLoading, error, mutate };
+}
+
 export function usePrescriptionDispenses(id: string | null | undefined) {
   const key = id ? `${PharmacyEndpointEnum.PRESCRIPTIONS}/${id}/dispenses` : null;
   const { data, error, isLoading, mutate } = useSWR<unknown>(key);

@@ -35,5 +35,6 @@ export {
   usePrescriptions,
   usePrescription,
   usePrescriptionsByPatient,
+  usePrescriptionsByConsultation,
   usePrescriptionDispenses,
 } from './pharmacy.hook';

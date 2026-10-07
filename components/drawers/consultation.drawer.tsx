@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { FaFlask, FaHeartbeat, FaHistory, FaPills, FaPlus, FaStethoscope, FaTrash } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { Button, Drawer, Dropdown, Input, Pill } from '@/components';
+import ConsultationPrescriptionsList from '@/components/consultation/consultation-prescriptions.list';
 import {
   ButtonVariantEnum,
   ConsultationTypeEnum,
@@ -313,11 +314,24 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
       {orders.length > 0 && (
         <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
           {orders.map((o) => (
-            <li key={o.id} className="flex items-center justify-between px-3 py-2 text-sm">
-              <span className="text-ink">{o.items?.map((i) => i.test?.code).join(', ') || 'Tests'}</span>
-              <span className="text-xs text-ink-muted capitalize">
-                {o.status.replaceAll('_', ' ')} · {o.priority}
-              </span>
+            <li key={o.id} className="flex flex-col gap-1 px-3 py-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-ink">{o.items?.map((i) => i.test?.code).join(', ') || 'Tests'}</span>
+                <span className="text-xs text-ink-muted capitalize">
+                  {o.status.replaceAll('_', ' ')} · {o.priority}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-0.5 text-xs">
+                {o.items?.map((i) => (
+                  <li key={i.id} className="flex justify-between gap-2">
+                    <span className="text-ink-muted">{i.test?.code ?? '—'}</span>
+                    <span className="tabular-nums text-ink">
+                      {i.resultValue ? i.resultValue : i.status.replaceAll('_', ' ')}
+                      {i.isAbnormal ? ' · abnormal' : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
@@ -424,6 +438,8 @@ function PrescriptionsPanel({ consultation, onChanged }: { consultation: IConsul
         <FaPills className="text-brand" />
         <h3 className="text-sm font-semibold text-ink">Prescriptions</h3>
       </div>
+
+      <ConsultationPrescriptionsList consultationId={consultation.id} />
 
       <div className="rounded-lg border border-line p-3">
         <div className="flex gap-2">

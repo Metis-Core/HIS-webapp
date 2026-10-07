@@ -117,6 +117,6 @@ export function useLabOrdersByPatient(patientId: string | null | undefined) {
 
 export function useLabOrdersByConsultation(consultationId: string | null | undefined) {
   const key = consultationId ? labOrdersService.buildByConsultationUrl(consultationId) : null;
-  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
+  const { data, error, isLoading, mutate } = useSWR<unknown>(key, { refreshInterval: 15_000 });
   return { orders: asList<ILabOrder>(data), isLoading, error, mutate };
 }
