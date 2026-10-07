@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FaCalculator,
   FaClipboardList,
   FaFlask,
   FaHeartbeat,
+  FaLock,
   FaPills,
   FaShieldAlt,
   FaStethoscope,
-  FaUserInjured,
   FaUserNurse,
 } from 'react-icons/fa';
 import { Header } from '@/components';
@@ -70,27 +69,21 @@ const ROLE_OPTIONS: RoleOption[] = [
     description: 'Patients, services and billing.',
     icon: <FaCalculator aria-hidden className={ICON} />,
   },
-  {
-    role: UserRoleEnum.PATIENT,
-    label: 'Patient',
-    description: 'My visits, lab results and notifications.',
-    icon: <FaUserInjured aria-hidden className={ICON} />,
-  },
 ];
 
 export default function RolesPage() {
   const router = useRouter();
-  const { user, isLoading, viewAsRole } = useAuth();
+  const { user, viewAsRole } = useAuth();
   const isAdmin = roleInGroup(user?.role, 'ADMINS');
 
-  useEffect(() => {
-    if (!isLoading && user && !isAdmin) router.replace('/dashboard');
-  }, [isLoading, user, isAdmin, router]);
+  if (!user) return null;
 
-  if (!isAdmin) return null;
+  const canAccess = (role: UserRoleEnum) => isAdmin || role === user.role;
+  const options = [...ROLE_OPTIONS].sort((a, b) => Number(canAccess(b.role)) - Number(canAccess(a.role)));
 
   const choose = (role: UserRoleEnum) => {
-    viewAsRole(role);
+    if (!canAccess(role)) return;
+    if (isAdmin) viewAsRole(role);
     router.push('/dashboard');
   };
 
@@ -105,24 +98,44 @@ export default function RolesPage() {
             Choose a role to continue
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            You will see exactly what that role sees. You can switch back from the profile menu.
+            {isAdmin
+              ? 'As an administrator you can open any role and see exactly what it sees.'
+              : 'You can only open the role assigned to you. Roles marked with a lock are not available to your account.'}
           </p>
         </div>
 
         <ul className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {ROLE_OPTIONS.map((option) => (
-            <li key={option.role}>
-              <button
-                type="button"
-                onClick={() => choose(option.role)}
-                className="flex h-full w-full flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-colors hover:border-green-600 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-green-700"
-              >
-                <span className="rounded-lg bg-green-100 p-2.5 text-green-700">{option.icon}</span>
-                <span className="text-base font-semibold text-slate-900">{option.label}</span>
-                <span className="text-sm text-slate-600">{option.description}</span>
-              </button>
-            </li>
-          ))}
+          {options.map((option) => {
+            const allowed = canAccess(option.role);
+            return (
+              <li key={option.role}>
+                <button
+                  type="button"
+                  onClick={() => choose(option.role)}
+                  disabled={!allowed}
+                  className="relative flex h-full w-full flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-colors hover:border-green-600 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:hover:border-slate-200 disabled:hover:bg-slate-100"
+                >
+                  {!allowed && (
+                    <span className="absolute right-4 top-4 flex items-center gap-1 text-xs font-medium text-slate-500">
+                      <FaLock aria-hidden className="h-4 w-4" />
+                      <span className="sr-only">No access</span>
+                    </span>
+                  )}
+                  <span
+                    className={`rounded-lg p-2.5 ${allowed ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-400'}`}
+                  >
+                    {option.icon}
+                  </span>
+                  <span className={`text-base font-semibold ${allowed ? 'text-slate-900' : 'text-slate-500'}`}>
+                    {option.label}
+                  </span>
+                  <span className={`text-sm ${allowed ? 'text-slate-600' : 'text-slate-400'}`}>
+                    {option.description}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </main>
     </div>

@@ -128,12 +128,6 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
   ],
   [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
   [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
-  [UserRoleEnum.PATIENT]: [
-    NAV.dashboard,
-    { ...NAV.queue, label: 'My Visits' },
-    { ...NAV.lab, label: 'Lab Results' },
-    NAV.notifications,
-  ],
 };
 
 function SidebarContent({
@@ -152,14 +146,16 @@ function SidebarContent({
   return (
     <>
       <div className="flex h-32 shrink-0 items-center justify-center border-b border-slate-200">
-        <Image
-          src="/logo.png"
-          alt="Suubi Medical Centre"
-          width={192}
-          height={128}
-          priority
-          className={collapsed ? 'h-auto w-12 object-contain' : 'h-20 w-auto max-w-[13rem] object-contain'}
-        />
+        <Link href="/" onClick={onNavigate} aria-label="Go to home" title="Home">
+          <Image
+            src="/logo.png"
+            alt="Suubi Medical Centre"
+            width={192}
+            height={128}
+            priority
+            className={collapsed ? 'h-auto w-12 object-contain' : 'h-20 w-auto max-w-[13rem] object-contain'}
+          />
+        </Link>
       </div>
       <nav aria-label="Primary" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {navigation.map((item) => {

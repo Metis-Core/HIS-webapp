@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { IAuthContext, IAuthState, ILoginDto, ISignupDto, IUser } from '@/interfaces';
+import type { IAuthContext, IAuthState, ILoginDto, IUser } from '@/interfaces';
 import { AuthStatusEnum, UserRoleEnum } from '@/enum';
 import authService from '@/helpers/auth.service';
 import { roleInGroup } from '@/helpers/role-groups';
@@ -88,24 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router, viewAsRole],
   );
 
-  const signup = useCallback(
-    async (dto: ISignupDto): Promise<IUser> => {
-      setState((s) => ({ ...s, status: AuthStatusEnum.LOADING, error: null }));
-      try {
-        const { user } = await authService.signup(dto);
-        setState({ status: AuthStatusEnum.AUTHENTICATED, user, error: null });
-        router.replace('/');
-        return user;
-      } catch (err: any) {
-        const message = err?.response?.data?.message ?? 'Signup failed';
-        const error = { code: err?.response?.data?.code ?? 'UNKNOWN', message };
-        setState({ status: AuthStatusEnum.UNAUTHENTICATED, user: null, error });
-        throw error;
-      }
-    },
-    [router],
-  );
-
   const logout = useCallback(
     async (options?: { allDevices?: boolean }) => {
       await authService.logout(options?.allDevices);
@@ -135,11 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isRolePicked,
       viewAsRole,
       login,
-      signup,
       logout,
       refreshUser,
     }),
-    [state, isAuthenticated, isLoading, effectiveRole, isRolePicked, viewAsRole, login, signup, logout, refreshUser],
+    [state, isAuthenticated, isLoading, effectiveRole, isRolePicked, viewAsRole, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

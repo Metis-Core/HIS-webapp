@@ -7,12 +7,6 @@ export interface ILoginDto {
   password: string;
 }
 
-export interface ISignupDto {
-  email: string;
-  username: string;
-  password: string;
-}
-
 export interface IAuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -51,7 +45,6 @@ export interface IAuthContext extends IAuthState {
   isRolePicked: boolean;
   viewAsRole: (role: UserRoleEnum | null) => void;
   login: (dto: ILoginDto) => Promise<IUser>;
-  signup: (dto: ISignupDto) => Promise<IUser>;
   logout: (options?: { allDevices?: boolean }) => Promise<void>;
   refreshUser: () => Promise<IUser | undefined>;
 }

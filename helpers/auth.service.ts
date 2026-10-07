@@ -15,12 +15,6 @@ class AuthService {
     return data;
   }
 
-  async signup(dto: { email: string; username: string; password: string }): Promise<ILoginResponse> {
-    const { data } = await publicApi.post<ILoginResponse>(AuthEndpointEnum.SIGNUP, dto);
-    tokenStore.setTokens(data.tokens);
-    return data;
-  }
-
   async refresh(): Promise<IAuthTokens> {
     const refreshToken = tokenStore.getRefreshToken();
     if (!refreshToken) throw new Error('No refresh token');
