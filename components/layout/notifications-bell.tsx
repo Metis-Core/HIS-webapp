@@ -3,18 +3,18 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaBell } from 'react-icons/fa';
-import { toast } from 'sonner';
 import { useMyNotifications, useUnreadNotificationsCount } from '@/hooks';
+import { showNotificationToast } from '@/helpers/notification-toast';
 import { NotificationStatusEnum } from '@/enum';
 
-const REFRESH_MS = 30_000;
+// Fallback only: the live stream normally delivers changes instantly.
+const REFRESH_MS = 60_000;
 
 export default function NotificationsBell() {
   const router = useRouter();
   const { unread, refresh } = useUnreadNotificationsCount();
   const { notifications } = useMyNotifications({ limit: 5, status: NotificationStatusEnum.UNREAD });
   const previousUnread = useRef<number | null>(null);
-  const notifiedIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -29,17 +29,7 @@ export default function NotificationsBell() {
       return;
     }
     if (unread > previousUnread.current) {
-      const fresh = notifications.filter((n) => !notifiedIds.current.has(n.id)).slice(0, 3);
-      fresh.forEach((n) => {
-        notifiedIds.current.add(n.id);
-        toast(n.title, {
-          description: n.body,
-          action: {
-            label: 'Open',
-            onClick: () => router.push('/notifications'),
-          },
-        });
-      });
+      notifications.slice(0, 3).forEach((n) => showNotificationToast(n, (url) => router.push(url)));
     }
     previousUnread.current = unread;
   }, [unread, notifications, router]);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaBell } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, PageHeader, Pill, Stats } from '@/components';
@@ -28,6 +29,7 @@ const statusVariant: Record<NotificationStatusEnum, PillVariantEnum> = {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, markAsRead, markAllRead, archive } = useMyNotifications({ limit: 50 });
 
   const stats = useMemo(
@@ -64,6 +66,7 @@ export default function NotificationsPage() {
   };
 
   const readOne = async (n: INotification) => {
+    if (n.actionUrl) router.push(n.actionUrl);
     if (n.status !== NotificationStatusEnum.UNREAD) return;
     await markAsRead(n.id);
   };
@@ -79,7 +82,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        description="Recent lab results, prescriptions, and system alerts for you."
+        description="New patients in your queue, lab results, prescriptions, and stock alerts for you."
         action={
           <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={readAll}>
             Mark all read

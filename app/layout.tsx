@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist_Mono, Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
+import NotificationStream from '@/components/layout/notification-stream';
 import { AuthProvider, SidebarProvider, SwrProvider } from '@/providers';
 import './globals.css';
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full flex flex-col font-sans bg-surface text-ink">
         <AuthProvider>
           <SwrProvider>
+            <NotificationStream />
             <SidebarProvider>{children}</SidebarProvider>
           </SwrProvider>
         </AuthProvider>
