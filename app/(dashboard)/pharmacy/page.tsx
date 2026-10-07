@@ -6,6 +6,8 @@ import { FaBoxes, FaClipboardList, FaPills, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
 import { API_URL } from '@/helpers/axios';
+import { extractErrorMessage } from '@/helpers/errors';
+import { formatStockQuantity } from '@/helpers/inventory.format';
 import {
   ButtonVariantEnum,
   DepartmentEnum,
@@ -15,7 +17,13 @@ import {
   QueueEntryStatusEnum,
   StatVariantEnum,
 } from '@/enum';
-import { useActiveInventoryStores, useDepartmentQueue, useInventoryItems, usePrescriptions } from '@/hooks';
+import {
+  useActiveInventoryStores,
+  useDepartmentQueue,
+  useInventoryItems,
+  useInventoryStock,
+  usePrescriptions,
+} from '@/hooks';
 import type { IInventoryItem, IPrescription, IQueueEntryRecord } from '@/interfaces';
 
 type TabId = 'waiting' | 'pending' | 'all' | 'medications';
@@ -39,6 +47,8 @@ export default function PharmacyPage() {
   });
   const pharmacyStore = stores.find((s) => s.department === DepartmentEnum.MAIN_PHARMACY);
   const defaultStoreId = pharmacyStore?.id ?? stores[0]?.id ?? '';
+  const { stock } = useInventoryStock(defaultStoreId || undefined);
+  const onHandByItem = useMemo(() => new Map(stock.map((s) => [s.itemId, s.quantity])), [stock]);
   const hasStore = Boolean(defaultStoreId);
   const {
     entries: waiting,
@@ -108,7 +118,7 @@ export default function PharmacyPage() {
     await toast.promise(dispensePrescription(p.id, { storeId: defaultStoreId, items }), {
       loading: 'Dispensing…',
       success: 'Dispensed',
-      error: "Couldn't dispense — retry",
+      error: (e) => extractErrorMessage(e, "Couldn't dispense — retry"),
     });
   };
 
@@ -198,7 +208,13 @@ export default function PharmacyPage() {
           }}
         />
       ) : tab === 'medications' ? (
-        <MedicationsCatalog items={medications} isLoading={medsLoading} search={search} onSearch={setSearch} />
+        <MedicationsCatalog
+          items={medications}
+          onHandByItem={onHandByItem}
+          isLoading={medsLoading}
+          search={search}
+          onSearch={setSearch}
+        />
       ) : (
         <>
           <Input
@@ -221,11 +237,13 @@ export default function PharmacyPage() {
 
 function MedicationsCatalog({
   items,
+  onHandByItem,
   isLoading,
   search,
   onSearch,
 }: {
   items: IInventoryItem[];
+  onHandByItem: Map<string, number>;
   isLoading: boolean;
   search: string;
   onSearch: (v: string) => void;
@@ -283,6 +301,7 @@ function MedicationsCatalog({
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Manufacturer</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Unit</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Unit price</th>
+                <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">In stock</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Reorder at</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Status</th>
               </tr>
@@ -298,6 +317,9 @@ function MedicationsCatalog({
                   <td className="px-4 py-3 text-sm text-ink-muted">{i.manufacturer ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-ink-muted">{i.unitOfMeasure}</td>
                   <td className="px-4 py-3 text-sm tabular-nums text-ink">{i.unitPrice.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-ink">
+                    {formatStockQuantity(onHandByItem.get(i.id) ?? 0, i)}
+                  </td>
                   <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{i.minStockLevel}</td>
                   <td className="px-4 py-3">
                     <Pill variant={i.isActive ? PillVariantEnum.SUCCESS : PillVariantEnum.DEFAULT}>

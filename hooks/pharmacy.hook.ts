@@ -14,6 +14,7 @@ import type {
 } from '@/interfaces';
 
 const isPharmacyKey = (key: unknown) => typeof key === 'string' && key.startsWith('/pharmacy');
+const isInventoryKey = (key: unknown) => typeof key === 'string' && key.startsWith('/inventory');
 
 export function usePrescriptions(filters: IPrescriptionFilters = {}) {
   const { mutate } = useSWRConfig();
@@ -36,7 +37,7 @@ export function usePrescriptions(filters: IPrescriptionFilters = {}) {
 
   const dispensePrescription = async (id: string, dto: IDispensePrescriptionDto) => {
     const d = await pharmacyService.dispense(id, dto);
-    await invalidate();
+    await Promise.all([invalidate(), mutate(isInventoryKey)]);
     return d;
   };
 

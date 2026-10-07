@@ -30,6 +30,8 @@ export interface IInventoryItem extends IBaseEntity {
   description?: string | null;
   type: InventoryItemTypeEnum;
   unitOfMeasure: UnitOfMeasureEnum;
+  packSize: number;
+  packUnit: UnitOfMeasureEnum;
   minStockLevel: number;
   unitPrice: number;
   manufacturer?: string | null;
@@ -46,6 +48,9 @@ export interface ICreateInventoryItemDto {
   description?: string;
   type: InventoryItemTypeEnum;
   unitOfMeasure: UnitOfMeasureEnum;
+  packSize?: number;
+  packUnit?: UnitOfMeasureEnum;
+  initialStock?: IInitialStockDto;
   minStockLevel?: number;
   unitPrice?: number;
   manufacturer?: string;
@@ -56,7 +61,18 @@ export interface ICreateInventoryItemDto {
   isActive?: boolean;
 }
 
-export type IUpdateInventoryItemDto = Partial<ICreateInventoryItemDto>;
+export type IUpdateInventoryItemDto = Partial<Omit<ICreateInventoryItemDto, 'initialStock'>>;
+
+export type QuantityUnit = 'UNIT' | 'PACK';
+
+export interface IInitialStockDto {
+  storeId: string;
+  quantity: number;
+  quantityUnit?: QuantityUnit;
+  batchNumber?: string;
+  expiryDate?: string;
+  manufactureDate?: string;
+}
 
 export interface IInventoryItemFilters {
   page?: number;
@@ -99,6 +115,7 @@ export interface ICreateInventoryTransactionDto {
   itemId: string;
   type: InventoryTransactionTypeEnum;
   quantity: number;
+  quantityUnit?: QuantityUnit;
   counterpartStoreId?: string;
   referenceType?: string;
   referenceId?: string;

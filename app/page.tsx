@@ -94,7 +94,6 @@ export default function RolesPage() {
       <main className="flex flex-1 flex-col items-center px-6 py-12">
         <div className="text-center">
           <h2 className="flex items-center justify-center gap-2 text-2xl font-semibold tracking-tight text-slate-900">
-            <FaHeartbeat aria-hidden className="h-6 w-6 text-green-700" />
             Choose a role to continue
           </h2>
           <p className="mt-2 text-sm text-slate-600">
