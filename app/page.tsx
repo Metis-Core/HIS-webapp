@@ -5,7 +5,6 @@ import {
   FaCalculator,
   FaClipboardList,
   FaFlask,
-  FaHeartbeat,
   FaLock,
   FaPills,
   FaShieldAlt,

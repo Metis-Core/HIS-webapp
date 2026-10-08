@@ -103,23 +103,30 @@ export default function PharmacyPage() {
     [prescriptions, waiting],
   );
 
-  const dispenseAll = async (p: IPrescription) => {
+  const dispenseAll = async (list: IPrescription[]) => {
     if (!defaultStoreId) {
       toast.error('Set up an inventory store before dispensing (Inventory → Stores)');
       return;
     }
-    const items = p.items
-      .filter((i) => i.quantity - i.dispensedQuantity > 0)
-      .map((i) => ({
-        prescriptionItemId: i.id,
-        quantity: i.quantity - i.dispensedQuantity,
-      }));
-    if (items.length === 0) return;
-    await toast.promise(dispensePrescription(p.id, { storeId: defaultStoreId, items }), {
-      loading: 'Dispensing…',
-      success: 'Dispensed',
-      error: (e) => extractErrorMessage(e, "Couldn't dispense — retry"),
-    });
+    const jobs = list
+      .map((p) => ({
+        id: p.id,
+        items: p.items
+          .filter((i) => i.quantity - i.dispensedQuantity > 0)
+          .map((i) => ({ prescriptionItemId: i.id, quantity: i.quantity - i.dispensedQuantity })),
+      }))
+      .filter((j) => j.items.length > 0);
+    if (jobs.length === 0) return;
+    await toast.promise(
+      (async () => {
+        for (const job of jobs) await dispensePrescription(job.id, { storeId: defaultStoreId, items: job.items });
+      })(),
+      {
+        loading: 'Dispensing…',
+        success: 'Dispensed',
+        error: (e) => extractErrorMessage(e, "Couldn't dispense — retry"),
+      },
+    );
   };
 
   const cancel = async (p: IPrescription) => {
@@ -227,7 +234,7 @@ export default function PharmacyPage() {
           {filtered.length === 0 ? (
             <EmptyState message="No prescriptions" icon={FaPills} />
           ) : (
-            <PrescriptionsTable rows={filtered} onDispense={dispenseAll} onCancel={cancel} />
+            <PrescriptionsTable rows={filtered} onDispense={(p) => dispenseAll([p])} onCancel={cancel} />
           )}
         </>
       )}
@@ -349,7 +356,7 @@ function WaitingPharmacyQueue({
   prescriptions: IPrescription[];
   onCall: (e: IQueueEntryRecord) => void;
   onStart: (e: IQueueEntryRecord) => void;
-  onDispenseAll: (p: IPrescription) => void;
+  onDispenseAll: (list: IPrescription[]) => void;
   onComplete: (e: IQueueEntryRecord) => void;
   onSkip: (e: IQueueEntryRecord) => void;
 }) {
@@ -385,7 +392,6 @@ function WaitingPharmacyQueue({
               (p) =>
                 p.status === PrescriptionStatusEnum.PENDING || p.status === PrescriptionStatusEnum.PARTIALLY_DISPENSED,
             );
-            const primary = rx[0];
             return (
               <tr key={e.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
@@ -425,10 +431,10 @@ function WaitingPharmacyQueue({
                         Start
                       </button>
                     )}
-                    {primary && (
+                    {rx.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => onDispenseAll(primary)}
+                        onClick={() => onDispenseAll(rx)}
                         className="text-xs font-medium text-primary hover:text-primary-hover"
                       >
                         Dispense

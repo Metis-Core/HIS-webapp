@@ -6,8 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   FaAngleDoubleLeft,
   FaAngleDoubleRight,
-  FaBell,
-  FaCog,
   FaHandHoldingMedical,
   FaMicroscope,
   FaNotesMedical,
@@ -69,14 +67,7 @@ const NAV: Record<string, NavItem> = {
     href: '/services',
     icon: <FaHandHoldingMedical aria-hidden className="h-5 w-5" />,
   },
-  notifications: {
-    key: 'notifications',
-    label: 'Notifications',
-    href: '/notifications',
-    icon: <FaBell aria-hidden className="h-5 w-5" />,
-  },
   users: { key: 'users', label: 'Users', href: '/users', icon: <FaUserShield aria-hidden className="h-5 w-5" /> },
-  settings: { key: 'settings', label: 'Settings', href: '/settings', icon: <FaCog aria-hidden className="h-5 w-5" /> },
 };
 
 const ALL_NAV: NavItem[] = [
@@ -89,45 +80,18 @@ const ALL_NAV: NavItem[] = [
   NAV.pharmacy,
   NAV.inventory,
   NAV.services,
-  NAV.notifications,
   NAV.users,
-  NAV.settings,
 ];
 
 const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.SUPER_ADMIN]: ALL_NAV,
   [UserRoleEnum.ADMIN]: ALL_NAV,
-  [UserRoleEnum.DOCTOR]: [
-    NAV.dashboard,
-    NAV.patients,
-    NAV.queue,
-    NAV.triage,
-    NAV.consultations,
-    NAV.lab,
-    NAV.pharmacy,
-    NAV.notifications,
-    NAV.settings,
-  ],
-  [UserRoleEnum.NURSE]: [
-    NAV.dashboard,
-    NAV.patients,
-    NAV.consultations,
-    NAV.lab,
-    NAV.pharmacy,
-    NAV.notifications,
-    NAV.settings,
-  ],
-  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.patients, NAV.lab, NAV.inventory, NAV.notifications, NAV.settings],
-  [UserRoleEnum.PHARMACIST]: [
-    NAV.dashboard,
-    NAV.patients,
-    NAV.pharmacy,
-    NAV.inventory,
-    NAV.notifications,
-    NAV.settings,
-  ],
-  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
-  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.services, NAV.notifications, NAV.settings],
+  [UserRoleEnum.DOCTOR]: [NAV.dashboard, NAV.patients, NAV.queue, NAV.triage, NAV.consultations, NAV.lab, NAV.pharmacy],
+  [UserRoleEnum.NURSE]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.pharmacy],
+  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.patients, NAV.lab, NAV.inventory],
+  [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory],
+  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.services],
+  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.services],
 };
 
 function SidebarContent({

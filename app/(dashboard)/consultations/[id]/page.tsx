@@ -784,6 +784,7 @@ function PrescriptionsPanel({
   >([]);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const itemOptions: IOption[] = inventoryItems.map((i) => ({
     label: `${i.name}${i.manufacturer ? ` (${i.manufacturer})` : ''} — ${i.sku}`,
@@ -798,11 +799,16 @@ function PrescriptionsPanel({
     setRows((s) => s.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
 
   const submit = async () => {
-    const filled = rows.filter((r) => r.itemId && r.dosage && r.frequency && r.quantity);
+    const filled = rows.filter((r) => r.itemId && r.dosage.trim() && r.frequency.trim() && Number(r.quantity) >= 1);
     if (filled.length === 0) {
-      toast.error('Add at least one prescription item');
+      setFormError('Add at least one prescription item');
       return;
     }
+    if (filled.length !== rows.length) {
+      setFormError('Complete medication, dosage, frequency and quantity on every row, or remove the empty rows');
+      return;
+    }
+    setFormError('');
     setBusy(true);
     try {
       await toast.promise(
@@ -917,6 +923,12 @@ function PrescriptionsPanel({
                 </div>
               ))}
             </div>
+          )}
+
+          {formError && (
+            <p role="alert" className="mt-3 rounded-lg bg-critical-soft px-3 py-2 text-sm text-critical">
+              {formError}
+            </p>
           )}
 
           <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
