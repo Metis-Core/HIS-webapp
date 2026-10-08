@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Metis Healthcare — by Metis Analytica',
+  title: 'Metis Care — by Metis Analytica',
   description: 'Hospital information system for clinical staff. Built by Metis Analytica.',
-  applicationName: 'Metis Healthcare',
+  applicationName: 'Metis Care',
   authors: [{ name: 'Metis Analytica' }],
 };
 

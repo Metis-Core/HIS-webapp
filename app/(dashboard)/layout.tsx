@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { Header, Sidebar } from '@/components';
 
 export const metadata: Metadata = {
-  title: 'Metis Healthcare',
-  description: 'Metis Healthcare',
+  title: 'Metis Care',
+  description: 'Metis Care',
 };
 
 export default function DashboardLayout({
