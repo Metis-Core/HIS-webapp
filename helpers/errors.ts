@@ -54,3 +54,10 @@ export function extractErrorMessage(error: unknown, fallback = 'Something went w
   if (error instanceof AxiosError && !err?.response) return 'Cannot reach the server — check your connection';
   return fallback;
 }
+
+/** Machine-readable error code from the failure envelope (e.g. `UNAUTHORIZED`, `TOO_MANY_REQUESTS`). */
+export function extractErrorCode(error: unknown, fallback = 'UNKNOWN'): string {
+  const data = (error as AxiosError<IErrorPayload> | undefined)?.response?.data;
+  if (data && typeof data === 'object' && typeof data.error === 'object' && data.error.code) return data.error.code;
+  return fallback;
+}
