@@ -38,3 +38,4 @@ export {
   usePrescriptionsByConsultation,
   usePrescriptionDispenses,
 } from './pharmacy.hook';
+export { useDebouncedValue } from './use-debounced-value';

@@ -5,11 +5,18 @@ import { PatientEndpointEnum } from '@/enum';
 import patientsService from '@/helpers/patients.service';
 import type { ICreatePatientDto, IPagination, IPatient, IPatientFilters, IUpdatePatientDto } from '@/interfaces';
 
-export function usePatients(filters: IPatientFilters = {}) {
-  const { mutate } = useSWRConfig();
-  const url = patientsService.buildListUrl(filters);
+const DEFAULT_PAGE_SIZE = 20;
 
-  const { data, error, isLoading } = useSWR<IPagination<IPatient>>(url);
+/**
+ * Server-side patient search and paging. Pass `enabled: false` to skip the request
+ * (e.g. until the user has typed something).
+ */
+export function usePatients(filters: IPatientFilters = {}, { enabled = true }: { enabled?: boolean } = {}) {
+  const { mutate } = useSWRConfig();
+  const url = enabled ? patientsService.buildListUrl(filters) : null;
+
+  // keepPreviousData stops the table flashing empty while the next page or search loads.
+  const { data, error, isLoading, isValidating } = useSWR<IPagination<IPatient>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate((key) => typeof key === 'string' && key.startsWith(PatientEndpointEnum.BASE));
 
@@ -38,10 +45,12 @@ export function usePatients(filters: IPatientFilters = {}) {
 
   return {
     patients: data?.items ?? [],
-    total: data?.total ?? 0,
-    page: data?.page ?? 1,
-    limit: data?.limit ?? 20,
+    total: data?.meta?.total ?? data?.total ?? 0,
+    page: data?.meta?.page ?? data?.page ?? 1,
+    limit: data?.meta?.limit ?? data?.limit ?? DEFAULT_PAGE_SIZE,
+    hasNextPage: data?.meta?.hasNextPage ?? false,
     isLoading,
+    isValidating,
     error,
     createPatient,
     updatePatient,
