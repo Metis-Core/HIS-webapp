@@ -4,12 +4,12 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button, Dropdown, VisitReceiptDrawer } from '@/components';
 import { VisitTypeEnum } from '@/enum/queue.enum';
-import { patientFullName } from '@/data/patients';
 import { api } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { useServices } from '@/hooks';
 import type { ICreateVisitDto, IInsuranceVerification, IOption } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
+import PatientSearchSelect from './patient-search-select';
 
 const visitTypeOptions: IOption[] = Object.values(VisitTypeEnum).map((type) => ({
   label: type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -17,21 +17,15 @@ const visitTypeOptions: IOption[] = Object.values(VisitTypeEnum).map((type) => (
 }));
 
 type Props = {
-  patients: IPatient[];
   onCheckedIn: () => Promise<unknown> | void;
 };
 
-export default function WalkInCheckIn({ patients, onCheckedIn }: Props) {
+export default function WalkInCheckIn({ onCheckedIn }: Props) {
   const [visitType, setVisitType] = useState<IOption>(visitTypeOptions[0]);
-  const [patient, setPatient] = useState<IOption | null>(null);
+  const [patient, setPatient] = useState<IPatient | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { services } = useServices({ search: 'consultation', isActive: true });
-
-  const patientOptions = useMemo<IOption[]>(
-    () => patients.map((p) => ({ label: `${patientFullName(p)} - ${p.mrn}`, value: p.id })),
-    [patients],
-  );
 
   const consultationFee = useMemo(
     () => services.find((s) => s.name.toLowerCase().startsWith('consultation')) ?? null,
@@ -41,7 +35,7 @@ export default function WalkInCheckIn({ patients, onCheckedIn }: Props) {
   const confirm = async (insuranceVerification?: IInsuranceVerification) => {
     if (!patient || submitting) return;
     const dto: ICreateVisitDto = {
-      patientId: patient.value as string,
+      patientId: patient.id,
       visitType: visitType.value as VisitTypeEnum,
       insuranceVerification,
     };
@@ -77,13 +71,7 @@ export default function WalkInCheckIn({ patients, onCheckedIn }: Props) {
           if (next) setVisitType(next);
         }}
       />
-      <Dropdown
-        label="Patient"
-        placeholder="Search by name or MRN"
-        options={patientOptions}
-        value={patient}
-        onChange={(value) => setPatient(Array.isArray(value) ? (value[0] ?? null) : value)}
-      />
+      <PatientSearchSelect value={patient} onChange={setPatient} />
       <Button type="button" onClick={() => setReceiptOpen(true)} disabled={!patient} className="w-full justify-center">
         Check in
       </Button>
@@ -92,7 +80,7 @@ export default function WalkInCheckIn({ patients, onCheckedIn }: Props) {
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
         consultationFee={consultationFee}
-        patient={patients.find((p) => p.id === patient?.value) ?? null}
+        patient={patient}
         onConfirm={confirm}
         submitting={submitting}
       />

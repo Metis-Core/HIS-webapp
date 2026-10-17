@@ -47,7 +47,12 @@ export default function ReceptionistDashboard() {
 
   const stats = useMemo(
     () => [
-      { label: 'Registered patients', value: patients.length, icon: FaUserInjured, variant: StatVariantEnum.Green },
+      {
+        label: 'Registered patients',
+        value: data?.data.data.total ?? patients.length,
+        icon: FaUserInjured,
+        variant: StatVariantEnum.Green,
+      },
       {
         label: 'Patients in queue',
         value: activeQueue.length,
@@ -62,7 +67,7 @@ export default function ReceptionistDashboard() {
       },
       { label: 'Unread alerts', value: unread, icon: FaBell, variant: StatVariantEnum.Amber },
     ],
-    [patients, activeQueue, consultations, unread],
+    [data, patients, activeQueue, consultations, unread],
   );
 
   return (
@@ -80,7 +85,7 @@ export default function ReceptionistDashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <WalkInCheckIn patients={patients} onCheckedIn={mutateVisits} />
+          <WalkInCheckIn onCheckedIn={mutateVisits} />
         </div>
 
         <div className="overflow-hidden rounded-xl border border-line bg-surface-raised lg:col-span-2">

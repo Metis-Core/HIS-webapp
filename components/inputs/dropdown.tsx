@@ -16,7 +16,13 @@ export default function Dropdown({
   placeholder = 'Select...',
   isDisabled,
   compact,
+  inputValue,
+  onInputChange,
+  isLoading,
+  isClearable,
+  noOptionsMessage,
 }: ISelectProps) {
+  const isAsync = onInputChange !== undefined;
   const instanceId = useId();
   const styles: StylesConfig<IOption, boolean> = {
     control: (base, state) => ({
@@ -84,6 +90,19 @@ export default function Dropdown({
         isMulti={isMulti}
         placeholder={placeholder}
         isDisabled={isDisabled}
+        isLoading={isLoading}
+        isClearable={isClearable}
+        inputValue={inputValue}
+        onInputChange={
+          isAsync
+            ? (next, meta) => {
+                // Keep the typed text when an option is picked or the menu closes.
+                if (meta.action === 'input-change') onInputChange(next);
+              }
+            : undefined
+        }
+        filterOption={isAsync ? null : undefined}
+        noOptionsMessage={noOptionsMessage ? () => noOptionsMessage : undefined}
         classNamePrefix="rs"
         className="capitalize"
         styles={styles}
