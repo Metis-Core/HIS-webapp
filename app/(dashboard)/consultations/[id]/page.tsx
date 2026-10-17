@@ -18,12 +18,13 @@ import {
   FaTrash,
 } from 'react-icons/fa';
 import { useSWRConfig } from 'swr';
-import { Button, Dropdown, Input, PageHeader, Pill, Tabs } from '@/components';
+import { Button, DocumentButton, Dropdown, Input, PageHeader, Pill, Tabs } from '@/components';
 import CompleteStageDrawer from '@/components/drawers/complete-stage.drawer';
 import PatientContextPanel from '@/components/consultation/patient-context.panel';
 import VisitChargesPanel from '@/components/consultation/visit-charges.panel';
 import ConsultationPrescriptionsList from '@/components/consultation/consultation-prescriptions.list';
 import {
+  DocumentEndpointEnum,
   ButtonVariantEnum,
   ConsultationStatusEnum,
   ConsultationTypeEnum,
@@ -35,7 +36,6 @@ import {
   PillVariantEnum,
   VisitIntentEnum,
 } from '@/enum';
-import { API_URL } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { labOrdersService } from '@/helpers/lab.service';
 import pharmacyService from '@/helpers/pharmacy.service';
@@ -241,23 +241,21 @@ export default function ConsultationDetailPage() {
             <Pill variant={statusVariant[consultation.status] ?? PillVariantEnum.DEFAULT}>
               {consultation.status.replaceAll('_', ' ')}
             </Pill>
-            <a
-              href={`${API_URL}/documents/discharge/${consultation.id}`}
-              target="_blank"
-              rel="noreferrer"
+            <DocumentButton
+              endpoint={DocumentEndpointEnum.DISCHARGE}
+              id={consultation.id}
               className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
             >
               Discharge summary
-            </a>
+            </DocumentButton>
             {consultation.visitId && (
-              <a
-                href={`${API_URL}/documents/receipt/${consultation.visitId}`}
-                target="_blank"
-                rel="noreferrer"
+              <DocumentButton
+                endpoint={DocumentEndpointEnum.RECEIPT}
+                id={consultation.visitId}
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface"
               >
                 Visit receipt
-              </a>
+              </DocumentButton>
             )}
           </div>
         }
@@ -629,14 +627,9 @@ function LabTab({
                   <div className="flex items-center gap-2">
                     {item.isAbnormal && <Pill variant={PillVariantEnum.DANGER}>Abnormal</Pill>}
                     <Pill variant={PillVariantEnum.SUCCESS}>{item.status.replaceAll('_', ' ')}</Pill>
-                    <a
-                      href={`${API_URL}/documents/lab-order/${order.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-raised"
-                    >
+                    <DocumentButton endpoint={DocumentEndpointEnum.LAB_ORDER} id={order.id}>
                       Print / Download
-                    </a>
+                    </DocumentButton>
                   </div>
                 </div>
 

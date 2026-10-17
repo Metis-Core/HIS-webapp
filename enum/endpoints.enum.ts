@@ -23,3 +23,11 @@ export enum ChargeEndpointEnum {
   BASE = '/charges',
   BY_VISIT = '/charges/visit',
 }
+
+/** Printable HTML documents. Each path takes the record id as its last segment. */
+export enum DocumentEndpointEnum {
+  LAB_ORDER = '/documents/lab-order',
+  PRESCRIPTION = '/documents/prescription',
+  DISCHARGE = '/documents/discharge',
+  RECEIPT = '/documents/receipt',
+}
