@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -40,6 +40,7 @@ import { extractErrorMessage } from '@/helpers/errors';
 import { labOrdersService } from '@/helpers/lab.service';
 import pharmacyService from '@/helpers/pharmacy.service';
 import {
+  useAutosaveForm,
   useConsultation,
   useConsultations,
   useInventoryItems,
@@ -47,7 +48,8 @@ import {
   useLabTests,
   usePrescriptionsByConsultation,
 } from '@/hooks';
-import type { IOption, IUpdateConsultationDto } from '@/interfaces';
+import type { IConsultation, IOption, IUpdateConsultationDto } from '@/interfaces';
+import EncounterSaveStatus from './encounter-save-status';
 
 type ConsultationTab = 'encounter' | 'lab' | 'prescriptions' | 'charges';
 
@@ -73,6 +75,62 @@ const priorityOptions: IOption[] = Object.values(LabPriorityEnum).map((v) => ({
   value: v,
 }));
 
+interface EncounterValues {
+  chiefComplaint: string;
+  type: ConsultationTypeEnum;
+  department: DepartmentEnum;
+  historyOfPresentIllness: string;
+  examinationFindings: string;
+  assessment: string;
+  diagnosis: string;
+  icd10Codes: string;
+  plan: string;
+  notes: string;
+}
+
+const EMPTY_ENCOUNTER: EncounterValues = {
+  chiefComplaint: '',
+  type: ConsultationTypeEnum.OUTPATIENT,
+  department: DepartmentEnum.OUTPATIENT_CLINIC,
+  historyOfPresentIllness: '',
+  examinationFindings: '',
+  assessment: '',
+  diagnosis: '',
+  icd10Codes: '',
+  plan: '',
+  notes: '',
+};
+
+const toEncounterValues = (c: IConsultation): EncounterValues => ({
+  chiefComplaint: c.chiefComplaint,
+  type: c.type,
+  department: c.department,
+  historyOfPresentIllness: c.historyOfPresentIllness ?? '',
+  examinationFindings: c.examinationFindings ?? '',
+  assessment: c.assessment ?? '',
+  diagnosis: c.diagnosis ?? '',
+  icd10Codes: c.icd10Codes ?? '',
+  plan: c.plan ?? '',
+  notes: c.notes ?? '',
+});
+
+// Empty strings are sent on purpose so that clearing a field is saved too.
+const toEncounterPayload = (v: EncounterValues): IUpdateConsultationDto => ({
+  chiefComplaint: v.chiefComplaint.trim(),
+  type: v.type,
+  department: v.department,
+  historyOfPresentIllness: v.historyOfPresentIllness.trim(),
+  examinationFindings: v.examinationFindings.trim(),
+  assessment: v.assessment.trim(),
+  diagnosis: v.diagnosis.trim(),
+  icd10Codes: v.icd10Codes.trim(),
+  plan: v.plan.trim(),
+  notes: v.notes.trim(),
+});
+
+const validateEncounter = (v: EncounterValues): string | null =>
+  v.chiefComplaint.trim() ? null : 'Chief complaint is required';
+
 const statusVariant: Record<ConsultationStatusEnum, PillVariantEnum> = {
   [ConsultationStatusEnum.IN_PROGRESS]: PillVariantEnum.INFO,
   [ConsultationStatusEnum.COMPLETED]: PillVariantEnum.SUCCESS,
@@ -87,19 +145,26 @@ export default function ConsultationDetailPage() {
   const { consultation, isLoading, mutate } = useConsultation(params.id);
   const { updateConsultation, completeConsultation, cancelConsultation } = useConsultations({ limit: 20 });
 
-  const [values, setValues] = useState({
-    chiefComplaint: '',
-    type: ConsultationTypeEnum.OUTPATIENT,
-    department: DepartmentEnum.OUTPATIENT_CLINIC,
-    historyOfPresentIllness: '',
-    examinationFindings: '',
-    assessment: '',
-    diagnosis: '',
-    icd10Codes: '',
-    plan: '',
-    notes: '',
+  const encounterSource = useMemo(() => (consultation ? toEncounterValues(consultation) : null), [consultation]);
+  const persistEncounter = useCallback(
+    async (next: EncounterValues) => {
+      try {
+        await updateConsultation(params.id, toEncounterPayload(next));
+      } catch (err) {
+        throw new Error(extractErrorMessage(err, "Couldn't save — retry"));
+      }
+    },
+    [params.id, updateConsultation],
+  );
+  // D1: notes autosave as the doctor types and are never reset by background refetches.
+  const encounter = useAutosaveForm<EncounterValues>({
+    recordId: consultation?.id,
+    source: encounterSource,
+    enabled: consultation?.status === ConsultationStatusEnum.IN_PROGRESS,
+    save: persistEncounter,
+    validate: validateEncounter,
   });
-  const [savingForm, setSavingForm] = useState(false);
+  const values = encounter.values ?? EMPTY_ENCOUNTER;
   const [completing, setCompleting] = useState(false);
   const [completingBusy, setCompletingBusy] = useState(false);
   const [tab, setTab] = useState<ConsultationTab>('encounter');
@@ -111,22 +176,6 @@ export default function ConsultationDetailPage() {
     (n, o) => n + o.items.filter((i) => i.status === LabOrderItemStatusEnum.RESULT_READY).length,
     0,
   );
-
-  useEffect(() => {
-    if (!consultation) return;
-    setValues({
-      chiefComplaint: consultation.chiefComplaint,
-      type: consultation.type,
-      department: consultation.department,
-      historyOfPresentIllness: consultation.historyOfPresentIllness ?? '',
-      examinationFindings: consultation.examinationFindings ?? '',
-      assessment: consultation.assessment ?? '',
-      diagnosis: consultation.diagnosis ?? '',
-      icd10Codes: consultation.icd10Codes ?? '',
-      plan: consultation.plan ?? '',
-      notes: consultation.notes ?? '',
-    });
-  }, [consultation]);
 
   const invalidateAll = () =>
     globalMutate(
@@ -157,42 +206,21 @@ export default function ConsultationDetailPage() {
 
   const readOnly = consultation.status !== ConsultationStatusEnum.IN_PROGRESS;
 
-  const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
-    setValues((s) => ({ ...s, [key]: value }));
+  const set = encounter.setField;
 
   const saveForm = async () => {
-    if (!values.chiefComplaint.trim()) {
-      toast.error('Chief complaint is required');
-      return;
-    }
-    setSavingForm(true);
-    try {
-      const payload: IUpdateConsultationDto = {
-        chiefComplaint: values.chiefComplaint.trim(),
-        type: values.type,
-        department: values.department,
-        historyOfPresentIllness: values.historyOfPresentIllness.trim() || undefined,
-        examinationFindings: values.examinationFindings.trim() || undefined,
-        assessment: values.assessment.trim() || undefined,
-        diagnosis: values.diagnosis.trim() || undefined,
-        icd10Codes: values.icd10Codes.trim() || undefined,
-        plan: values.plan.trim() || undefined,
-        notes: values.notes.trim() || undefined,
-      };
-      await toast.promise(updateConsultation(consultation.id, payload), {
-        loading: 'Saving…',
-        success: 'Consultation saved',
-        error: (err) => extractErrorMessage(err, "Couldn't save — retry"),
-      });
-      await mutate();
-    } finally {
-      setSavingForm(false);
-    }
+    if (await encounter.saveNow()) toast.success('Encounter saved');
+    else toast.error(validateEncounter(values) ?? 'Encounter not saved — retry');
   };
 
   const confirmComplete = async ({ nextIntents, notes }: { nextIntents: VisitIntentEnum[]; notes?: string }) => {
     setCompletingBusy(true);
     try {
+      // Never sign over unsaved notes.
+      if (encounter.isDirty && !(await encounter.saveNow())) {
+        toast.error('Save the encounter before signing');
+        return;
+      }
       await toast.promise(completeConsultation(consultation.id, { nextIntents, notes }), {
         loading: 'Signing…',
         success: nextIntents.length > 0 ? `Signed — routed to ${nextIntents.join(', ')}` : 'Encounter signed',
@@ -288,9 +316,17 @@ export default function ConsultationDetailPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-ink">Encounter</h2>
                 {!readOnly && (
-                  <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={saveForm} loading={savingForm}>
-                    Save
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <EncounterSaveStatus {...encounter} />
+                    <Button
+                      type="button"
+                      variant={ButtonVariantEnum.PRIMARY}
+                      onClick={saveForm}
+                      loading={encounter.isSaving}
+                    >
+                      Save
+                    </Button>
+                  </div>
                 )}
               </div>
 
@@ -423,11 +459,21 @@ export default function ConsultationDetailPage() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface-raised/95 backdrop-blur">
           <div className="flex w-full items-center justify-between gap-3 px-6 py-3">
             <div className="flex items-center gap-3 text-xs text-ink-muted">
+              <EncounterSaveStatus {...encounter} />
               <span className="hidden md:inline">
                 Document encounter, order labs and prescriptions from the tabs above before signing.
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant={ButtonVariantEnum.SECONDARY}
+                onClick={saveForm}
+                loading={encounter.isSaving}
+                disabled={!encounter.isDirty}
+              >
+                Save
+              </Button>
               <Button type="button" variant={ButtonVariantEnum.SECONDARY} onClick={cancel}>
                 <FaBan className="text-xs" />
                 Cancel visit
