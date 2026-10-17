@@ -7,6 +7,9 @@ import { Button, EmptyState, Input, PageHeader, Pill, Tabs } from '@/components'
 import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { useAuth } from '@/providers';
 import usersService from '@/helpers/users.service';
+import authService from '@/helpers/auth.service';
+import { extractErrorMessage } from '@/helpers/errors';
+import { RoleGroups } from '@/helpers/role-groups';
 import PasswordChecklist, { isValidPassword, PASSWORD_MIN_LENGTH } from '@/components/forms/password-checklist';
 
 type TabId = 'profile' | 'security' | 'preferences';
@@ -69,24 +72,30 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
 
   if (!user) return null;
 
-  const dirty = user.username !== values.username || user.email !== values.email;
+  // Usernames and emails are sign-in identifiers, so only administrators may change them (C-1).
+  const canEdit = (RoleGroups.ADMINS as readonly string[]).includes(user.role);
+  const dirty = canEdit && (user.username !== values.username || user.email !== values.email);
 
   const submit = async () => {
     if (!dirty) return;
     setBusy(true);
     try {
-      await toast.promise(
-        usersService.update(user.id, {
-          username: values.username.trim(),
-          email: values.email.trim(),
-        }),
-        {
-          loading: 'Saving profile…',
-          success: 'Profile updated',
-          error: "Couldn't save — retry",
-        },
-      );
+      await toast
+        .promise(
+          usersService.update(user.id, {
+            username: values.username.trim(),
+            email: values.email.trim(),
+          }),
+          {
+            loading: 'Saving profile…',
+            success: 'Profile updated',
+            error: (err: unknown) => extractErrorMessage(err, "Couldn't save — retry"),
+          },
+        )
+        .unwrap();
       onSaved();
+    } catch {
+      // The toast already shows the reason.
     } finally {
       setBusy(false);
     }
@@ -97,7 +106,9 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
       <header className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-ink">Profile</h2>
-          <p className="text-xs text-ink-muted">Basic account information.</p>
+          <p className="text-xs text-ink-muted">
+            {canEdit ? 'Basic account information.' : 'Ask an administrator to change your username or email.'}
+          </p>
         </div>
         <Pill variant={PillVariantEnum.INFO}>{user.role.replaceAll('_', ' ')}</Pill>
       </header>
@@ -106,12 +117,14 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
         <Input
           label="Username"
           value={values.username}
+          disabled={!canEdit}
           onChange={(e) => setValues((s) => ({ ...s, username: e.target.value }))}
         />
         <Input
           label="Email"
           type="email"
           value={values.email}
+          disabled={!canEdit}
           onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
         />
         <Input label="Role" value={user.role.replaceAll('_', ' ')} disabled />
@@ -136,9 +149,11 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={submit} loading={busy} disabled={!dirty}>
-          Save changes
-        </Button>
+        {canEdit && (
+          <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={submit} loading={busy} disabled={!dirty}>
+            Save changes
+          </Button>
+        )}
       </div>
     </section>
   );
@@ -152,6 +167,10 @@ function SecurityCard() {
   if (!user) return null;
 
   const submit = async () => {
+    if (!values.current) {
+      toast.error('Enter your current password');
+      return;
+    }
     if (!isValidPassword(values.next)) {
       toast.error('New password does not meet the rules');
       return;
@@ -162,12 +181,16 @@ function SecurityCard() {
     }
     setBusy(true);
     try {
-      await toast.promise(usersService.update(user.id, { password: values.next }), {
-        loading: 'Updating password…',
-        success: 'Password updated',
-        error: "Couldn't update — retry",
-      });
+      await toast
+        .promise(authService.changePassword(values.current, values.next), {
+          loading: 'Updating password…',
+          success: 'Password updated — other devices have been signed out',
+          error: (err: unknown) => extractErrorMessage(err, "Couldn't update — retry"),
+        })
+        .unwrap();
       setValues({ current: '', next: '', confirm: '' });
+    } catch {
+      // The toast already shows the reason; keep the form filled so the user can correct it.
     } finally {
       setBusy(false);
     }
@@ -178,8 +201,8 @@ function SecurityCard() {
       <header>
         <h2 className="text-sm font-semibold text-ink">Change password</h2>
         <p className="text-xs text-ink-muted">
-          Use at least {PASSWORD_MIN_LENGTH} characters with a letter and a number. Sign out from other devices after
-          changing.
+          Use at least {PASSWORD_MIN_LENGTH} characters with a letter and a number. Changing it signs you out on every
+          other device.
         </p>
       </header>
 
@@ -215,7 +238,7 @@ function SecurityCard() {
           variant={ButtonVariantEnum.PRIMARY}
           loading={busy}
           onClick={submit}
-          disabled={!values.next || !values.confirm}
+          disabled={!values.current || !values.next || !values.confirm}
         >
           Update password
         </Button>
