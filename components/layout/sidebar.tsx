@@ -83,7 +83,8 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.ADMIN]: ALL_NAV,
   [UserRoleEnum.DOCTOR]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.pharmacy],
   [UserRoleEnum.NURSE]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.pharmacy],
-  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.patients, NAV.lab, NAV.inventory],
+  // L3: the lab reaches patients through its queue, orders and search; no general patient list.
+  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.lab, NAV.inventory],
   [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory],
   [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.services],
   [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.services],

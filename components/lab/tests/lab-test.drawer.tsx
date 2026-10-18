@@ -90,6 +90,8 @@ function LabTestForm({ test, onClose, onSave }: LabTestFormProps) {
     try {
       await onSave(payload, test?.id);
       onClose();
+    } catch {
+      // onSave already reported the failure; keep the form open for a retry.
     } finally {
       setBusy(false);
     }

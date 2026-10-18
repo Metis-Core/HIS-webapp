@@ -47,8 +47,10 @@ export function useLabBoard(filters: ILabItemFilters) {
   return { items: data?.items ?? [], pagination: pageInfo(data, filters.limit), isLoading, error };
 }
 
-export function useLabBoardSummary(range: ILabDayRange) {
-  const { data } = useSWR<ILabBoardSummary>(labWorkService.boardSummaryUrl(range), { refreshInterval: 30_000 });
+/** Lab staff only (the API refuses other roles), so callers pass `enabled`. */
+export function useLabBoardSummary(range: ILabDayRange, enabled = true) {
+  const key = enabled ? labWorkService.boardSummaryUrl(range) : null;
+  const { data } = useSWR<ILabBoardSummary>(key, { refreshInterval: 30_000 });
   return data;
 }
 
