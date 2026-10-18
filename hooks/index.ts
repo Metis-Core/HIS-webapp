@@ -48,6 +48,8 @@ export {
   usePrescriptionDispenses,
 } from './pharmacy.hook';
 export { useCheckIn } from './check-in.hook';
+export { useAnalyticsOverview } from './analytics.hook';
+export { usePasswordPolicy } from './password-policy.hook';
 export {
   useLedgerRefresh,
   useInvoices,

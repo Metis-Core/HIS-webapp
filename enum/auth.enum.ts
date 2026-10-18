@@ -4,6 +4,7 @@ export enum AuthEndpointEnum {
   LOGOUT = '/auth/logout',
   ME = '/auth/me',
   CHANGE_PASSWORD = '/auth/change-password',
+  PASSWORD_POLICY = '/auth/password-policy',
 }
 
 export enum AuthCookieEnum {

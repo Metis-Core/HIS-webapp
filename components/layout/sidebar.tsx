@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   FaAngleDoubleLeft,
   FaAngleDoubleRight,
+  FaChartLine,
   FaFileInvoiceDollar,
   FaHandHoldingMedical,
   FaXRay,
@@ -59,6 +60,12 @@ const NAV: Record<string, NavItem> = {
     href: '/inventory',
     icon: <FaWarehouse aria-hidden className="h-5 w-5" />,
   },
+  management: {
+    key: 'management',
+    label: 'Management',
+    href: '/management',
+    icon: <FaChartLine aria-hidden className="h-5 w-5" />,
+  },
   billing: {
     key: 'billing',
     label: 'Billing',
@@ -82,6 +89,7 @@ const NAV: Record<string, NavItem> = {
 
 const ALL_NAV: NavItem[] = [
   NAV.dashboard,
+  NAV.management,
   NAV.patients,
   NAV.consultations,
   NAV.lab,
@@ -103,7 +111,7 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.lab, NAV.orders, NAV.inventory],
   [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory],
   [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.billing, NAV.services],
-  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.patients, NAV.billing, NAV.services],
+  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.management, NAV.patients, NAV.billing, NAV.services],
 };
 
 function SidebarContent({
