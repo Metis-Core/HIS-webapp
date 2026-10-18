@@ -32,7 +32,7 @@ export default function LabTestPicker({ selected, onChange }: LabTestPickerProps
 
   return (
     <div className="flex flex-col gap-2">
-      <Input placeholder="Search code / name" value={text} onChange={(e) => setText(e.target.value)} />
+      <Input placeholder="Search code, abbreviation or name" value={text} onChange={(e) => setText(e.target.value)} />
       <div className="max-h-64 overflow-auto rounded-md border border-line p-3">
         {shown.length === 0 && !search && !isLoading ? (
           <p className="text-xs text-ink-muted">

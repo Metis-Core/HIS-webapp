@@ -31,22 +31,28 @@ export default function LabResultsDrawer({ order, onClose }: LabResultsDrawerPro
                   </span>
                   {item.isAbnormal && <Pill variant={PillVariantEnum.DANGER}>Abnormal</Pill>}
                 </div>
-                <LabResultView item={item} />
+                <LabResultView item={item} patient={order.patient} />
                 {item.resultNotes && (
                   <p className="rounded-md bg-surface px-2 py-1 text-xs text-ink-muted">Notes: {item.resultNotes}</p>
                 )}
-                {item.resultedAt && (
+                {item.verifiedAt && (
                   <span className="text-[11px] tabular-nums text-ink-muted">
-                    Resulted {format(new Date(item.resultedAt), 'dd MMM yyyy HH:mm')}
+                    Verified {format(new Date(item.verifiedAt), 'dd MMM yyyy HH:mm')}
+                    {item.verifiedBy ? ` by ${item.verifiedBy.firstName} ${item.verifiedBy.lastName}` : ''}
                   </span>
                 )}
               </li>
             ))}
           </ul>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <DocumentButton endpoint={DocumentEndpointEnum.LAB_ORDER} id={order.id}>
-              Print / Download
+              Print order report
             </DocumentButton>
+            {order.visitId && (
+              <DocumentButton endpoint={DocumentEndpointEnum.LAB_REPORT_VISIT} id={order.visitId}>
+                Print visit report
+              </DocumentButton>
+            )}
           </div>
         </div>
       )}

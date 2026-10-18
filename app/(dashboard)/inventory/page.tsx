@@ -153,7 +153,11 @@ export default function InventoryPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        description="Medications, consumables, and equipment across stores."
+        description={
+          roles.is(UserRoleEnum.LAB_TECH)
+            ? 'Laboratory reagents and consumables in the lab stores.'
+            : 'Medications, consumables, and equipment across stores.'
+        }
         action={
           tab === 'items' && canManage ? (
             <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>

@@ -3,6 +3,11 @@ export enum LabEndpointEnum {
   ORDERS = '/lab/orders',
   ORDERS_BY_PATIENT = '/lab/orders/patient',
   ORDERS_BY_CONSULTATION = '/lab/orders/consultation',
+  ITEMS = '/lab/items',
+  ITEMS_SUMMARY = '/lab/items/summary',
+  REPORTS = '/lab/reports',
+  REPORTS_EXPORT = '/lab/reports/export',
+  LAB_ONLY_VISIT = '/visits/lab-only',
 }
 
 export enum LabTestTypeEnum {
@@ -46,7 +51,26 @@ export enum LabOrderItemStatusEnum {
   COLLECTED = 'collected',
   IN_PROCESS = 'in_process',
   RESULT_READY = 'result_ready',
+  VERIFIED = 'verified',
   CANCELLED = 'cancelled',
+}
+
+/** Computed by the API from the field's reference ranges (L6). */
+export enum LabResultFlagEnum {
+  LOW = 'low',
+  HIGH = 'high',
+  CRITICAL_LOW = 'critical_low',
+  CRITICAL_HIGH = 'critical_high',
+  ABNORMAL = 'abnormal',
+}
+
+/** L11 age bands, age taken on the result date (Decision 3 default). */
+export enum LabAgeBandEnum {
+  UNDER_5 = 'under_5',
+  AGE_5_12 = '5_12',
+  AGE_13_17 = '13_17',
+  AGE_18_59 = '18_59',
+  AGE_60_PLUS = '60_plus',
 }
 
 export enum LabPriorityEnum {
