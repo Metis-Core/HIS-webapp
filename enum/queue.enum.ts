@@ -14,7 +14,7 @@ export enum QueueStatusEnum {
 }
 
 export enum QueueStageEnum {
-  REGISTRATION = 'registration',
+  RECEPTION = 'reception',
   CONSULTATION = 'consultation',
   EXAMINATION = 'triage',
   LAB = 'lab',
@@ -25,6 +25,7 @@ export enum QueueStageEnum {
   SURGERY = 'surgery',
   POSTOPERATIVE = 'postoperative',
   FOLLOWUP = 'follow-up',
+  BILLING = 'billing',
   DISCHARGE = 'discharge',
   REFERRAL = 'referral',
   TRANSFER = 'transfer',
@@ -47,6 +48,14 @@ export enum VisitIntentEnum {
   SURGERY = 'surgery',
   POSTOPERATIVE = 'postoperative',
   FOLLOWUP = 'follow-up',
+  BILLING = 'billing',
+}
+
+/** Emergency triage colour (matches the API): red = immediate, yellow = urgent, green = can wait. */
+export enum TriageCategoryEnum {
+  RED = 'red',
+  YELLOW = 'yellow',
+  GREEN = 'green',
 }
 
 export enum QueueEntryStatusEnum {

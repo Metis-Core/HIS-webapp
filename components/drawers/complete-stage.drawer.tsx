@@ -34,6 +34,7 @@ const INTENT_LABEL: Record<VisitIntentEnum, string> = {
   [VisitIntentEnum.SURGERY]: 'Surgery',
   [VisitIntentEnum.POSTOPERATIVE]: 'Post-op',
   [VisitIntentEnum.FOLLOWUP]: 'Follow-up',
+  [VisitIntentEnum.BILLING]: 'Billing',
 };
 
 const OPTIONS: VisitIntentEnum[] = [

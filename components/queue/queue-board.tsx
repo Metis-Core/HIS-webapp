@@ -23,6 +23,7 @@ import {
   departmentStageMap,
   entryStatusMap,
   initialsOf,
+  stageReadyAt,
   priorityVariants,
   stageLabel,
 } from '@/data/queue';
@@ -50,7 +51,8 @@ interface IQueueRow {
   rawStatus: QueueEntryStatusEnum;
   assignedTo: string;
   department: string;
-  checkedInAt: Date;
+  /** Start of the wait for the current stage. */
+  waitingSince: Date;
   sequenceNumber: number;
   steps: IStageStep[];
 }
@@ -152,7 +154,7 @@ export default function QueueBoard() {
             rawStatus: active.status,
             assignedTo: active.servedById ? 'Assigned staff' : 'Unassigned',
             department: stageLabel(active.department),
-            checkedInAt: visit.createdAt,
+            waitingSince: stageReadyAt(visit),
             sequenceNumber: active.sequenceNumber,
             steps: sorted.map((entry) => ({
               stage: departmentStageMap[entry.department],
@@ -253,7 +255,7 @@ export default function QueueBoard() {
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Pathway</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Handled by</th>
                 <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide">Status</th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Waiting</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide">Waiting at stage</th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide" />
               </tr>
             </thead>
@@ -312,7 +314,7 @@ export default function QueueBoard() {
                       </Pill>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap text-sm text-ink-muted">
-                      {formatDistanceToNow(entry.checkedInAt, { addSuffix: true })}
+                      {formatDistanceToNow(entry.waitingSince)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-3">

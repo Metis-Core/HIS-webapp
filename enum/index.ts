@@ -42,6 +42,7 @@ export {
   VisitIntentEnum,
   VisitStatusEnum,
   QueueEntryStatusEnum,
+  TriageCategoryEnum,
 } from './queue.enum';
 export {
   ConsultationEndpointEnum,

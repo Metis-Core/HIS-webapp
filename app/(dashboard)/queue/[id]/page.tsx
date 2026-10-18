@@ -26,7 +26,8 @@ import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum, QueueEntryStatusEnu
 import { api } from '@/helpers/axios';
 import visitsService from '@/helpers/visits.service';
 import { useConsultationsByVisit, useLabOrdersByConsultation } from '@/hooks';
-import type { IConsultation, IQueueEntryRecord, IVisitRecord } from '@/interfaces';
+import { formatDuration } from '@/data/queue';
+import type { IConsultation, IQueueEntryRecord, IVisitRecord, IVisitTimeline, IVisitTimelineStage } from '@/interfaces';
 
 const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.RECEPTION]: 'Reception',
@@ -38,7 +39,7 @@ const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.DENTAL]: 'Dental',
   [DepartmentEnum.ANTENATAL]: 'Antenatal (ANC)',
   [DepartmentEnum.MAIN_PHARMACY]: 'Pharmacy',
-  [DepartmentEnum.FINANCE]: 'Finance',
+  [DepartmentEnum.FINANCE]: 'Billing',
   [DepartmentEnum.ADMINISTRATION]: 'Administration',
 };
 
@@ -84,6 +85,13 @@ export default function QueueDetailPage() {
     api,
   );
   const visit = data?.data.data;
+  const { data: timelineData, mutate: mutateTimeline } = useSWR<IVisitTimeline>(
+    params.id ? `/visits/${params.id}/timeline` : null,
+  );
+  const stageTimes = useMemo(
+    () => new Map((timelineData?.stages ?? []).map((stage) => [stage.entryId, stage])),
+    [timelineData],
+  );
 
   const entries = useMemo(
     () => (visit ? [...(visit.queueEntries ?? [])].sort((a, b) => a.sequenceNumber - b.sequenceNumber) : []),
@@ -108,7 +116,7 @@ export default function QueueDetailPage() {
       success: 'Stage completed — next stage advanced',
       error: "Couldn't complete — retry",
     });
-    await mutate();
+    await Promise.all([mutate(), mutateTimeline()]);
     await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
   };
 
@@ -119,7 +127,7 @@ export default function QueueDetailPage() {
       success: 'Stage removed',
       error: "Couldn't remove — retry",
     });
-    await mutate();
+    await Promise.all([mutate(), mutateTimeline()]);
     await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
   };
 
@@ -223,7 +231,7 @@ export default function QueueDetailPage() {
               <div>
                 <h2 className="text-sm font-semibold text-ink">Care pathway</h2>
                 <p className="text-xs text-ink-muted">
-                  Timeline of every stage in the visit — from check-in to discharge.
+                  Every stage of the visit from reception to billing, with how long the patient waited at each.
                 </p>
               </div>
             </header>
@@ -237,6 +245,7 @@ export default function QueueDetailPage() {
                   <PathwayRow
                     key={entry.id}
                     entry={entry}
+                    times={stageTimes.get(entry.id)}
                     isFirst={i === 0}
                     isLast={i === entries.length - 1}
                     onComplete={() => completeEntry(entry)}
@@ -267,12 +276,14 @@ function ProfileRow({ icon, label, value }: { icon: React.ReactNode; label: stri
 
 function PathwayRow({
   entry,
+  times,
   isFirst,
   isLast,
   onComplete,
   onRemove,
 }: {
   entry: IQueueEntryRecord;
+  times?: IVisitTimelineStage;
   isFirst: boolean;
   isLast: boolean;
   onComplete: () => void;
@@ -281,8 +292,6 @@ function PathwayRow({
   const isDone = entry.status === QueueEntryStatusEnum.COMPLETED || entry.status === QueueEntryStatusEnum.SKIPPED;
   const isActive = entry.status === QueueEntryStatusEnum.CALLED || entry.status === QueueEntryStatusEnum.IN_SERVICE;
   const isWaiting = entry.status === QueueEntryStatusEnum.WAITING;
-
-  const timestamp = entry.completedAt ?? entry.startedAt ?? entry.calledAt ?? (entry.createdAt as unknown as string);
 
   return (
     <li className="relative flex gap-4 px-5 py-4">
@@ -311,6 +320,7 @@ function PathwayRow({
           <div>
             <p className="text-sm font-medium text-ink">
               #{entry.sequenceNumber} · {DEPT_LABEL[entry.department]}
+              {entry.metadata?.review && <span className="ml-2 text-xs font-normal text-info">Doctor review</span>}
             </p>
             <p className="text-xs text-ink-muted">
               {entry.completedAt
@@ -335,6 +345,13 @@ function PathwayRow({
           {entry.calledAt && <span>Called {format(new Date(entry.calledAt), 'HH:mm')}</span>}
           {entry.startedAt && <span>Started {format(new Date(entry.startedAt), 'HH:mm')}</span>}
           {entry.completedAt && <span>Ended {format(new Date(entry.completedAt), 'HH:mm')}</span>}
+          {times?.waitSeconds !== null && times?.waitSeconds !== undefined && (
+            <span>Waited {formatDuration(times.waitSeconds)}</span>
+          )}
+          {times?.serviceSeconds !== null && times?.serviceSeconds !== undefined && (
+            <span>Served {formatDuration(times.serviceSeconds)}</span>
+          )}
+          {times?.servedByName && <span>by {times.servedByName}</span>}
         </div>
 
         {!isDone && (

@@ -9,7 +9,7 @@ import { ButtonVariantEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
 import { QueueEntryStatusEnum } from '@/enum/queue.enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
 import { patientFullName, patientInitials } from '@/data/patients';
-import { currentEntry, departmentStageMap, entryStatusMap, statusVariants } from '@/data/queue';
+import { currentEntry, departmentStageMap, entryStatusMap, stageReadyAt, statusVariants } from '@/data/queue';
 import type { IPagination } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 import type { IVisitRecord } from '@/interfaces/queue.interfaces';
@@ -128,9 +128,7 @@ export default function OverviewDashboard({ primaryAction }: Props) {
                         <td className="px-6 py-4">
                           <Pill variant={statusVariants[status]}>{status.replace('-', ' ')}</Pill>
                         </td>
-                        <td className="px-6 py-4 text-zinc-500">
-                          {formatDistanceToNow(visit.createdAt, { addSuffix: true })}
-                        </td>
+                        <td className="px-6 py-4 text-zinc-500">{formatDistanceToNow(stageReadyAt(visit))}</td>
                       </tr>
                     );
                   })

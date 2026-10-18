@@ -3,6 +3,8 @@ import type { IBaseEntity } from './base.interface';
 
 export interface IService extends IBaseEntity {
   name: string;
+  /** Stable lookup key, e.g. CONSULTATION for the check-in fee. */
+  code?: string | null;
   fee: number;
   description?: string | null;
   isActive: boolean;
