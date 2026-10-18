@@ -40,4 +40,7 @@ export {
 } from './pharmacy.hook';
 export { useCheckIn } from './check-in.hook';
 export { useDebouncedValue } from './use-debounced-value';
+export { useUrlPage } from './use-url-page';
+export { usePagedSearch } from './use-paged-search';
+export { useListTotal } from './use-list-total';
 export { useAutosaveForm } from './use-autosave-form';

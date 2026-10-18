@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Button, PatientDrawer, Tabs, VisitReceiptDrawer } from '@/components';
+import { Button, Pagination, PatientDrawer, Tabs, VisitReceiptDrawer } from '@/components';
 import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPatientFilters, PatientFormValues } from '@/interfaces';
@@ -14,10 +14,9 @@ import { unwrapData } from '@/helpers/envelope';
 import { extractErrorMessage } from '@/helpers/errors';
 import { toPatientPayload } from '@/helpers/patients.service';
 import { roleInGroup } from '@/helpers/role-groups';
-import { useDebouncedValue, usePatients } from '@/hooks';
+import { useDebouncedValue, usePatients, useUrlPage } from '@/hooks';
 import { useAuth } from '@/providers';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
-import PaginationFooter from './components/pagination-footer';
 import PatientRow from './components/patient-row';
 
 const PAGE_SIZE = 20;
@@ -69,7 +68,7 @@ function PatientsView() {
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useUrlPage();
   const search = useDebouncedValue(filters.search, SEARCH_DEBOUNCE_MS);
 
   const query = useMemo(() => toQuery(filters, search, page), [filters, search, page]);
@@ -218,7 +217,7 @@ function PatientsView() {
                 </tbody>
               </table>
             </div>
-            <PaginationFooter
+            <Pagination
               page={page}
               limit={limit}
               total={total}

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Header, Sidebar } from '@/components';
 import RouteGuard from '@/components/layout/route-guard';
@@ -19,7 +20,10 @@ export default function DashboardLayout({
           <Header />
           <main className="min-h-0 flex-1 overflow-auto">
             <div className="w-full px-6 py-4">
-              <RouteGuard>{children}</RouteGuard>
+              {/* Lists keep their page in the URL (useSearchParams), which needs a Suspense boundary. */}
+              <Suspense fallback={null}>
+                <RouteGuard>{children}</RouteGuard>
+              </Suspense>
             </div>
           </main>
         </div>

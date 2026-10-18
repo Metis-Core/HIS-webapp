@@ -12,6 +12,12 @@ export interface IPaginationMeta {
   hasNextPage: boolean;
 }
 
+/** page/limit for any paged list (API default 20, max 100). */
+export interface IPageQuery {
+  page?: number;
+  limit?: number;
+}
+
 export interface IPagination<T> {
   items: T[];
   total: number;
