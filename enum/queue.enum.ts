@@ -49,6 +49,7 @@ export enum VisitIntentEnum {
   POSTOPERATIVE = 'postoperative',
   FOLLOWUP = 'follow-up',
   BILLING = 'billing',
+  ADMISSION = 'admission',
 }
 
 /** Emergency triage colour (matches the API): red = immediate, yellow = urgent, green = can wait. */
