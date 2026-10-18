@@ -25,6 +25,7 @@ import {
   usePrescriptions,
 } from '@/hooks';
 import type { IInventoryItem, IPrescription, IQueueEntryRecord } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'pending' | 'all' | 'medications';
 
@@ -399,6 +400,7 @@ function WaitingPharmacyQueue({
                     {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
                   </div>
                   <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+                  <PriorityBadge visit={e.visit} />
                 </td>
                 <td className="px-4 py-3 text-sm text-ink">
                   {rx.length === 0 ? '—' : rx.flatMap((p) => p.items.map((i) => i.item?.name ?? i.itemId)).join(', ')}

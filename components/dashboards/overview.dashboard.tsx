@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { FaBell, FaClipboardList, FaStethoscope, FaUserInjured } from 'react-icons/fa';
 import { Button, EmptyState, Pill, Stats } from '@/components';
+import PriorityBadge from '@/components/queue/priority-badge';
 import { ButtonVariantEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
 import { QueueEntryStatusEnum } from '@/enum/queue.enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
@@ -123,6 +124,7 @@ export default function OverviewDashboard({ primaryAction }: Props) {
                       >
                         <td className="px-6 py-4 font-medium text-zinc-900">
                           {visit.patient ? patientFullName(visit.patient) : visit.patientId}
+                          <PriorityBadge visit={visit} />
                         </td>
                         <td className="px-6 py-4 capitalize text-zinc-600">{stage.replace('-', ' ')}</td>
                         <td className="px-6 py-4">

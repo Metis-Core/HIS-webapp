@@ -25,6 +25,7 @@ import type {
   IQueueEntryRecord,
   IUpdateLabTestDto,
 } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'orders' | 'tests';
 
@@ -303,6 +304,7 @@ function WaitingLabQueue({
                     {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
                   </div>
                   <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+                  <PriorityBadge visit={e.visit} />
                 </td>
                 <td className="px-4 py-3 text-sm text-ink">
                   {visitOrders.length === 0

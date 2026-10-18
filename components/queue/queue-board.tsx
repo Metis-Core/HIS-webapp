@@ -16,7 +16,14 @@ import {
   FaUserClock,
 } from 'react-icons/fa';
 import { Dropdown, EmptyState, Input, Pill, Stats } from '@/components';
-import { QueueEntryStatusEnum, QueueStageEnum, QueueStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import {
+  QueueEntryStatusEnum,
+  QueueStageEnum,
+  QueueStatusEnum,
+  TriageCategoryEnum,
+  VisitTypeEnum,
+} from '@/enum/queue.enum';
+import PriorityBadge from './priority-badge';
 import { PillVariantEnum } from '@/enum';
 import {
   currentEntry,
@@ -55,6 +62,14 @@ interface IQueueRow {
   waitingSince: Date;
   sequenceNumber: number;
   steps: IStageStep[];
+  visit: IVisitRecord;
+}
+
+// Driven by the API's triage colour, so a red walk-in is flagged as well as an emergency visit.
+function priorityOf(visit: IVisitRecord): QueuePriority {
+  if (visit.triageCategory === TriageCategoryEnum.RED) return 'emergency';
+  if (visit.triageCategory === TriageCategoryEnum.YELLOW) return 'urgent';
+  return visit.visitType === VisitTypeEnum.EMERGENCY ? 'emergency' : 'routine';
 }
 
 function VisitPathway({ steps }: { steps: IStageStep[] }) {
@@ -148,7 +163,8 @@ export default function QueueBoard() {
             activeEntryId: active.id,
             patientName: visit.patient ? patientFullName(visit.patient) : visit.patientId,
             phone: visit.patient?.phone ?? '—',
-            priority: (visit.visitType === VisitTypeEnum.EMERGENCY ? 'emergency' : 'routine') as QueuePriority,
+            priority: priorityOf(visit),
+            visit,
             stage: departmentStageMap[active.department],
             status: entryStatusMap[active.status],
             rawStatus: active.status,
@@ -162,7 +178,11 @@ export default function QueueBoard() {
             })),
           };
         })
-        .sort((a, b) => a.sequenceNumber - b.sequenceNumber),
+        // Most urgent first, then whoever has waited longest at their current stage.
+        .sort(
+          (a, b) =>
+            (b.visit.priority ?? 0) - (a.visit.priority ?? 0) || a.waitingSince.getTime() - b.waitingSince.getTime(),
+        ),
     [visits],
   );
 
@@ -290,7 +310,11 @@ export default function QueueBoard() {
                         <span className="truncate">{entry.phone}</span>
                       </p>
                       <div className="mt-1.5">
-                        <Pill variant={priorityVariants[entry.priority]}>{entry.priority}</Pill>
+                        {entry.visit.triageCategory ? (
+                          <PriorityBadge visit={entry.visit} />
+                        ) : (
+                          <Pill variant={priorityVariants[entry.priority]}>{entry.priority}</Pill>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">

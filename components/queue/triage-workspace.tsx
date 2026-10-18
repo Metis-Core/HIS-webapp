@@ -21,6 +21,7 @@ import { extractErrorMessage } from '@/helpers/errors';
 import type { ICreateTriageDto, IQueueEntryRecord, ITriage, IUpdateTriageDto } from '@/interfaces';
 import { roleInGroup } from '@/helpers/role-groups';
 import { useAuth } from '@/providers';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'all';
 
@@ -201,6 +202,7 @@ export default function TriageWorkspace() {
                               : entry.visitId}
                           </div>
                           <div className="text-xs text-ink-muted">{entry.visit?.patient?.mrn}</div>
+                          <PriorityBadge visit={entry.visit} />
                         </td>
                         <td className="px-4 py-3">
                           <Pill variant={queueStatusVariant[entry.status] ?? PillVariantEnum.DEFAULT}>

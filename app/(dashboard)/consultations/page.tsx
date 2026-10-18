@@ -19,6 +19,7 @@ import { useConsultations, useDepartmentQueue, usePatients } from '@/hooks';
 import { extractErrorMessage } from '@/helpers/errors';
 import triageService from '@/helpers/triage.service';
 import type { IConsultation, IPatient, IQueueEntryRecord } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'all';
 
@@ -347,6 +348,7 @@ function WaitingTable({
                     {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
                   </div>
                   <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+                  <PriorityBadge visit={e.visit} />
                 </td>
                 <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
                 <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{e.priority}</td>

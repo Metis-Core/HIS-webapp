@@ -27,6 +27,10 @@ import { api } from '@/helpers/axios';
 import visitsService from '@/helpers/visits.service';
 import { useConsultationsByVisit, useLabOrdersByConsultation } from '@/hooks';
 import { formatDuration } from '@/data/queue';
+import PriorityBadge from '@/components/queue/priority-badge';
+import PriorityControl from '@/components/queue/priority-control';
+import { roleInGroup } from '@/helpers/role-groups';
+import { useAuth } from '@/providers';
 import type { IConsultation, IQueueEntryRecord, IVisitRecord, IVisitTimeline, IVisitTimelineStage } from '@/interfaces';
 
 const DEPT_LABEL: Record<DepartmentEnum, string> = {
@@ -79,6 +83,8 @@ export default function QueueDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { mutate: globalMutate } = useSWRConfig();
+  const { effectiveRole } = useAuth();
+  const canChangePriority = roleInGroup(effectiveRole, 'PRIORITY_MANAGERS');
 
   const { data, isLoading, mutate } = useSWR<{ data: { data: IVisitRecord } }>(
     params.id ? `/visits/${params.id}` : null,
@@ -172,6 +178,7 @@ export default function QueueDetailPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-ink">{patientName}</h1>
+          <PriorityBadge visit={visit} />
           <p className="text-sm text-ink-muted">
             {activeEntry
               ? `Currently at ${DEPT_LABEL[activeEntry.department]} — ${activeEntry.status.replaceAll('_', ' ')}`
@@ -221,6 +228,16 @@ export default function QueueDetailPage() {
               )}
             </dl>
           </section>
+
+          {canChangePriority && activeEntry && (
+            <PriorityControl
+              visitId={visit.id}
+              current={visit.triageCategory}
+              onChanged={() =>
+                Promise.all([mutate(), globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'))])
+              }
+            />
+          )}
 
           {consultations.length > 0 && <ConsultationSummaries consultations={consultations} />}
         </aside>
