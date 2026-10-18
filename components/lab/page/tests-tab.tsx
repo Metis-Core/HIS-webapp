@@ -35,6 +35,13 @@ export default function TestsTab({ canManage }: { canManage: boolean }) {
       })
       .unwrap();
   };
+  const toggleActive = async (test: ILabTest) => {
+    await toast.promise(updateTest(test.id, { isActive: !test.isActive }), {
+      loading: 'Saving…',
+      success: test.isActive ? `${test.name} can no longer be ordered` : `${test.name} can now be ordered`,
+      error: "Couldn't update — retry",
+    });
+  };
   const remove = async (test: ILabTest) => {
     if (!confirm(`Remove ${test.name}?`)) return;
     await toast.promise(removeTest(test.id), {
@@ -62,6 +69,7 @@ export default function TestsTab({ canManage }: { canManage: boolean }) {
           onAdd={() => open(ModalDrawerModeEnum.ADD, null)}
           onEdit={(t) => open(ModalDrawerModeEnum.EDIT, t)}
           onDelete={remove}
+          onToggleActive={toggleActive}
         />
         <Pagination {...pagination} loading={isLoading} onPageChange={list.setPage} label="Lab test pages" />
       </div>

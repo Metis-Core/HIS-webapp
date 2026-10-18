@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Input } from '@/components';
 import { PICKER_DEBOUNCE_MS, PICKER_PAGE_SIZE } from '@/helpers/pagination';
-import { useDebouncedValue, useLabTests } from '@/hooks';
+import { labTestsService } from '@/helpers/lab.service';
+import { useDebouncedValue, useLabTests, useListTotal } from '@/hooks';
 import type { ILabTest } from '@/interfaces';
 
 interface LabTestPickerProps {
@@ -25,6 +26,7 @@ export default function LabTestPicker({ selected, onChange }: LabTestPickerProps
     limit: PICKER_PAGE_SIZE,
   });
 
+  const inactiveCount = useListTotal(labTestsService.buildListUrl({ isActive: false, limit: 1 }));
   const selectedIds = selected.map((t) => t.id);
   const shown = [...selected, ...tests.filter((t) => !selectedIds.includes(t.id))];
   const toggle = (test: ILabTest) =>
@@ -36,9 +38,11 @@ export default function LabTestPicker({ selected, onChange }: LabTestPickerProps
       <div className="max-h-64 overflow-auto rounded-md border border-line p-3">
         {shown.length === 0 && !search && !isLoading ? (
           <p className="text-xs text-ink-muted">
-            No lab tests configured yet. Ask the lab admin to add tests under{' '}
+            {inactiveCount > 0
+              ? `${inactiveCount} lab tests are set up but not active, so they cannot be ordered. An administrator can activate them under `
+              : 'No lab tests configured yet. Ask the lab admin to add tests under '}
             <Link href="/lab" className="text-brand hover:underline">
-              Lab › Tests catalog
+              Lab › Tests catalogue
             </Link>
             .
           </p>
