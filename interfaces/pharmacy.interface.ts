@@ -82,3 +82,11 @@ export interface IDispense extends IBaseEntity {
   notes?: string | null;
   items: IDispenseItem[];
 }
+
+/** Body for POST /consultations/:id/prescriptions; patient, consultation and visit come from the URL. */
+export interface IConsultationPrescriptionDto extends Omit<
+  ICreatePrescriptionDto,
+  'patientId' | 'consultationId' | 'visitId'
+> {
+  allergyAcknowledged?: boolean;
+}
