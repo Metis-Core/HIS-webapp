@@ -11,9 +11,18 @@ interface TestsTableProps {
   onAdd: () => void;
   onEdit: (t: ILabTest) => void;
   onDelete: (t: ILabTest) => void;
+  onToggleActive: (t: ILabTest) => void;
 }
 
-export default function TestsTable({ tests, searching, canManage, onAdd, onEdit, onDelete }: TestsTableProps) {
+export default function TestsTable({
+  tests,
+  searching,
+  canManage,
+  onAdd,
+  onEdit,
+  onDelete,
+  onToggleActive,
+}: TestsTableProps) {
   if (tests.length === 0) {
     return searching ? (
       <EmptyState message="No lab tests match your search" icon={FaFlask} />
@@ -62,6 +71,9 @@ export default function TestsTable({ tests, searching, canManage, onAdd, onEdit,
             {canManage && (
               <td className={`${TD} text-right`}>
                 <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => onToggleActive(t)} className={LINK}>
+                    {t.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
                   <button type="button" onClick={() => onEdit(t)} className={LINK}>
                     Edit
                   </button>

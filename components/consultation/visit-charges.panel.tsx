@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { FaHandHoldingMedical, FaPlus, FaTrash } from 'react-icons/fa';
 import { Button, Input, Pill } from '@/components';
+import { formatFee } from '@/components/billing/billing-format';
 import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { ChargeStatusEnum } from '@/enum/billing.enum';
 import { extractErrorMessage } from '@/helpers/errors';
@@ -13,7 +14,7 @@ import servicesService from '@/helpers/services.service';
 import { useVisitBill } from '@/hooks';
 import type { IOption, IService } from '@/interfaces';
 
-const serviceOption = (s: IService): IOption => ({ label: `${s.name} · UGX ${s.fee.toLocaleString()}`, value: s.id });
+const serviceOption = (s: IService): IOption => ({ label: `${s.name} · ${formatFee(s.fee)}`, value: s.id });
 // The price list is searched on the server rather than loaded whole into the dropdown.
 const buildServiceUrl = (search: string) =>
   servicesService.buildListUrl({ search: search || undefined, isActive: true, limit: PICKER_PAGE_SIZE });
@@ -110,7 +111,7 @@ export default function VisitChargesPanel({ visitId, readOnly }: { visitId: stri
                       <span className="ml-2 text-xs capitalize text-ink-muted">{c.source}</span>
                     </td>
                     <td className="px-3 py-2 tabular-nums text-ink-muted">{c.quantity}</td>
-                    <td className="px-3 py-2 tabular-nums text-ink">UGX {c.amount.toLocaleString()}</td>
+                    <td className="px-3 py-2 tabular-nums text-ink">{formatFee(c.amount)}</td>
                     <td className="px-3 py-2">
                       <Pill variant={statusVariant[c.status]}>{c.status}</Pill>
                     </td>

@@ -1,5 +1,7 @@
 'use client';
 
+import MessageTeamButton from '@/components/messages/message-team.button';
+import { MessageTeamEnum } from '@/enum/message.enum';
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -105,6 +107,14 @@ export default function ConsultationDetailPage() {
               canAddAddendum={canAddAddendum}
               onSave={saveForm}
             />
+          )}
+          {(tab === 'lab' || tab === 'orders' || tab === 'prescriptions') && (
+            <div className="flex justify-end">
+              <MessageTeamButton
+                team={tab === 'prescriptions' ? MessageTeamEnum.PHARMACY : MessageTeamEnum.LABORATORY}
+                visitId={consultation.visitId}
+              />
+            </div>
           )}
           {tab === 'lab' && (
             <LabTab

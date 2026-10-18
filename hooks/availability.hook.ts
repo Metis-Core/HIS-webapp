@@ -22,21 +22,23 @@ const isAvailabilityKey = (key: unknown) =>
 export function useAvailability(userId?: string, enabled = true) {
   const { mutate: globalMutate } = useSWRConfig();
   const key = enabled ? availabilityService.overviewUrl(userId) : null;
-  const { data, error, isLoading, mutate } = useSWR<IAvailabilityOverview>(key, { refreshInterval: REFRESH_MS });
+  const { data, error, isLoading, mutate } = useSWR<IAvailabilityOverview>(key, {
+    refreshInterval: REFRESH_MS,
+    revalidateOnFocus: true,
+  });
 
-  const set = async (dto: ISetAvailabilityDto) => {
-    const next = await availabilityService.set(dto, userId);
-    await mutate(next, { revalidate: false });
+  const apply = async (next: IAvailabilityOverview) => {
+    await Promise.all([
+      mutate(next, { revalidate: false }),
+      !userId && globalMutate(availabilityService.overviewUrl(), next, { revalidate: false }),
+    ]);
     await globalMutate(isAvailabilityKey);
     return next;
   };
 
-  const cancel = async (periodId: string) => {
-    const next = await availabilityService.cancel(periodId, userId);
-    await mutate(next, { revalidate: false });
-    await globalMutate(isAvailabilityKey);
-    return next;
-  };
+  const set = async (dto: ISetAvailabilityDto) => apply(await availabilityService.set(dto, userId));
+
+  const cancel = async (periodId: string) => apply(await availabilityService.cancel(periodId, userId));
 
   return { overview: data, isLoading, error, set, cancel };
 }

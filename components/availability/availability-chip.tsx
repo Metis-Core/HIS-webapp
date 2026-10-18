@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AvailabilityStatusEnum } from '@/enum';
 import { useAvailability } from '@/hooks';
 import AvailabilityDrawer from './availability.drawer';
-import { AVAILABILITY_ICON, AVAILABILITY_LABEL } from './availability-status';
+import { AVAILABILITY_ICON, AVAILABILITY_LABEL, formatShortUntil } from './availability-status';
 
 /** Header control: shows the signed-in user's status and opens the availability drawer. */
 export default function AvailabilityChip() {
@@ -13,6 +13,7 @@ export default function AvailabilityChip() {
   const status = overview?.current.status ?? AvailabilityStatusEnum.AVAILABLE;
   const Icon = AVAILABILITY_ICON[status];
   const away = status !== AvailabilityStatusEnum.AVAILABLE;
+  const until = away ? formatShortUntil(overview?.current.until ?? null) : null;
 
   return (
     <>
@@ -26,6 +27,7 @@ export default function AvailabilityChip() {
       >
         <Icon aria-hidden className="h-3 w-3" />
         {AVAILABILITY_LABEL[status]}
+        {until && <span className="font-normal">· until {until}</span>}
       </button>
       <AvailabilityDrawer open={open} onClose={() => setOpen(false)} />
     </>

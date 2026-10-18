@@ -9,6 +9,7 @@ const INTENT_LABEL: Partial<Record<VisitIntentEnum, string>> = {
   [VisitIntentEnum.PHARMACY]: 'Pharmacy',
   [VisitIntentEnum.DENTAL]: 'Dental',
   [VisitIntentEnum.ANTENATAL]: 'Antenatal (ANC)',
+  [VisitIntentEnum.IMMUNIZATION]: 'Immunization',
   [VisitIntentEnum.CONSULTATION]: 'Consultation',
   [VisitIntentEnum.SURGERY]: 'Surgery',
   [VisitIntentEnum.FOLLOWUP]: 'Follow-up',

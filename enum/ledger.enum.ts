@@ -25,6 +25,7 @@ export enum InvoiceStatusEnum {
 
 export enum OrderEndpointEnum {
   BASE = '/orders',
+  TESTS = '/orders/tests',
 }
 
 export enum OrderKindEnum {
@@ -44,4 +45,23 @@ export enum OrderPriorityEnum {
   ROUTINE = 'routine',
   URGENT = 'urgent',
   EMERGENCY = 'emergency',
+}
+
+export enum ProcedureCategoryEnum {
+  XRAY = 'xray',
+  ULTRASOUND = 'ultrasound',
+  ECG = 'ecg',
+  ECHO = 'echo',
+  CT = 'ct',
+  MRI = 'mri',
+  MINOR_PROCEDURE = 'minor_procedure',
+  MINOR_SURGERY = 'minor_surgery',
+  MAJOR_SURGERY = 'major_surgery',
+  OTHER = 'other',
+}
+
+export enum ResultClassificationEnum {
+  NORMAL = 'normal',
+  ABNORMAL = 'abnormal',
+  CRITICAL = 'critical',
 }

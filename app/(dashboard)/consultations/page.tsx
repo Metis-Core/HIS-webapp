@@ -65,16 +65,20 @@ export default function ConsultationsPage() {
   const allCount = useListTotal(consultationsService.buildListUrl({ limit: 1 }));
 
   const {
-    entries: waiting,
+    entries: queueEntries,
     call: callEntry,
     start: startEntry,
     skip: skipEntry,
   } = useDepartmentQueue(DepartmentEnum.OUTPATIENT_CLINIC);
+  // Patients already in service are on the In progress list, not here.
+  const waiting = queueEntries.filter(
+    (e) => e.status === QueueEntryStatusEnum.WAITING || e.status === QueueEntryStatusEnum.CALLED,
+  );
 
   const stats = [
     {
       label: 'Waiting',
-      value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
+      value: waiting.length,
       icon: FaClipboardList,
       variant: StatVariantEnum.Amber,
     },

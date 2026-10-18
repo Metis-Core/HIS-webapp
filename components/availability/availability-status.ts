@@ -27,3 +27,28 @@ export const formatWhen = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export const formatUntil = (iso: string | null) => (iso ? `until ${formatWhen(iso)}` : 'until marked available');
+
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
+export const formatShortUntil = (iso: string | null) => {
+  if (!iso) return null;
+  const end = new Date(iso);
+  return sameDay(end, new Date())
+    ? end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    : end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+};
+
+export function describeAvailability(status: AvailabilityStatusEnum, until: string | null): string {
+  if (status === AvailabilityStatusEnum.AVAILABLE) return "You're available. New patients can be assigned to you.";
+  const when = formatShortUntil(until);
+  const label = AVAILABILITY_LABEL[status].toLowerCase();
+  return when
+    ? `You're ${label} until ${when}. You'll be available again automatically.`
+    : `You're ${label} until you mark yourself available.`;
+}
+
+export const minutesLeftToday = (cap: number) => {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(1, Math.min(cap, Math.round((midnight.getTime() - now.getTime()) / 60_000)));
+};

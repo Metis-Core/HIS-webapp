@@ -40,6 +40,7 @@ export {
   QueueStageEnum,
   VisitTypeEnum,
   VisitIntentEnum,
+  ServiceVisitKindEnum,
   VisitStatusEnum,
   QueueEntryStatusEnum,
   TriageCategoryEnum,
@@ -67,6 +68,9 @@ export {
   DocumentEndpointEnum,
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
+export { MessageEndpointEnum, MessageTeamEnum, MESSAGE_TEAM_LABEL, isMessageTeam } from './message.enum';
+export { ClinicRecordKindEnum, ClinicEndpointEnum } from './clinic.enum';
+export { AdmissionEndpointEnum } from './admission.enum';
 export {
   LedgerEndpointEnum,
   PaymentMethodEnum,
@@ -76,6 +80,8 @@ export {
   OrderKindEnum,
   OrderStatusEnum,
   OrderPriorityEnum,
+  ProcedureCategoryEnum,
+  ResultClassificationEnum,
 } from './ledger.enum';
 export {
   AvailabilityEndpointEnum,

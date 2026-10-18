@@ -1,9 +1,13 @@
 import { describeRange, displayValue, effectiveSchema, groupFields, rangeFor } from '@/helpers/lab-results';
-import type { ILabOrderItem, IPatient } from '@/interfaces';
+import type { ILabResultData, ILabResultFlags, ILabTest, IPatient } from '@/interfaces';
 import LabFlagPill from './lab-flag.pill';
 
 interface LabResultTableProps {
-  item: ILabOrderItem;
+  item: {
+    resultData?: ILabResultData | null;
+    resultFlags?: ILabResultFlags | null;
+    test?: Pick<ILabTest, 'resultSchema'>;
+  };
   patient?: Pick<IPatient, 'gender' | 'dateOfBirth'>;
 }
 

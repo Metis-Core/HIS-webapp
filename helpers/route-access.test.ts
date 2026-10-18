@@ -15,6 +15,12 @@ describe('canOpenRoute', () => {
     expect(canOpenRoute(UserRoleEnum.PHARMACIST, '/orders')).toBe(false);
   });
 
+  it('keeps the mother and child page to clinical staff', () => {
+    expect(canOpenRoute(UserRoleEnum.NURSE, '/maternity')).toBe(true);
+    expect(canOpenRoute(UserRoleEnum.DOCTOR, '/maternity')).toBe(true);
+    expect(canOpenRoute(UserRoleEnum.PHARMACIST, '/maternity')).toBe(false);
+  });
+
   it('allows super admins everywhere and unknown routes for anyone', () => {
     expect(canOpenRoute(UserRoleEnum.SUPER_ADMIN, '/billing')).toBe(true);
     expect(canOpenRoute(UserRoleEnum.NURSE, '/profile')).toBe(true);

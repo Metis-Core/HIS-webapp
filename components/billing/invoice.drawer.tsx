@@ -135,8 +135,9 @@ export default function InvoiceDrawer({ invoiceId, onClose, canVoid }: InvoiceDr
                           {item.status === 'waived' && <span className="ml-2 no-underline">(waived)</span>}
                         </span>
                         <span className="shrink-0 tabular-nums text-ink-muted">
-                          {item.quantity} × {item.unitPrice.toLocaleString('en-US')} ={' '}
-                          {item.amount.toLocaleString('en-US')}
+                          {item.unitPrice === 0
+                            ? 'Free'
+                            : `${item.quantity} × ${item.unitPrice.toLocaleString('en-US')} = ${item.amount.toLocaleString('en-US')}`}
                         </span>
                       </li>
                     ))}

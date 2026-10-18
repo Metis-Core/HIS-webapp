@@ -1,4 +1,4 @@
-import type { IBaseEntity } from './base.interface';
+import type { IBaseEntity, IPageQuery } from './base.interface';
 import type { IUser } from './user.interface';
 
 export interface IAdmitPatientDto {
@@ -15,4 +15,13 @@ export interface IAdmission extends IBaseEntity {
   admittedAt: string;
   admittedById: string;
   admittedBy?: IUser;
+  dischargedAt: string | null;
+  dischargedBy?: IUser | null;
+  dischargeNotes: string | null;
+}
+
+export interface IAdmissionFilters extends IPageQuery {
+  patientId?: string;
+  visitId?: string;
+  discharged?: boolean;
 }

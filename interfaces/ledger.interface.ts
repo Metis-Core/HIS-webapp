@@ -3,6 +3,8 @@ import type {
   OrderKindEnum,
   OrderPriorityEnum,
   OrderStatusEnum,
+  ProcedureCategoryEnum,
+  ResultClassificationEnum,
   PaymentMethodEnum,
   PaymentStatusEnum,
 } from '@/enum';
@@ -10,7 +12,7 @@ import type { ChargeSourceEnum } from '@/enum/billing.enum';
 import type { IBaseEntity, IPageQuery } from './base.interface';
 import type { IPatient } from './patient.interface';
 import type { IUser } from './user.interface';
-import type { IService } from './service.interface';
+import type { ILabResultData, ILabResultFlags, ILabResultSchema } from './lab-result.interface';
 import type { IVisitCharge } from './billing.interface';
 
 export interface IInvoice extends IBaseEntity {
@@ -114,6 +116,43 @@ export interface ICloseDayDto {
   notes?: string;
 }
 
+export interface IProcedureTest extends IBaseEntity {
+  code: string;
+  abbreviation: string | null;
+  name: string;
+  description: string | null;
+  kind: OrderKindEnum;
+  category: ProcedureCategoryEnum;
+  price: number;
+  durationMinutes: number | null;
+  preparation: string | null;
+  resultSchema: ILabResultSchema | null;
+  isActive: boolean;
+}
+
+export interface ICreateProcedureTestDto {
+  code: string;
+  abbreviation?: string;
+  name: string;
+  description?: string;
+  kind: OrderKindEnum;
+  category: ProcedureCategoryEnum;
+  price: number;
+  durationMinutes?: number;
+  preparation?: string;
+  resultSchema?: ILabResultSchema;
+  isActive?: boolean;
+}
+
+export type IUpdateProcedureTestDto = Partial<ICreateProcedureTestDto>;
+
+export interface IProcedureTestFilters extends IPageQuery {
+  search?: string;
+  kind?: OrderKindEnum;
+  category?: ProcedureCategoryEnum;
+  isActive?: boolean;
+}
+
 export interface IProcedureOrder extends IBaseEntity {
   patientId: string;
   patient?: IPatient;
@@ -123,11 +162,16 @@ export interface IProcedureOrder extends IBaseEntity {
   performedBy?: Pick<IUser, 'id' | 'username'> | null;
   kind: OrderKindEnum;
   name: string;
-  service?: IService | null;
+  testId: string;
+  test?: IProcedureTest;
   priority: OrderPriorityEnum;
   status: OrderStatusEnum;
   indication: string | null;
   scheduledFor: string | null;
+  resultData: ILabResultData | null;
+  resultFlags: ILabResultFlags | null;
+  classification: ResultClassificationEnum | null;
+  impression: string | null;
   report: string | null;
   completedAt: string | null;
   cancellationReason: string | null;
@@ -135,11 +179,9 @@ export interface IProcedureOrder extends IBaseEntity {
 
 export interface ICreateProcedureOrderDto {
   patientId: string;
-  kind: OrderKindEnum;
-  name: string;
+  testId: string;
   visitId?: string;
   consultationId?: string;
-  serviceId?: string;
   priority?: OrderPriorityEnum;
   indication?: string;
 }
@@ -147,6 +189,9 @@ export interface ICreateProcedureOrderDto {
 export interface IUpdateOrderStatusDto {
   status: OrderStatusEnum;
   scheduledFor?: string;
+  resultData?: ILabResultData;
+  classification?: ResultClassificationEnum;
+  impression?: string;
   report?: string;
   reason?: string;
 }
