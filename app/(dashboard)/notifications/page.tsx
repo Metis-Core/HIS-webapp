@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaBell } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, EmptyState, PageHeader, Pill, Stats } from '@/components';
+import { Button, EmptyState, PageHeader, Pagination, Pill, Stats } from '@/components';
 import {
   ButtonVariantEnum,
   NotificationPriorityEnum,
@@ -12,7 +11,8 @@ import {
   PillVariantEnum,
   StatVariantEnum,
 } from '@/enum';
-import { useMyNotifications } from '@/hooks';
+import { useListTotal, useMyNotifications, useUrlPage } from '@/hooks';
+import notificationsService from '@/helpers/notifications.service';
 import type { INotification } from '@/interfaces';
 
 const priorityVariant: Record<NotificationPriorityEnum, PillVariantEnum> = {
@@ -30,32 +30,25 @@ const statusVariant: Record<NotificationStatusEnum, PillVariantEnum> = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { notifications, markAsRead, markAllRead, archive } = useMyNotifications({ limit: 50 });
-
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Unread',
-        value: notifications.filter((n) => n.status === NotificationStatusEnum.UNREAD).length,
-        icon: FaBell,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Critical',
-        value: notifications.filter((n) => n.priority === NotificationPriorityEnum.CRITICAL).length,
-        icon: FaBell,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'High priority',
-        value: notifications.filter((n) => n.priority === NotificationPriorityEnum.HIGH).length,
-        icon: FaBell,
-        variant: StatVariantEnum.Blue,
-      },
-      { label: 'Total', value: notifications.length, icon: FaBell, variant: StatVariantEnum.Emerald },
-    ],
-    [notifications],
+  const [page, setPage] = useUrlPage();
+  const { notifications, pagination, markAsRead, markAllRead, archive } = useMyNotifications({ page });
+  // Counts span all of my notifications, not only the page on screen.
+  const unreadCount = useListTotal(
+    notificationsService.buildMineUrl({ status: NotificationStatusEnum.UNREAD, limit: 1 }),
   );
+  const criticalCount = useListTotal(
+    notificationsService.buildMineUrl({ priority: NotificationPriorityEnum.CRITICAL, limit: 1 }),
+  );
+  const highCount = useListTotal(
+    notificationsService.buildMineUrl({ priority: NotificationPriorityEnum.HIGH, limit: 1 }),
+  );
+
+  const stats = [
+    { label: 'Unread', value: unreadCount, icon: FaBell, variant: StatVariantEnum.Amber },
+    { label: 'Critical', value: criticalCount, icon: FaBell, variant: StatVariantEnum.Amber },
+    { label: 'High priority', value: highCount, icon: FaBell, variant: StatVariantEnum.Blue },
+    { label: 'Total', value: pagination.total, icon: FaBell, variant: StatVariantEnum.Emerald },
+  ];
 
   const readAll = async () => {
     await toast.promise(markAllRead(), {
@@ -130,6 +123,7 @@ export default function NotificationsPage() {
               </span>
             </button>
           ))}
+          <Pagination {...pagination} onPageChange={setPage} label="Notification pages" />
         </div>
       )}
     </div>

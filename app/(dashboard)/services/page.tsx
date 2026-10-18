@@ -1,56 +1,40 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FaConciergeBell, FaPlus } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, EmptyState, Input, PageHeader, Pill, ServiceDrawer, Stats } from '@/components';
+import { Button, EmptyState, Input, PageHeader, Pagination, Pill, ServiceDrawer, Stats } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
-import { useServices } from '@/hooks';
+import { useCheckIn, useListTotal, usePagedSearch, useServices } from '@/hooks';
+import servicesService from '@/helpers/services.service';
 import type { ICreateServiceDto, IService, IUpdateServiceDto, ServiceFormValues } from '@/interfaces';
 
 export default function ServicesPage() {
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IService | null>(null);
-  const [search, setSearch] = useState('');
+  const { page, setPage, search, setSearch, debouncedSearch } = usePagedSearch();
 
-  const { services, createService, updateService, removeService } = useServices({ limit: 100 });
+  const { services, pagination, createService, updateService, removeService } = useServices({
+    page,
+    search: debouncedSearch,
+  });
+  // Server-side counts and the coded fee, so the cards don't depend on which page is showing.
+  const activeCount = useListTotal(servicesService.buildListUrl({ isActive: true, limit: 1 }));
+  const inactiveCount = useListTotal(servicesService.buildListUrl({ isActive: false, limit: 1 }));
+  const allCount = useListTotal(servicesService.buildListUrl({ limit: 1 }));
+  const { consultationFee } = useCheckIn();
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return services;
-    return services.filter((s) => s.name.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q));
-  }, [services, search]);
-
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Active services',
-        value: services.filter((s) => s.isActive).length,
-        icon: FaConciergeBell,
-        variant: StatVariantEnum.Green,
-      },
-      {
-        label: 'Inactive',
-        value: services.filter((s) => !s.isActive).length,
-        icon: FaConciergeBell,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Consultation fee',
-        value: (() => {
-          // Same rule as the API: the CONSULTATION code wins, the old name match is only a fallback.
-          const consultation =
-            services.find((s) => s.isActive && s.code === 'CONSULTATION') ??
-            services.find((s) => s.isActive && s.name.toLowerCase().startsWith('consultation'));
-          return consultation ? `UGX ${consultation.fee.toLocaleString()}` : 'Not set';
-        })(),
-        icon: FaConciergeBell,
-        variant: StatVariantEnum.Blue,
-      },
-      { label: 'Total', value: services.length, icon: FaConciergeBell, variant: StatVariantEnum.Emerald },
-    ],
-    [services],
-  );
+  const stats = [
+    { label: 'Active services', value: activeCount, icon: FaConciergeBell, variant: StatVariantEnum.Green },
+    { label: 'Inactive', value: inactiveCount, icon: FaConciergeBell, variant: StatVariantEnum.Amber },
+    {
+      label: 'Consultation fee',
+      value: consultationFee ? `UGX ${consultationFee.fee.toLocaleString()}` : 'Not set',
+      icon: FaConciergeBell,
+      variant: StatVariantEnum.Blue,
+    },
+    { label: 'Total', value: allCount, icon: FaConciergeBell, variant: StatVariantEnum.Emerald },
+  ];
 
   const openAdd = () => {
     setSelected(null);
@@ -114,18 +98,22 @@ export default function ServicesPage() {
 
       <Input
         className="max-w-sm"
-        placeholder="Search name / description"
+        placeholder="Search name"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          message="No services yet"
-          icon={FaConciergeBell}
-          actionLabel="Add first service"
-          onAction={openAdd}
-        />
+      {services.length === 0 ? (
+        search.trim() ? (
+          <EmptyState message="No services match your search" icon={FaConciergeBell} />
+        ) : (
+          <EmptyState
+            message="No services yet"
+            icon={FaConciergeBell}
+            actionLabel="Add first service"
+            onAction={openAdd}
+          />
+        )
       ) : (
         <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
           <table className="w-full text-left">
@@ -139,7 +127,7 @@ export default function ServicesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => (
+              {services.map((s) => (
                 <tr key={s.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3 text-sm font-medium text-ink">
                     {s.name}
@@ -174,6 +162,7 @@ export default function ServicesPage() {
               ))}
             </tbody>
           </table>
+          <Pagination {...pagination} onPageChange={setPage} label="Services pages" />
         </div>
       )}
 

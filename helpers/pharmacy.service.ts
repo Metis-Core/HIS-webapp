@@ -1,10 +1,12 @@
 import { api } from './axios';
-import { CrudService } from './crud.service';
+import { CrudService, buildQuery } from './crud.service';
 import { PharmacyEndpointEnum } from '@/enum';
 import type {
   ICreatePrescriptionDto,
   IDispense,
   IDispensePrescriptionDto,
+  IPageQuery,
+  IPagination,
   IPrescription,
   IPrescriptionFilters,
 } from '@/interfaces';
@@ -19,12 +21,12 @@ class PharmacyService extends CrudService<
     super(PharmacyEndpointEnum.PRESCRIPTIONS);
   }
 
-  buildByPatientUrl(patientId: string): string {
-    return `${PharmacyEndpointEnum.PRESCRIPTIONS_BY_PATIENT}/${patientId}`;
+  buildByPatientUrl(patientId: string, query: IPageQuery = {}): string {
+    return `${PharmacyEndpointEnum.PRESCRIPTIONS_BY_PATIENT}/${patientId}${buildQuery(query)}`;
   }
 
-  async findByPatient(patientId: string): Promise<IPrescription[]> {
-    const { data } = await api.get<IPrescription[]>(this.buildByPatientUrl(patientId));
+  async findByPatient(patientId: string, query: IPageQuery = {}): Promise<IPagination<IPrescription>> {
+    const { data } = await api.get<IPagination<IPrescription>>(this.buildByPatientUrl(patientId, query));
     return data;
   }
 

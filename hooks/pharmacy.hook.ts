@@ -8,19 +8,21 @@ import type {
   ICreatePrescriptionDto,
   IDispense,
   IDispensePrescriptionDto,
+  IPageQuery,
   IPagination,
   IPrescription,
   IPrescriptionFilters,
 } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isPharmacyKey = (key: unknown) => typeof key === 'string' && key.startsWith('/pharmacy');
 const isInventoryKey = (key: unknown) => typeof key === 'string' && key.startsWith('/inventory');
 
-export function usePrescriptions(filters: IPrescriptionFilters = {}) {
+export function usePrescriptions(filters: IPrescriptionFilters = {}, { enabled = true }: { enabled?: boolean } = {}) {
   const { mutate } = useSWRConfig();
-  const url = pharmacyService.buildListUrl(filters);
+  const url = enabled ? pharmacyService.buildListUrl(filters) : null;
 
-  const { data, error, isLoading } = useSWR<IPagination<IPrescription>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<IPrescription>>(url, { keepPreviousData: true });
   const invalidate = () => mutate(isPharmacyKey);
 
   const createPrescription = async (dto: ICreatePrescriptionDto) => {
@@ -44,6 +46,7 @@ export function usePrescriptions(filters: IPrescriptionFilters = {}) {
   return {
     prescriptions: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     createPrescription,
@@ -58,10 +61,11 @@ export function usePrescription(id: string | null | undefined) {
   return { prescription: data, isLoading, error, mutate };
 }
 
-export function usePrescriptionsByPatient(patientId: string | null | undefined) {
-  const key = patientId ? pharmacyService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
-  return { prescriptions: asList<IPrescription>(data), isLoading, error, mutate };
+/** One page of the patient's history, newest first. */
+export function usePrescriptionsByPatient(patientId: string | null | undefined, query: IPageQuery = {}) {
+  const key = patientId ? pharmacyService.buildByPatientUrl(patientId, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IPrescription>>(key, { keepPreviousData: true });
+  return { prescriptions: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }
 
 export function usePrescriptionsByConsultation(consultationId: string | null | undefined) {

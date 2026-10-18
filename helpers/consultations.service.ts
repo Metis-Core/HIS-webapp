@@ -7,6 +7,8 @@ import type {
   IConsultation,
   IConsultationFilters,
   ICreateConsultationDto,
+  IPageQuery,
+  IPagination,
   IUpdateConsultationDto,
 } from '@/interfaces';
 
@@ -20,16 +22,16 @@ class ConsultationsService extends CrudService<
     super(ConsultationEndpointEnum.BASE);
   }
 
-  buildByPatientUrl(patientId: string): string {
-    return `${ConsultationEndpointEnum.BASE}/patient/${patientId}`;
+  buildByPatientUrl(patientId: string, query: IPageQuery = {}): string {
+    return `${ConsultationEndpointEnum.BASE}/patient/${patientId}${buildQuery(query)}`;
   }
 
   buildByVisitUrl(visitId: string): string {
     return `${ConsultationEndpointEnum.BASE}/visit/${visitId}`;
   }
 
-  async findByPatient(patientId: string): Promise<IConsultation[]> {
-    const { data } = await api.get<IConsultation[]>(this.buildByPatientUrl(patientId));
+  async findByPatient(patientId: string, query: IPageQuery = {}): Promise<IPagination<IConsultation>> {
+    const { data } = await api.get<IPagination<IConsultation>>(this.buildByPatientUrl(patientId, query));
     return data;
   }
 

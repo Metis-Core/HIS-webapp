@@ -10,6 +10,7 @@ import type {
   IPagination,
   IUnreadCountResponse,
 } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isNotificationKey = (key: unknown) => typeof key === 'string' && key.startsWith(NotificationEndpointEnum.BASE);
 
@@ -17,7 +18,7 @@ export function useNotifications(filters: INotificationFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = notificationsService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<INotification>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<INotification>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate(isNotificationKey);
 
@@ -35,6 +36,7 @@ export function useNotifications(filters: INotificationFilters = {}) {
   return {
     notifications: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     createNotification,
@@ -46,7 +48,7 @@ export function useMyNotifications(filters: INotificationFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = notificationsService.buildMineUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<INotification>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<INotification>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate(isNotificationKey);
 
@@ -71,6 +73,7 @@ export function useMyNotifications(filters: INotificationFilters = {}) {
   return {
     notifications: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     markAsRead,

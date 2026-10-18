@@ -11,6 +11,7 @@ import type {
   IVisitFilters,
   IVisitRecord,
 } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isVisitKey = (key: unknown) => typeof key === 'string' && key.startsWith(VisitEndpointEnum.BASE);
 
@@ -18,7 +19,7 @@ export function useVisits(filters: IVisitFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = visitsService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<IVisitRecord>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<IVisitRecord>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate(isVisitKey);
 
@@ -37,6 +38,7 @@ export function useVisits(filters: IVisitFilters = {}) {
   return {
     visits: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     page: data?.page ?? 1,
     limit: data?.limit ?? 20,
     isLoading,
@@ -54,10 +56,11 @@ export function useVisit(id: string | null | undefined) {
 
 export function useVisitQueues(filters: IVisitFilters = {}) {
   const url = visitsService.buildQueuesUrl(filters);
-  const { data, error, isLoading, mutate } = useSWR<IPagination<IVisitRecord>>(url);
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IVisitRecord>>(url, { keepPreviousData: true });
   return {
     visits: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     mutate,
