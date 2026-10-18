@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FaPlus, FaStethoscope, FaTrash } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
-import { Button, EmptyState, Pill, Stats, Tabs, WalkInCheckIn } from '@/components';
+import { Button, EmptyState, Pagination, Pill, Stats, Tabs, WalkInCheckIn } from '@/components';
 import TriageDrawer from '@/components/drawers/triage.drawer';
 import {
   ButtonVariantEnum,
@@ -16,7 +16,8 @@ import {
   TriageAcuityEnum,
   TriageStatusEnum,
 } from '@/enum';
-import { useDepartmentQueue, usePatients, useTriage } from '@/hooks';
+import { useDepartmentQueue, useListTotal, useTriage, useUrlPage } from '@/hooks';
+import triageService from '@/helpers/triage.service';
 import { extractErrorMessage } from '@/helpers/errors';
 import type { ICreateTriageDto, IQueueEntryRecord, ITriage, IUpdateTriageDto } from '@/interfaces';
 import { roleInGroup } from '@/helpers/role-groups';
@@ -59,39 +60,35 @@ export default function TriageWorkspace() {
   const [selected, setSelected] = useState<ITriage | null>(null);
   const [prefillFromQueue, setPrefillFromQueue] = useState<IQueueEntryRecord | null>(null);
 
-  const { patients } = usePatients({ limit: 100 });
   const { entries, call, start, remove, mutate: refreshQueue } = useDepartmentQueue(DepartmentEnum.TRIAGE);
-  const { triages, createTriage, updateTriage } = useTriage({ limit: 50 });
+  const [page, setPage] = useUrlPage('triagePage');
+  const { triages, pagination, createTriage, updateTriage } = useTriage({ page });
+  // Server-side counts over all triage records, not just this page.
+  const level1Count = useListTotal(triageService.buildListUrl({ acuity: TriageAcuityEnum.LEVEL_1, limit: 1 }));
+  const level2Count = useListTotal(triageService.buildListUrl({ acuity: TriageAcuityEnum.LEVEL_2, limit: 1 }));
+  const referredCount = useListTotal(triageService.buildListUrl({ status: TriageStatusEnum.REFERRED, limit: 1 }));
 
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Waiting in queue',
-        value: entries.filter((e) => e.status === QueueEntryStatusEnum.WAITING).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'In service',
-        value: entries.filter((e) => e.status === QueueEntryStatusEnum.IN_SERVICE).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Blue,
-      },
-      {
-        label: 'Critical (L1-L2)',
-        value: triages.filter((t) => [TriageAcuityEnum.LEVEL_1, TriageAcuityEnum.LEVEL_2].includes(t.acuity)).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Referred today',
-        value: triages.filter((t) => t.status === TriageStatusEnum.REFERRED).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Emerald,
-      },
-    ],
-    [entries, triages],
-  );
+  const stats = [
+    {
+      label: 'Waiting in queue',
+      value: entries.filter((e) => e.status === QueueEntryStatusEnum.WAITING).length,
+      icon: FaStethoscope,
+      variant: StatVariantEnum.Amber,
+    },
+    {
+      label: 'In service',
+      value: entries.filter((e) => e.status === QueueEntryStatusEnum.IN_SERVICE).length,
+      icon: FaStethoscope,
+      variant: StatVariantEnum.Blue,
+    },
+    {
+      label: 'Critical (L1-L2)',
+      value: level1Count + level2Count,
+      icon: FaStethoscope,
+      variant: StatVariantEnum.Amber,
+    },
+    { label: 'Referred', value: referredCount, icon: FaStethoscope, variant: StatVariantEnum.Emerald },
+  ];
 
   const openAdd = () => {
     setSelected(null);
@@ -158,7 +155,7 @@ export default function TriageWorkspace() {
         <Tabs<TabId>
           tabs={[
             { id: 'waiting', label: `Waiting queue (${entries.length})` },
-            { id: 'all', label: `Triage records (${triages.length})` },
+            { id: 'all', label: `Triage records (${pagination.total})` },
           ]}
           active={tab}
           onChange={setTab}
@@ -300,13 +297,13 @@ export default function TriageWorkspace() {
               ))}
             </tbody>
           </table>
+          <Pagination {...pagination} onPageChange={setPage} label="Triage record pages" />
         </div>
       )}
 
       <TriageDrawer
         mode={drawerMode}
         triage={selected}
-        patients={patients}
         prefillPatient={prefillFromQueue?.visit?.patient ?? null}
         prefillPatientId={prefillFromQueue?.visit?.patientId ?? prefillFromQueue?.visit?.patient?.id}
         prefillVisitId={prefillFromQueue?.visitId}
