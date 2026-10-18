@@ -36,10 +36,10 @@ import {
 } from '@/data/queue';
 import type { QueuePriority } from '@/data/queue';
 import { patientFullName } from '@/data/patients';
-import useSWR, { useSWRConfig } from 'swr';
-import { api } from '@/helpers/axios';
+import { useSWRConfig } from 'swr';
 import visitsService from '@/helpers/visits.service';
-import type { IOption, IPagination } from '@/interfaces';
+import { useVisitQueues } from '@/hooks';
+import type { IOption } from '@/interfaces';
 import type { IVisitRecord } from '@/interfaces/queue.interfaces';
 
 interface IStageStep {
@@ -126,8 +126,7 @@ const rawStatusVariant: Record<QueueEntryStatusEnum, PillVariantEnum> = {
 // Live board of every open visit; shown on /queue and as the admin dashboard's Queue tab (R4).
 export default function QueueBoard() {
   const { mutate: globalMutate } = useSWRConfig();
-  const { data, mutate } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', api);
-  const visits = useMemo(() => data?.data.data.items || [], [data]);
+  const { visits, mutate } = useVisitQueues();
 
   const removeEntry = async (entryId: string) => {
     if (!confirm('Remove this patient from the current stage?')) return;
@@ -168,7 +167,11 @@ export default function QueueBoard() {
             stage: departmentStageMap[active.department],
             status: entryStatusMap[active.status],
             rawStatus: active.status,
-            assignedTo: active.servedById ? 'Assigned staff' : 'Unassigned',
+            assignedTo: visit.assignedDoctor
+              ? `Dr ${visit.assignedDoctor.username}`
+              : active.servedById
+                ? 'Assigned staff'
+                : 'Unassigned',
             department: stageLabel(active.department),
             waitingSince: stageReadyAt(visit),
             sequenceNumber: active.sequenceNumber,

@@ -20,12 +20,12 @@ import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
 import { RoleGroups } from '@/helpers/role-groups';
 import { useConsultations, usePatient } from '@/hooks';
-import type { ICreateConsultationDto, IPatient, IUser } from '@/interfaces';
+import type { ICreateConsultationDto, IDoctorSummary, IPatient } from '@/interfaces';
 import { useAuth } from '@/providers';
 
 const optional = (value: string) => value.trim() || undefined;
 
-const toPayload = (v: EncounterValues, patientId: string, visitId: string | null, doctor: IUser | null) =>
+const toPayload = (v: EncounterValues, patientId: string, visitId: string | null, doctor: IDoctorSummary | null) =>
   ({
     patientId,
     doctorId: doctor?.id,
@@ -51,7 +51,7 @@ export default function NewConsultationForm() {
 
   const [values, setValues] = useState<EncounterValues>(EMPTY_ENCOUNTER);
   const [pickedPatient, setPickedPatient] = useState<IPatient | null>(null);
-  const [doctor, setDoctor] = useState<IUser | null>(null);
+  const [doctor, setDoctor] = useState<IDoctorSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const { createConsultation } = useConsultations({ limit: 1 });
   // A prefilled patient is loaded by id; otherwise patients are found by server-side search.

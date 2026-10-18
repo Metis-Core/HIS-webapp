@@ -8,6 +8,8 @@ import {
 } from '@/enum/queue.enum';
 import type { InsuranceVerificationMethodEnum } from '@/enum/billing.enum';
 import type { IPatient } from './patient.interface';
+import type { IUser } from './user.interface';
+import type { AssignmentSourceEnum } from '@/enum/availability.enum';
 
 export type IQueue = IBaseEntity;
 
@@ -37,6 +39,10 @@ export interface IVisitRecord extends IBaseEntity {
   emergencyNumber: string | null;
   priority: number;
   metadata: Record<string, unknown>;
+  assignedDoctorId?: string | null;
+  assignedDoctor?: Pick<IUser, 'id' | 'username'> | null;
+  assignedAt?: string | null;
+  assignmentSource?: AssignmentSourceEnum | null;
   queueEntries: IQueueEntryRecord[];
 }
 

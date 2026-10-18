@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { api } from '@/helpers/axios';
+import { asList } from '@/hooks/utils';
 
 export function RecordCard({
   title,
@@ -32,17 +32,15 @@ export function RecordCard({
 
 export default function PatientRecordsPanel<T>({
   url,
-  selectItems,
   emptyMessage,
   renderItem,
 }: {
   url: string;
-  selectItems: (data: any) => T[];
   emptyMessage: string;
   renderItem: (item: T) => React.ReactNode;
 }) {
-  const { data, isLoading } = useSWR<{ data: any }>(url, api);
-  const items = data ? selectItems(data.data) : [];
+  const { data, isLoading } = useSWR<unknown>(url);
+  const items = asList<T>(data);
 
   if (isLoading) return <p className="py-10 text-center text-sm text-zinc-500">Loading…</p>;
   if (!items.length) return <p className="py-10 text-center text-sm text-zinc-500">{emptyMessage}</p>;

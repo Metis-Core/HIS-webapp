@@ -13,7 +13,6 @@ export default function PatientTriageTab({ patientId }: { patientId: string }) {
   return (
     <PatientRecordsPanel<Triage>
       url={`/triage/patient/${patientId}`}
-      selectItems={(data) => data ?? []}
       emptyMessage="No triage records found."
       renderItem={(item) => (
         <RecordCard

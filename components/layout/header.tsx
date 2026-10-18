@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaBars } from 'react-icons/fa';
+import AvailabilityChip from '@/components/availability/availability-chip';
 import NotificationsBell from './notifications-bell';
 import { useAuth, useSidebar } from '@/providers';
 import { roleInGroup } from '@/helpers/role-groups';
@@ -69,6 +70,8 @@ export default function Header({ standalone = false }: { standalone?: boolean })
       <h1 className="text-lg font-semibold tracking-tight text-slate-900">{titleFromPath(pathname)}</h1>
 
       <div className="ml-auto" />
+
+      {user && <AvailabilityChip />}
 
       <NotificationsBell />
 

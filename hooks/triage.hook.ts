@@ -14,7 +14,8 @@ import type {
 import { asList } from './utils';
 import { pageInfo } from '@/helpers/pagination';
 
-const isTriageKey = (key: unknown) => typeof key === 'string' && key.startsWith(TriageEndpointEnum.BASE);
+const isTriageOrQueueKey = (key: unknown) =>
+  typeof key === 'string' && (key.startsWith(TriageEndpointEnum.BASE) || key.startsWith('/visits'));
 
 export function useTriage(filters: ITriageFilters = {}) {
   const { mutate } = useSWRConfig();
@@ -22,7 +23,7 @@ export function useTriage(filters: ITriageFilters = {}) {
 
   const { data, error, isLoading } = useSWR<IPagination<ITriage>>(url, { keepPreviousData: true });
 
-  const invalidate = () => mutate(isTriageKey);
+  const invalidate = () => mutate(isTriageOrQueueKey);
 
   const createTriage = async (dto: ICreateTriageDto) => {
     const triage = await triageService.create(dto);
