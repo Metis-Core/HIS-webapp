@@ -1,21 +1,22 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Button, PatientDrawer, Tabs } from '@/components';
+import { Button, Pagination, PatientDrawer, Tabs, VisitReceiptDrawer } from '@/components';
 import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPatientFilters, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
+import { unwrapData } from '@/helpers/envelope';
 import { extractErrorMessage } from '@/helpers/errors';
 import { toPatientPayload } from '@/helpers/patients.service';
 import { roleInGroup } from '@/helpers/role-groups';
-import { useDebouncedValue, usePatients } from '@/hooks';
+import { useDebouncedValue, usePatients, useUrlPage } from '@/hooks';
 import { useAuth } from '@/providers';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
-import PaginationFooter from './components/pagination-footer';
 import PatientRow from './components/patient-row';
 
 const PAGE_SIZE = 20;
@@ -48,14 +49,26 @@ function toQuery(filters: PatientsFilterValue, search: string, page: number): IP
 }
 
 export default function PatientsPage() {
+  return (
+    <Suspense>
+      <PatientsView />
+    </Suspense>
+  );
+}
+
+function PatientsView() {
   const { effectiveRole } = useAuth();
-  const canTriage = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
+  const searchParams = useSearchParams();
+  const canTriage = roleInGroup(effectiveRole, 'FRONT_DESK_CLINICAL');
   const canDelete = roleInGroup(effectiveRole, 'ADMINS');
-  const [tab, setTab] = useState<PatientsTab>('registry');
+  const canCheckIn = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
+  // One guided step (R8): a newly registered patient goes straight to the check-in receipt.
+  const [checkInPatient, setCheckInPatient] = useState<IPatient | null>(null);
+  const [tab, setTab] = useState<PatientsTab>(searchParams.get('tab') === 'triage' ? 'triage' : 'registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useUrlPage();
   const search = useDebouncedValue(filters.search, SEARCH_DEBOUNCE_MS);
 
   const query = useMemo(() => toQuery(filters, search, page), [filters, search, page]);
@@ -111,13 +124,14 @@ export default function PatientsPage() {
     const payload = toPatientPayload(values);
 
     if (drawerMode === ModalDrawerModeEnum.ADD) {
-      await toast
+      const created = await toast
         .promise(createPatient(payload), {
           loading: 'Registering patient…',
-          success: 'Patient registered',
+          success: canCheckIn ? 'Patient registered — confirm check-in' : 'Patient registered',
           error: (err: unknown) => extractErrorMessage(err, "Couldn't register — retry"),
         })
         .unwrap();
+      if (canCheckIn) setCheckInPatient(unwrapData(created));
     } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
       await toast
         .promise(updatePatient(selected.id, payload), {
@@ -203,7 +217,7 @@ export default function PatientsPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationFooter
+            <Pagination
               page={page}
               limit={limit}
               total={total}
@@ -214,6 +228,13 @@ export default function PatientsPage() {
           </div>
         </>
       )}
+
+      <VisitReceiptDrawer
+        open={Boolean(checkInPatient)}
+        patient={checkInPatient}
+        title="Check in the new patient"
+        onClose={() => setCheckInPatient(null)}
+      />
 
       <PatientDrawer mode={drawerMode} patient={selected} onClose={closeDrawer} onSave={handleSave} onEdit={openEdit} />
     </div>

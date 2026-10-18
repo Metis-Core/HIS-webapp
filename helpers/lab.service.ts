@@ -1,5 +1,5 @@
 import { api } from './axios';
-import { CrudService } from './crud.service';
+import { CrudService, buildQuery } from './crud.service';
 import { LabEndpointEnum } from '@/enum';
 import type {
   ICreateLabOrderDto,
@@ -8,6 +8,7 @@ import type {
   ILabOrderFilters,
   ILabTest,
   ILabTestFilters,
+  IPageQuery,
   IPagination,
   IUpdateLabOrderDto,
   IUpdateLabOrderItemDto,
@@ -25,16 +26,16 @@ class LabOrdersService extends CrudService<ILabOrder, ICreateLabOrderDto, IUpdat
     super(LabEndpointEnum.ORDERS);
   }
 
-  buildByPatientUrl(patientId: string): string {
-    return `${LabEndpointEnum.ORDERS_BY_PATIENT}/${patientId}`;
+  buildByPatientUrl(patientId: string, query: IPageQuery = {}): string {
+    return `${LabEndpointEnum.ORDERS_BY_PATIENT}/${patientId}${buildQuery(query)}`;
   }
 
   buildByConsultationUrl(consultationId: string): string {
     return `${LabEndpointEnum.ORDERS_BY_CONSULTATION}/${consultationId}`;
   }
 
-  async findByPatient(patientId: string): Promise<ILabOrder[]> {
-    const { data } = await api.get<ILabOrder[]>(this.buildByPatientUrl(patientId));
+  async findByPatient(patientId: string, query: IPageQuery = {}): Promise<IPagination<ILabOrder>> {
+    const { data } = await api.get<IPagination<ILabOrder>>(this.buildByPatientUrl(patientId, query));
     return data;
   }
 

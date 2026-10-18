@@ -43,12 +43,15 @@ import {
   useAutosaveForm,
   useConsultation,
   useConsultations,
-  useInventoryItems,
+  useListTotal,
   useLabOrdersByConsultation,
-  useLabTests,
   usePrescriptionsByConsultation,
 } from '@/hooks';
-import type { IConsultation, IOption, IUpdateConsultationDto } from '@/interfaces';
+import { PICKER_PAGE_SIZE } from '@/helpers/pagination';
+import LabTestPicker from '@/components/consultation/lab-test-picker';
+import { inventoryItemsService } from '@/helpers/inventory.service';
+import RemoteSearchSelect from '@/components/inputs/remote-search-select';
+import type { IConsultation, IInventoryItem, ILabTest, IOption, IUpdateConsultationDto } from '@/interfaces';
 import EncounterSaveStatus from './encounter-save-status';
 
 type ConsultationTab = 'encounter' | 'lab' | 'prescriptions' | 'charges';
@@ -223,7 +226,10 @@ export default function ConsultationDetailPage() {
       }
       await toast.promise(completeConsultation(consultation.id, { nextIntents, notes }), {
         loading: 'Signing…',
-        success: nextIntents.length > 0 ? `Signed — routed to ${nextIntents.join(', ')}` : 'Encounter signed',
+        success:
+          nextIntents.length > 0
+            ? `Signed — routed to ${nextIntents.join(', ')}`
+            : 'Encounter signed — sent to billing',
         error: (err) => extractErrorMessage(err, "Couldn't sign — retry"),
       });
       setCompleting(false);
@@ -561,28 +567,13 @@ function LabTab({
   onChanged: ReturnType<typeof useLabOrdersByConsultation>['mutate'];
   readOnly: boolean;
 }) {
-  const { tests } = useLabTests({ limit: 100, isActive: true });
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedTests, setSelectedTests] = useState<ILabTest[]>([]);
+  const selectedIds = selectedTests.map((t) => t.id);
   const [priority, setPriority] = useState<LabPriorityEnum>(LabPriorityEnum.ROUTINE);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
-  const [search, setSearch] = useState('');
 
-  const toggle = (id: string) => setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-
-  const selectedTotal = useMemo(
-    () => tests.filter((t) => selectedIds.includes(t.id)).reduce((sum, t) => sum + t.price, 0),
-    [tests, selectedIds],
-  );
-
-  const filteredTests = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tests;
-    return tests.filter(
-      (t) =>
-        t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
-    );
-  }, [tests, search]);
+  const selectedTotal = selectedTests.reduce((sum, t) => sum + t.price, 0);
 
   const readyItems = useMemo(
     () =>
@@ -632,7 +623,7 @@ function LabTab({
           error: (err) => extractErrorMessage(err, "Couldn't send — retry"),
         },
       );
-      setSelectedIds([]);
+      setSelectedTests([]);
       setNotes('');
       await onChanged();
     } finally {
@@ -738,45 +729,7 @@ function LabTab({
             <span className="ml-auto text-xs text-ink-muted">Sent to the laboratory queue on order.</span>
           </div>
 
-          <Input
-            placeholder="Search code / name / category"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <div className="max-h-64 overflow-auto rounded-md border border-line p-3">
-            {tests.length === 0 ? (
-              <p className="text-xs text-ink-muted">
-                No lab tests configured yet. Ask the lab admin to add tests under{' '}
-                <Link href="/lab" className="text-brand hover:underline">
-                  Lab › Tests catalog
-                </Link>
-                .
-              </p>
-            ) : filteredTests.length === 0 ? (
-              <p className="text-xs text-ink-muted">No tests match your search.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {filteredTests.map((t) => {
-                  const active = selectedIds.includes(t.id);
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => toggle(t.id)}
-                      className={`rounded-full px-2.5 py-1 text-xs ring-1 transition ${
-                        active
-                          ? 'bg-brand text-white ring-brand'
-                          : 'bg-surface text-ink-muted ring-line hover:bg-surface-raised'
-                      }`}
-                    >
-                      {t.code} — {t.name} · UGX {t.price.toLocaleString()}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <LabTestPicker selected={selectedTests} onChange={setSelectedTests} />
 
           <div className="grid grid-cols-2 gap-2">
             <Dropdown
@@ -805,6 +758,18 @@ function LabTab({
   );
 }
 
+const medicationOption = (i: IInventoryItem): IOption => ({
+  label: `${i.name}${i.manufacturer ? ` (${i.manufacturer})` : ''} — ${i.sku}`,
+  value: i.id,
+});
+const buildMedicationUrl = (search: string) =>
+  inventoryItemsService.buildListUrl({
+    search: search || undefined,
+    isActive: true,
+    type: InventoryItemTypeEnum.MEDICATION,
+    limit: PICKER_PAGE_SIZE,
+  });
+
 function PrescriptionsPanel({
   consultation,
   readOnly,
@@ -812,25 +777,27 @@ function PrescriptionsPanel({
   consultation: NonNullable<ReturnType<typeof useConsultation>['consultation']>;
   readOnly: boolean;
 }) {
-  const { items: inventoryItems } = useInventoryItems({
-    limit: 100,
-    isActive: true,
-    type: InventoryItemTypeEnum.MEDICATION,
-  });
+  // Only a count here; each row searches medications on the server as the doctor types.
+  const medicationCount = useListTotal(
+    inventoryItemsService.buildListUrl({ isActive: true, type: InventoryItemTypeEnum.MEDICATION, limit: 1 }),
+  );
   const { mutate: globalMutate } = useSWRConfig();
   const [rows, setRows] = useState<
-    Array<{ itemId: string; dosage: string; frequency: string; duration: string; quantity: string }>
+    Array<{
+      itemId: string;
+      item: IInventoryItem | null;
+      dosage: string;
+      frequency: string;
+      duration: string;
+      quantity: string;
+    }>
   >([]);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const itemOptions: IOption[] = inventoryItems.map((i) => ({
-    label: `${i.name}${i.manufacturer ? ` (${i.manufacturer})` : ''} — ${i.sku}`,
-    value: i.id,
-  }));
-
-  const addRow = () => setRows((s) => [...s, { itemId: '', dosage: '', frequency: '', duration: '', quantity: '1' }]);
+  const addRow = () =>
+    setRows((s) => [...s, { itemId: '', item: null, dosage: '', frequency: '', duration: '', quantity: '1' }]);
 
   const removeRow = (idx: number) => setRows((s) => s.filter((_, i) => i !== idx));
 
@@ -896,7 +863,7 @@ function PrescriptionsPanel({
         </div>
 
         <div className="rounded-md border border-line p-3">
-          {inventoryItems.length === 0 ? (
+          {medicationCount === 0 ? (
             <p className="text-xs text-ink-muted">
               No medications configured yet. Ask the pharmacy admin to add medication stock under{' '}
               <Link href="/inventory" className="text-brand hover:underline">
@@ -911,12 +878,16 @@ function PrescriptionsPanel({
               {rows.map((row, idx) => (
                 <div key={idx} className="grid grid-cols-12 items-end gap-2">
                   <div className="col-span-4">
-                    <Dropdown
+                    <RemoteSearchSelect<IInventoryItem>
                       label="Medication"
                       placeholder="Search medication…"
-                      options={itemOptions}
-                      value={itemOptions.find((o) => o.value === row.itemId) ?? null}
-                      onChange={(o) => setRow(idx, 'itemId', (o as IOption).value as string)}
+                      value={row.item}
+                      onChange={(item) =>
+                        setRows((s) => s.map((r, i) => (i === idx ? { ...r, item, itemId: item?.id ?? '' } : r)))
+                      }
+                      buildUrl={buildMedicationUrl}
+                      toOption={medicationOption}
+                      noun="medications"
                     />
                   </div>
                   <div className="col-span-2">

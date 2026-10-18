@@ -51,7 +51,9 @@ export interface IPrescriptionFilters {
   patientId?: string;
   consultationId?: string;
   prescribedById?: string;
-  status?: PrescriptionStatusEnum;
+  /** One status or several (sent comma-separated). */
+  status?: PrescriptionStatusEnum | PrescriptionStatusEnum[];
+  search?: string;
 }
 
 export interface IDispenseItemDto {

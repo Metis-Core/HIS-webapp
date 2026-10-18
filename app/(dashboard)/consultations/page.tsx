@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaArrowRight, FaClipboardList, FaEye, FaPlay, FaPlus, FaStethoscope } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
+import { Button, EmptyState, Input, PageHeader, Pagination, Pill, Stats, Tabs } from '@/components';
 import {
   ButtonVariantEnum,
   ConsultationStatusEnum,
@@ -15,10 +15,12 @@ import {
   QueueEntryStatusEnum,
   StatVariantEnum,
 } from '@/enum';
-import { useConsultations, useDepartmentQueue, usePatients } from '@/hooks';
+import { useConsultations, useDepartmentQueue, useListTotal, usePagedSearch } from '@/hooks';
+import consultationsService from '@/helpers/consultations.service';
 import { extractErrorMessage } from '@/helpers/errors';
 import triageService from '@/helpers/triage.service';
-import type { IConsultation, IPatient, IQueueEntryRecord } from '@/interfaces';
+import type { IConsultation, IQueueEntryRecord } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'all';
 
@@ -40,16 +42,24 @@ const entryStatusVariant: Record<QueueEntryStatusEnum, PillVariantEnum> = {
 export default function ConsultationsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>('waiting');
-  const [search, setSearch] = useState('');
+  const { page, setPage, search, setSearch, debouncedSearch } = usePagedSearch();
 
-  const { patients } = usePatients({ limit: 100 });
   const {
     consultations,
+    pagination,
     createConsultation,
     cancelConsultation,
     isLoading: consultationsLoading,
     error: consultationsError,
-  } = useConsultations({ limit: 100 });
+  } = useConsultations({ page, q: debouncedSearch });
+  // Server-side counts across all consultations, not just the page on screen.
+  const inProgressCount = useListTotal(
+    consultationsService.buildListUrl({ status: ConsultationStatusEnum.IN_PROGRESS, limit: 1 }),
+  );
+  const completedCount = useListTotal(
+    consultationsService.buildListUrl({ status: ConsultationStatusEnum.COMPLETED, limit: 1 }),
+  );
+  const allCount = useListTotal(consultationsService.buildListUrl({ limit: 1 }));
 
   const {
     entries: waiting,
@@ -58,41 +68,17 @@ export default function ConsultationsPage() {
     skip: skipEntry,
   } = useDepartmentQueue(DepartmentEnum.OUTPATIENT_CLINIC);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return consultations;
-    return consultations.filter((c) => {
-      const name = `${c.patient?.firstName ?? ''} ${c.patient?.lastName ?? ''}`.toLowerCase();
-      return (
-        name.includes(q) || c.chiefComplaint.toLowerCase().includes(q) || (c.diagnosis ?? '').toLowerCase().includes(q)
-      );
-    });
-  }, [consultations, search]);
-
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Waiting',
-        value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
-        icon: FaClipboardList,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'In progress',
-        value: consultations.filter((c) => c.status === ConsultationStatusEnum.IN_PROGRESS).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Blue,
-      },
-      {
-        label: 'Completed',
-        value: consultations.filter((c) => c.status === ConsultationStatusEnum.COMPLETED).length,
-        icon: FaStethoscope,
-        variant: StatVariantEnum.Green,
-      },
-      { label: 'Total', value: consultations.length, icon: FaStethoscope, variant: StatVariantEnum.Emerald },
-    ],
-    [consultations, waiting],
-  );
+  const stats = [
+    {
+      label: 'Waiting',
+      value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
+      icon: FaClipboardList,
+      variant: StatVariantEnum.Amber,
+    },
+    { label: 'In progress', value: inProgressCount, icon: FaStethoscope, variant: StatVariantEnum.Blue },
+    { label: 'Completed', value: completedCount, icon: FaStethoscope, variant: StatVariantEnum.Green },
+    { label: 'Total', value: allCount, icon: FaStethoscope, variant: StatVariantEnum.Emerald },
+  ];
 
   const openAdd = () => router.push('/consultations/new');
   const openDetail = (c: IConsultation) => router.push(`/consultations/${c.id}`);
@@ -120,10 +106,9 @@ export default function ConsultationsPage() {
 
       let chiefComplaint = 'To be documented';
       try {
-        const triages = await triageService.findByPatient(patientId);
-        const latest = triages
-          .slice()
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+        // Patient history comes back newest first, so the first row is the latest triage.
+        const { items } = await triageService.findByPatient(patientId, { limit: 1 });
+        const latest = items[0];
         if (latest?.chiefComplaint) chiefComplaint = latest.chiefComplaint;
       } catch {}
 
@@ -186,7 +171,7 @@ export default function ConsultationsPage() {
             Tap <span className="font-semibold text-brand">Start</span> next to the patient at the top of the queue —
             the encounter opens instantly and you can document it.
           </p>
-          <WaitingTable entries={waiting} patients={patients} onStart={startFromQueue} onSkip={skipFromQueue} />
+          <WaitingTable entries={waiting} onStart={startFromQueue} onSkip={skipFromQueue} />
         </>
       ) : (
         <>
@@ -212,18 +197,12 @@ export default function ConsultationsPage() {
             <div className="rounded-lg border border-critical/40 bg-critical-soft p-4 text-sm text-critical">
               Couldn't load consultations. Check that the API is reachable and you're signed in — then refresh.
             </div>
-          ) : filtered.length === 0 ? (
+          ) : consultations.length === 0 ? (
             <EmptyState
-              message={
-                search.trim()
-                  ? 'No consultations match your search'
-                  : consultations.length === 0
-                    ? 'No consultations yet'
-                    : 'No consultations match your search'
-              }
+              message={search.trim() ? 'No consultations match your search' : 'No consultations yet'}
               icon={FaStethoscope}
-              actionLabel={consultations.length === 0 ? 'Start consultation' : undefined}
-              onAction={consultations.length === 0 ? openAdd : undefined}
+              actionLabel={search.trim() ? undefined : 'Start consultation'}
+              onAction={search.trim() ? undefined : openAdd}
             />
           ) : (
             <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
@@ -239,7 +218,7 @@ export default function ConsultationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c) => {
+                  {consultations.map((c) => {
                     const inProgress = c.status === ConsultationStatusEnum.IN_PROGRESS;
                     return (
                       <tr
@@ -294,6 +273,7 @@ export default function ConsultationsPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination {...pagination} onPageChange={setPage} label="Consultation pages" />
             </div>
           )}
         </>
@@ -304,21 +284,13 @@ export default function ConsultationsPage() {
 
 function WaitingTable({
   entries,
-  patients,
   onStart,
   onSkip,
 }: {
   entries: IQueueEntryRecord[];
-  patients: IPatient[];
   onStart: (e: IQueueEntryRecord) => void;
   onSkip: (e: IQueueEntryRecord) => void;
 }) {
-  const patientLookup = useMemo(() => {
-    const map = new Map<string, IPatient>();
-    patients.forEach((p) => map.set(p.id, p));
-    return map;
-  }, [patients]);
-
   if (entries.length === 0) {
     return <EmptyState message="Nobody waiting for consultation" icon={FaClipboardList} />;
   }
@@ -337,7 +309,8 @@ function WaitingTable({
         </thead>
         <tbody>
           {entries.map((e) => {
-            const patient = e.visit?.patient ?? patientLookup.get(e.visit?.patientId ?? '');
+            // The department queue API already joins visit.patient.
+            const patient = e.visit?.patient;
             const waitedMs = Date.now() - new Date(e.createdAt).getTime();
             const waitedMin = Math.max(0, Math.round(waitedMs / 60000));
             return (
@@ -347,6 +320,7 @@ function WaitingTable({
                     {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
                   </div>
                   <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+                  <PriorityBadge visit={e.visit} />
                 </td>
                 <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
                 <td className="px-4 py-3 text-sm tabular-nums text-ink-muted">{e.priority}</td>

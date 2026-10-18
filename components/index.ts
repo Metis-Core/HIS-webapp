@@ -29,3 +29,4 @@ export { default as MetisFooter } from './layout/metis-footer';
 export { default as StatCard } from './stats/stat-card';
 export { default as Stats } from './stats/stats';
 export { default as DocumentButton } from './documents/document-button';
+export { default as Pagination } from './tables/pagination';

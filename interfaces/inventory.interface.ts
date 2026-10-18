@@ -125,6 +125,15 @@ export interface ICreateInventoryTransactionDto {
   manufactureDate?: string;
 }
 
+export interface IInventoryStockFilters {
+  storeId?: string;
+  /** Only these items; used to show on-hand quantities for the rows on screen. */
+  itemIds?: string[];
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface IInventoryTransactionFilters {
   page?: number;
   limit?: number;

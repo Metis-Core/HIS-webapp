@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { FaClipboardList, FaFlask, FaPlus, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
-import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
+import { Button, EmptyState, Input, PageHeader, Pagination, Pill, Stats, Tabs } from '@/components';
 import LabResultDrawer from '@/components/drawers/lab-result.drawer';
 import LabTestDrawer from '@/components/drawers/lab-test.drawer';
 import {
@@ -16,7 +16,8 @@ import {
   QueueEntryStatusEnum,
   StatVariantEnum,
 } from '@/enum';
-import { useDepartmentQueue, useLabOrders, useLabTests, useRoles } from '@/hooks';
+import { useDepartmentQueue, useLabOrders, useLabTests, useListTotal, usePagedSearch, useRoles } from '@/hooks';
+import { labOrdersService } from '@/helpers/lab.service';
 import type {
   ICreateLabTestDto,
   ILabOrder,
@@ -25,6 +26,7 @@ import type {
   IQueueEntryRecord,
   IUpdateLabTestDto,
 } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'orders' | 'tests';
 
@@ -37,15 +39,35 @@ const orderStatusVariant: Record<LabOrderStatusEnum, PillVariantEnum> = {
 
 export default function LabPage() {
   const [tab, setTab] = useState<TabId>('waiting');
-  const [search, setSearch] = useState('');
   const [testDrawerMode, setTestDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selectedTest, setSelectedTest] = useState<ILabTest | null>(null);
   const [resultDrawer, setResultDrawer] = useState<ILabOrder | null>(null);
   const roles = useRoles();
   const { mutate: globalMutate } = useSWRConfig();
 
-  const { tests, createTest, updateTest, removeTest } = useLabTests({ limit: 100 });
-  const { orders } = useLabOrders({ limit: 50 });
+  // Each tab pages and searches on the server and keeps its own page in the URL.
+  const ordersList = usePagedSearch('ordersPage');
+  const testsList = usePagedSearch('testsPage');
+  const activeList = tab === 'orders' ? ordersList : testsList;
+
+  const {
+    tests,
+    pagination: testsPagination,
+    createTest,
+    updateTest,
+    removeTest,
+  } = useLabTests({ page: testsList.page, search: testsList.debouncedSearch });
+  const { orders, pagination: ordersPagination } = useLabOrders({
+    page: ordersList.page,
+    search: ordersList.debouncedSearch,
+  });
+  const pendingCount = useListTotal(labOrdersService.buildListUrl({ status: LabOrderStatusEnum.PENDING, limit: 1 }));
+  const inProgressCount = useListTotal(
+    labOrdersService.buildListUrl({ status: LabOrderStatusEnum.IN_PROGRESS, limit: 1 }),
+  );
+  const completedCount = useListTotal(
+    labOrdersService.buildListUrl({ status: LabOrderStatusEnum.COMPLETED, limit: 1 }),
+  );
   const {
     entries: waiting,
     call: callEntry,
@@ -54,53 +76,17 @@ export default function LabPage() {
     skip: skipEntry,
   } = useDepartmentQueue(DepartmentEnum.MAIN_LABORATORY);
 
-  const filteredTests = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return tests;
-    return tests.filter(
-      (t) =>
-        t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
-    );
-  }, [tests, search]);
-
-  const filteredOrders = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return orders;
-    return orders.filter((o) => {
-      const name = `${o.patient?.firstName ?? ''} ${o.patient?.lastName ?? ''}`.toLowerCase();
-      return name.includes(q) || o.patient?.mrn?.toLowerCase().includes(q);
-    });
-  }, [orders, search]);
-
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Waiting',
-        value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
-        icon: FaClipboardList,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Pending orders',
-        value: orders.filter((o) => o.status === LabOrderStatusEnum.PENDING).length,
-        icon: FaFlask,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'In progress',
-        value: orders.filter((o) => o.status === LabOrderStatusEnum.IN_PROGRESS).length,
-        icon: FaFlask,
-        variant: StatVariantEnum.Blue,
-      },
-      {
-        label: 'Completed today',
-        value: orders.filter((o) => o.status === LabOrderStatusEnum.COMPLETED).length,
-        icon: FaFlask,
-        variant: StatVariantEnum.Green,
-      },
-    ],
-    [orders, waiting],
-  );
+  const stats = [
+    {
+      label: 'Waiting',
+      value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
+      icon: FaClipboardList,
+      variant: StatVariantEnum.Amber,
+    },
+    { label: 'Pending orders', value: pendingCount, icon: FaFlask, variant: StatVariantEnum.Amber },
+    { label: 'In progress', value: inProgressCount, icon: FaFlask, variant: StatVariantEnum.Blue },
+    { label: 'Completed', value: completedCount, icon: FaFlask, variant: StatVariantEnum.Green },
+  ];
 
   const canManageCatalog = roles.isAdmin;
 
@@ -176,9 +162,9 @@ export default function LabPage() {
             <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink-muted" />
             <Input
               className="pl-9"
-              placeholder={tab === 'orders' ? 'Search patient / MRN' : 'Search code / name / category'}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tab === 'orders' ? 'Search patient / MRN' : 'Search code / name'}
+              value={activeList.search}
+              onChange={(e) => activeList.setSearch(e.target.value)}
             />
           </div>
         </div>
@@ -187,7 +173,6 @@ export default function LabPage() {
       {tab === 'waiting' ? (
         <WaitingLabQueue
           entries={waiting}
-          orders={orders}
           onCall={async (e) => {
             try {
               await callEntry(e.id);
@@ -223,10 +208,17 @@ export default function LabPage() {
           }}
         />
       ) : tab === 'orders' ? (
-        <OrdersTable orders={filteredOrders} onOpen={(order) => setResultDrawer(order)} />
+        <OrdersTable
+          orders={orders}
+          searching={Boolean(ordersList.debouncedSearch)}
+          pagination={<Pagination {...ordersPagination} onPageChange={ordersList.setPage} label="Lab order pages" />}
+          onOpen={(order) => setResultDrawer(order)}
+        />
       ) : (
         <TestsTable
-          tests={filteredTests}
+          tests={tests}
+          searching={Boolean(testsList.debouncedSearch)}
+          pagination={<Pagination {...testsPagination} onPageChange={testsList.setPage} label="Lab test pages" />}
           canManage={canManageCatalog}
           onAdd={openAddTest}
           onEdit={openEditTest}
@@ -250,7 +242,6 @@ export default function LabPage() {
 
 function WaitingLabQueue({
   entries,
-  orders,
   onCall,
   onStart,
   onOpen,
@@ -258,24 +249,12 @@ function WaitingLabQueue({
   onSkip,
 }: {
   entries: IQueueEntryRecord[];
-  orders: ILabOrder[];
   onCall: (e: IQueueEntryRecord) => void;
   onStart: (e: IQueueEntryRecord) => void;
   onOpen: (o: ILabOrder) => void;
   onComplete: (e: IQueueEntryRecord) => void;
   onSkip: (e: IQueueEntryRecord) => void;
 }) {
-  const ordersByVisit = useMemo(() => {
-    const map = new Map<string, ILabOrder[]>();
-    orders.forEach((o) => {
-      if (!o.visitId) return;
-      const list = map.get(o.visitId) ?? [];
-      list.push(o);
-      map.set(o.visitId, list);
-    });
-    return map;
-  }, [orders]);
-
   if (entries.length === 0) {
     return <EmptyState message="Nobody waiting for lab" icon={FaClipboardList} />;
   }
@@ -292,88 +271,118 @@ function WaitingLabQueue({
           </tr>
         </thead>
         <tbody>
-          {entries.map((e) => {
-            const patient = e.visit?.patient;
-            const visitOrders = ordersByVisit.get(e.visitId) ?? [];
-            const activeOrder = visitOrders.find((o) => o.status !== LabOrderStatusEnum.CANCELLED);
-            return (
-              <tr key={e.id} className="border-b border-line last:border-0">
-                <td className="px-4 py-3">
-                  <div className="text-sm font-medium text-ink">
-                    {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
-                  </div>
-                  <div className="text-xs text-ink-muted">{patient?.mrn}</div>
-                </td>
-                <td className="px-4 py-3 text-sm text-ink">
-                  {visitOrders.length === 0
-                    ? '—'
-                    : visitOrders.flatMap((o) => o.items.map((i) => i.test?.code ?? '—')).join(', ')}
-                </td>
-                <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
-                <td className="px-4 py-3">
-                  <Pill
-                    variant={e.status === QueueEntryStatusEnum.WAITING ? PillVariantEnum.WARNING : PillVariantEnum.INFO}
-                  >
-                    {e.status.replaceAll('_', ' ')}
-                  </Pill>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-3">
-                    {e.status === QueueEntryStatusEnum.WAITING && (
-                      <button
-                        type="button"
-                        onClick={() => onCall(e)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Call
-                      </button>
-                    )}
-                    {e.status !== QueueEntryStatusEnum.IN_SERVICE && (
-                      <button
-                        type="button"
-                        onClick={() => onStart(e)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Start
-                      </button>
-                    )}
-                    {activeOrder && (
-                      <button
-                        type="button"
-                        onClick={() => onOpen(activeOrder)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Enter results
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => onComplete(e)}
-                      className="text-xs font-medium text-normal hover:opacity-80"
-                    >
-                      Complete
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onSkip(e)}
-                      className="text-xs font-medium text-ink-muted hover:text-ink"
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+          {entries.map((e) => (
+            <WaitingLabRow
+              key={e.id}
+              entry={e}
+              onCall={onCall}
+              onStart={onStart}
+              onOpen={onOpen}
+              onComplete={onComplete}
+              onSkip={onSkip}
+            />
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
 
-function OrdersTable({ orders, onOpen }: { orders: ILabOrder[]; onOpen: (o: ILabOrder) => void }) {
+// One visit's orders per row (a visit has a handful), instead of loading every order to match them up.
+function WaitingLabRow({
+  entry: e,
+  onCall,
+  onStart,
+  onOpen,
+  onComplete,
+  onSkip,
+}: {
+  entry: IQueueEntryRecord;
+  onCall: (e: IQueueEntryRecord) => void;
+  onStart: (e: IQueueEntryRecord) => void;
+  onOpen: (o: ILabOrder) => void;
+  onComplete: (e: IQueueEntryRecord) => void;
+  onSkip: (e: IQueueEntryRecord) => void;
+}) {
+  const patient = e.visit?.patient;
+  const { orders: visitOrders } = useLabOrders({ visitId: e.visitId, limit: 20 });
+  const activeOrder = visitOrders.find((o) => o.status !== LabOrderStatusEnum.CANCELLED);
+  return (
+    <tr key={e.id} className="border-b border-line last:border-0">
+      <td className="px-4 py-3">
+        <div className="text-sm font-medium text-ink">{patient ? `${patient.firstName} ${patient.lastName}` : '—'}</div>
+        <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+        <PriorityBadge visit={e.visit} />
+      </td>
+      <td className="px-4 py-3 text-sm text-ink">
+        {visitOrders.length === 0
+          ? '—'
+          : visitOrders.flatMap((o) => o.items.map((i) => i.test?.code ?? '—')).join(', ')}
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
+      <td className="px-4 py-3">
+        <Pill variant={e.status === QueueEntryStatusEnum.WAITING ? PillVariantEnum.WARNING : PillVariantEnum.INFO}>
+          {e.status.replaceAll('_', ' ')}
+        </Pill>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex justify-end gap-3">
+          {e.status === QueueEntryStatusEnum.WAITING && (
+            <button
+              type="button"
+              onClick={() => onCall(e)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Call
+            </button>
+          )}
+          {e.status !== QueueEntryStatusEnum.IN_SERVICE && (
+            <button
+              type="button"
+              onClick={() => onStart(e)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Start
+            </button>
+          )}
+          {activeOrder && (
+            <button
+              type="button"
+              onClick={() => onOpen(activeOrder)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Enter results
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onComplete(e)}
+            className="text-xs font-medium text-normal hover:opacity-80"
+          >
+            Complete
+          </button>
+          <button type="button" onClick={() => onSkip(e)} className="text-xs font-medium text-ink-muted hover:text-ink">
+            Skip
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function OrdersTable({
+  orders,
+  searching,
+  pagination,
+  onOpen,
+}: {
+  orders: ILabOrder[];
+  searching: boolean;
+  pagination: ReactNode;
+  onOpen: (o: ILabOrder) => void;
+}) {
   if (orders.length === 0) {
-    return <EmptyState message="No lab orders yet" icon={FaFlask} />;
+    return <EmptyState message={searching ? 'No lab orders match your search' : 'No lab orders yet'} icon={FaFlask} />;
   }
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
@@ -422,25 +431,32 @@ function OrdersTable({ orders, onOpen }: { orders: ILabOrder[]; onOpen: (o: ILab
           ))}
         </tbody>
       </table>
+      {pagination}
     </div>
   );
 }
 
 function TestsTable({
   tests,
+  searching,
+  pagination,
   canManage,
   onAdd,
   onEdit,
   onDelete,
 }: {
   tests: ILabTest[];
+  searching: boolean;
+  pagination: ReactNode;
   canManage: boolean;
   onAdd: () => void;
   onEdit: (t: ILabTest) => void;
   onDelete: (t: ILabTest) => void;
 }) {
   if (tests.length === 0) {
-    return (
+    return searching ? (
+      <EmptyState message="No lab tests match your search" icon={FaFlask} />
+    ) : (
       <EmptyState
         message="No lab tests yet"
         icon={FaFlask}
@@ -502,6 +518,7 @@ function TestsTable({
           ))}
         </tbody>
       </table>
+      {pagination}
     </div>
   );
 }

@@ -1,11 +1,6 @@
-import { PageHeader } from '@/components';
-import TriageWorkspace from '@/components/queue/triage-workspace';
+import { redirect } from 'next/navigation';
 
+// Triage moved under Patients (R4); keep the old URL working for bookmarks.
 export default function TriagePage() {
-  return (
-    <div className="flex flex-col gap-5">
-      <PageHeader description="Take vitals, set acuity, and send patients to the doctor." />
-      <TriageWorkspace />
-    </div>
-  );
+  redirect('/patients?tab=triage');
 }

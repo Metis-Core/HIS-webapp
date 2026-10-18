@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { FaBoxes, FaClipboardList, FaPills, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, DocumentButton, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
+import { Button, DocumentButton, EmptyState, Input, PageHeader, Pagination, Pill, Stats, Tabs } from '@/components';
 import { extractErrorMessage } from '@/helpers/errors';
 import { formatStockQuantity } from '@/helpers/inventory.format';
 import {
@@ -22,11 +22,20 @@ import {
   useDepartmentQueue,
   useInventoryItems,
   useInventoryStock,
+  useListTotal,
+  usePagedSearch,
   usePrescriptions,
 } from '@/hooks';
-import type { IInventoryItem, IPrescription, IQueueEntryRecord } from '@/interfaces';
+import pharmacyService from '@/helpers/pharmacy.service';
+import { inventoryItemsService } from '@/helpers/inventory.service';
+import { MAX_PAGE_SIZE } from '@/helpers/pagination';
+import type { IPrescription, IQueueEntryRecord } from '@/interfaces';
+import PriorityBadge from '@/components/queue/priority-badge';
 
 type TabId = 'waiting' | 'pending' | 'all' | 'medications';
+
+// "Pending" work = not started or partly dispensed.
+const OPEN_STATUSES = [PrescriptionStatusEnum.PENDING, PrescriptionStatusEnum.PARTIALLY_DISPENSED];
 
 const statusVariant: Record<PrescriptionStatusEnum, PillVariantEnum> = {
   [PrescriptionStatusEnum.PENDING]: PillVariantEnum.WARNING,
@@ -37,19 +46,26 @@ const statusVariant: Record<PrescriptionStatusEnum, PillVariantEnum> = {
 
 export default function PharmacyPage() {
   const [tab, setTab] = useState<TabId>('waiting');
-  const [search, setSearch] = useState('');
-  const { prescriptions, dispensePrescription, cancelPrescription } = usePrescriptions({ limit: 100 });
-  const { stores } = useActiveInventoryStores();
-  const { items: medications, isLoading: medsLoading } = useInventoryItems({
-    limit: 100,
-    isActive: true,
-    type: InventoryItemTypeEnum.MEDICATION,
+  const rxList = usePagedSearch('rxPage');
+  const { prescriptions, pagination, dispensePrescription, cancelPrescription } = usePrescriptions({
+    page: rxList.page,
+    search: rxList.debouncedSearch,
+    status: tab === 'pending' ? OPEN_STATUSES : undefined,
   });
+  const { stores } = useActiveInventoryStores();
   const pharmacyStore = stores.find((s) => s.department === DepartmentEnum.MAIN_PHARMACY);
   const defaultStoreId = pharmacyStore?.id ?? stores[0]?.id ?? '';
-  const { stock } = useInventoryStock(defaultStoreId || undefined);
-  const onHandByItem = useMemo(() => new Map(stock.map((s) => [s.itemId, s.quantity])), [stock]);
   const hasStore = Boolean(defaultStoreId);
+  const medicationCount = useListTotal(
+    inventoryItemsService.buildListUrl({ isActive: true, type: InventoryItemTypeEnum.MEDICATION, limit: 1 }),
+  );
+  const pendingCount = useListTotal(pharmacyService.buildListUrl({ status: PrescriptionStatusEnum.PENDING, limit: 1 }));
+  const partialCount = useListTotal(
+    pharmacyService.buildListUrl({ status: PrescriptionStatusEnum.PARTIALLY_DISPENSED, limit: 1 }),
+  );
+  const dispensedCount = useListTotal(
+    pharmacyService.buildListUrl({ status: PrescriptionStatusEnum.DISPENSED, limit: 1 }),
+  );
   const {
     entries: waiting,
     call: callEntry,
@@ -58,50 +74,22 @@ export default function PharmacyPage() {
     skip: skipEntry,
   } = useDepartmentQueue(DepartmentEnum.MAIN_PHARMACY);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let rows = prescriptions;
-    if (tab === 'pending') {
-      rows = rows.filter((p) =>
-        [PrescriptionStatusEnum.PENDING, PrescriptionStatusEnum.PARTIALLY_DISPENSED].includes(p.status),
-      );
-    }
-    if (!q) return rows;
-    return rows.filter((p) => {
-      const name = `${p.patient?.firstName ?? ''} ${p.patient?.lastName ?? ''}`.toLowerCase();
-      return name.includes(q) || (p.patient?.mrn ?? '').toLowerCase().includes(q);
-    });
-  }, [prescriptions, tab, search]);
+  const changeTab = (next: TabId) => {
+    setTab(next);
+    rxList.setPage(1);
+  };
 
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Waiting',
-        value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
-        icon: FaClipboardList,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Pending',
-        value: prescriptions.filter((p) => p.status === PrescriptionStatusEnum.PENDING).length,
-        icon: FaPills,
-        variant: StatVariantEnum.Amber,
-      },
-      {
-        label: 'Partial',
-        value: prescriptions.filter((p) => p.status === PrescriptionStatusEnum.PARTIALLY_DISPENSED).length,
-        icon: FaPills,
-        variant: StatVariantEnum.Blue,
-      },
-      {
-        label: 'Dispensed today',
-        value: prescriptions.filter((p) => p.status === PrescriptionStatusEnum.DISPENSED).length,
-        icon: FaPills,
-        variant: StatVariantEnum.Green,
-      },
-    ],
-    [prescriptions, waiting],
-  );
+  const stats = [
+    {
+      label: 'Waiting',
+      value: waiting.filter((e) => e.status !== QueueEntryStatusEnum.COMPLETED).length,
+      icon: FaClipboardList,
+      variant: StatVariantEnum.Amber,
+    },
+    { label: 'Pending', value: pendingCount, icon: FaPills, variant: StatVariantEnum.Amber },
+    { label: 'Partial', value: partialCount, icon: FaPills, variant: StatVariantEnum.Blue },
+    { label: 'Dispensed', value: dispensedCount, icon: FaPills, variant: StatVariantEnum.Green },
+  ];
 
   const dispenseAll = async (list: IPrescription[]) => {
     if (!defaultStoreId) {
@@ -168,18 +156,17 @@ export default function PharmacyPage() {
           { id: 'all', label: 'All prescriptions' },
           {
             id: 'medications',
-            label: `Medications${medications.length > 0 ? ` (${medications.length})` : ''}`,
+            label: `Medications${medicationCount > 0 ? ` (${medicationCount})` : ''}`,
             icon: FaBoxes,
           },
         ]}
         active={tab}
-        onChange={setTab}
+        onChange={changeTab}
       />
 
       {tab === 'waiting' ? (
         <WaitingPharmacyQueue
           entries={waiting}
-          prescriptions={prescriptions}
           onCall={async (e) => {
             try {
               await callEntry(e.id);
@@ -215,26 +202,28 @@ export default function PharmacyPage() {
           }}
         />
       ) : tab === 'medications' ? (
-        <MedicationsCatalog
-          items={medications}
-          onHandByItem={onHandByItem}
-          isLoading={medsLoading}
-          search={search}
-          onSearch={setSearch}
-        />
+        <MedicationsCatalog storeId={defaultStoreId} />
       ) : (
         <>
           <Input
             className="max-w-sm"
             placeholder="Search patient / MRN"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={rxList.search}
+            onChange={(e) => rxList.setSearch(e.target.value)}
           />
 
-          {filtered.length === 0 ? (
-            <EmptyState message="No prescriptions" icon={FaPills} />
+          {prescriptions.length === 0 ? (
+            <EmptyState
+              message={rxList.debouncedSearch ? 'No prescriptions match your search' : 'No prescriptions'}
+              icon={FaPills}
+            />
           ) : (
-            <PrescriptionsTable rows={filtered} onDispense={(p) => dispenseAll([p])} onCancel={cancel} />
+            <PrescriptionsTable
+              rows={prescriptions}
+              pagination={<Pagination {...pagination} onPageChange={rxList.setPage} label="Prescription pages" />}
+              onDispense={(p) => dispenseAll([p])}
+              onCancel={cancel}
+            />
           )}
         </>
       )}
@@ -242,29 +231,21 @@ export default function PharmacyPage() {
   );
 }
 
-function MedicationsCatalog({
-  items,
-  onHandByItem,
-  isLoading,
-  search,
-  onSearch,
-}: {
-  items: IInventoryItem[];
-  onHandByItem: Map<string, number>;
-  isLoading: boolean;
-  search: string;
-  onSearch: (v: string) => void;
-}) {
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (i) =>
-        i.name.toLowerCase().includes(q) ||
-        i.sku.toLowerCase().includes(q) ||
-        (i.manufacturer ?? '').toLowerCase().includes(q),
-    );
-  }, [items, search]);
+function MedicationsCatalog({ storeId }: { storeId: string }) {
+  const { page, setPage, search, setSearch, debouncedSearch } = usePagedSearch('medsPage');
+  const { items, pagination, isLoading } = useInventoryItems({
+    page,
+    search: debouncedSearch,
+    isActive: true,
+    type: InventoryItemTypeEnum.MEDICATION,
+  });
+  // On-hand quantities for just the medications on this page.
+  const itemIds = items.map((i) => i.id);
+  const { stock } = useInventoryStock(
+    { storeId, itemIds, limit: MAX_PAGE_SIZE },
+    { enabled: Boolean(storeId) && itemIds.length > 0 },
+  );
+  const onHandByItem = new Map(stock.map((st) => [st.itemId, st.quantity]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -275,7 +256,7 @@ function MedicationsCatalog({
             className="pl-9"
             placeholder="Search medication / SKU / manufacturer"
             value={search}
-            onChange={(e) => onSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Link href="/inventory" className="text-xs font-medium text-primary hover:text-primary-hover">
@@ -289,14 +270,14 @@ function MedicationsCatalog({
           <div className="h-3 w-full animate-pulse rounded bg-line/70" />
           <div className="h-3 w-5/6 animate-pulse rounded bg-line/70" />
         </div>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !debouncedSearch ? (
         <EmptyState
           message="No medications configured"
           icon={FaBoxes}
           actionLabel="Add in Inventory"
           onAction={() => (window.location.href = '/inventory')}
         />
-      ) : filtered.length === 0 ? (
+      ) : items.length === 0 ? (
         <EmptyState message="No medications match your search" icon={FaBoxes} />
       ) : (
         <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
@@ -314,7 +295,7 @@ function MedicationsCatalog({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((i) => (
+              {items.map((i) => (
                 <tr key={i.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">
                     <div className="text-sm font-medium text-ink">{i.name}</div>
@@ -337,6 +318,7 @@ function MedicationsCatalog({
               ))}
             </tbody>
           </table>
+          <Pagination {...pagination} onPageChange={setPage} label="Medication pages" />
         </div>
       )}
     </div>
@@ -345,7 +327,6 @@ function MedicationsCatalog({
 
 function WaitingPharmacyQueue({
   entries,
-  prescriptions,
   onCall,
   onStart,
   onDispenseAll,
@@ -353,23 +334,12 @@ function WaitingPharmacyQueue({
   onSkip,
 }: {
   entries: IQueueEntryRecord[];
-  prescriptions: IPrescription[];
   onCall: (e: IQueueEntryRecord) => void;
   onStart: (e: IQueueEntryRecord) => void;
   onDispenseAll: (list: IPrescription[]) => void;
   onComplete: (e: IQueueEntryRecord) => void;
   onSkip: (e: IQueueEntryRecord) => void;
 }) {
-  const prescriptionsByPatient = useMemo(() => {
-    const map = new Map<string, IPrescription[]>();
-    prescriptions.forEach((p) => {
-      const list = map.get(p.patientId) ?? [];
-      list.push(p);
-      map.set(p.patientId, list);
-    });
-    return map;
-  }, [prescriptions]);
-
   if (entries.length === 0) {
     return <EmptyState message="Nobody waiting for pharmacy" icon={FaClipboardList} />;
   }
@@ -386,91 +356,115 @@ function WaitingPharmacyQueue({
           </tr>
         </thead>
         <tbody>
-          {entries.map((e) => {
-            const patient = e.visit?.patient;
-            const rx = (prescriptionsByPatient.get(e.visit?.patientId ?? '') ?? []).filter(
-              (p) =>
-                p.status === PrescriptionStatusEnum.PENDING || p.status === PrescriptionStatusEnum.PARTIALLY_DISPENSED,
-            );
-            return (
-              <tr key={e.id} className="border-b border-line last:border-0">
-                <td className="px-4 py-3">
-                  <div className="text-sm font-medium text-ink">
-                    {patient ? `${patient.firstName} ${patient.lastName}` : '—'}
-                  </div>
-                  <div className="text-xs text-ink-muted">{patient?.mrn}</div>
-                </td>
-                <td className="px-4 py-3 text-sm text-ink">
-                  {rx.length === 0 ? '—' : rx.flatMap((p) => p.items.map((i) => i.item?.name ?? i.itemId)).join(', ')}
-                </td>
-                <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
-                <td className="px-4 py-3">
-                  <Pill
-                    variant={e.status === QueueEntryStatusEnum.WAITING ? PillVariantEnum.WARNING : PillVariantEnum.INFO}
-                  >
-                    {e.status.replaceAll('_', ' ')}
-                  </Pill>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-3">
-                    {e.status === QueueEntryStatusEnum.WAITING && (
-                      <button
-                        type="button"
-                        onClick={() => onCall(e)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Call
-                      </button>
-                    )}
-                    {e.status !== QueueEntryStatusEnum.IN_SERVICE && (
-                      <button
-                        type="button"
-                        onClick={() => onStart(e)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Start
-                      </button>
-                    )}
-                    {rx.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => onDispenseAll(rx)}
-                        className="text-xs font-medium text-primary hover:text-primary-hover"
-                      >
-                        Dispense
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => onComplete(e)}
-                      className="text-xs font-medium text-normal hover:opacity-80"
-                    >
-                      Complete
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onSkip(e)}
-                      className="text-xs font-medium text-ink-muted hover:text-ink"
-                    >
-                      Skip
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+          {entries.map((e) => (
+            <WaitingPharmacyRow
+              key={e.id}
+              entry={e}
+              onCall={onCall}
+              onStart={onStart}
+              onDispenseAll={onDispenseAll}
+              onComplete={onComplete}
+              onSkip={onSkip}
+            />
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
 
+// Each waiting patient's open prescriptions (a handful), instead of loading every prescription to match them up.
+function WaitingPharmacyRow({
+  entry: e,
+  onCall,
+  onStart,
+  onDispenseAll,
+  onComplete,
+  onSkip,
+}: {
+  entry: IQueueEntryRecord;
+  onCall: (e: IQueueEntryRecord) => void;
+  onStart: (e: IQueueEntryRecord) => void;
+  onDispenseAll: (list: IPrescription[]) => void;
+  onComplete: (e: IQueueEntryRecord) => void;
+  onSkip: (e: IQueueEntryRecord) => void;
+}) {
+  const patient = e.visit?.patient;
+  const patientId = e.visit?.patientId ?? e.visit?.patient?.id;
+  // Without a patient id the filter would match everyone, so skip the request.
+  const { prescriptions: rx } = usePrescriptions(
+    { patientId, status: OPEN_STATUSES, limit: 20 },
+    { enabled: Boolean(patientId) },
+  );
+  return (
+    <tr className="border-b border-line last:border-0">
+      <td className="px-4 py-3">
+        <div className="text-sm font-medium text-ink">{patient ? `${patient.firstName} ${patient.lastName}` : '—'}</div>
+        <div className="text-xs text-ink-muted">{patient?.mrn}</div>
+        <PriorityBadge visit={e.visit} />
+      </td>
+      <td className="px-4 py-3 text-sm text-ink">
+        {rx.length === 0 ? '—' : rx.flatMap((p) => p.items.map((i) => i.item?.name ?? i.itemId)).join(', ')}
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums text-ink">#{e.sequenceNumber}</td>
+      <td className="px-4 py-3">
+        <Pill variant={e.status === QueueEntryStatusEnum.WAITING ? PillVariantEnum.WARNING : PillVariantEnum.INFO}>
+          {e.status.replaceAll('_', ' ')}
+        </Pill>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex justify-end gap-3">
+          {e.status === QueueEntryStatusEnum.WAITING && (
+            <button
+              type="button"
+              onClick={() => onCall(e)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Call
+            </button>
+          )}
+          {e.status !== QueueEntryStatusEnum.IN_SERVICE && (
+            <button
+              type="button"
+              onClick={() => onStart(e)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Start
+            </button>
+          )}
+          {rx.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onDispenseAll(rx)}
+              className="text-xs font-medium text-primary hover:text-primary-hover"
+            >
+              Dispense
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onComplete(e)}
+            className="text-xs font-medium text-normal hover:opacity-80"
+          >
+            Complete
+          </button>
+          <button type="button" onClick={() => onSkip(e)} className="text-xs font-medium text-ink-muted hover:text-ink">
+            Skip
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function PrescriptionsTable({
   rows,
+  pagination,
   onDispense,
   onCancel,
 }: {
   rows: IPrescription[];
+  pagination: ReactNode;
   onDispense: (p: IPrescription) => void;
   onCancel: (p: IPrescription) => void;
 }) {
@@ -541,6 +535,7 @@ function PrescriptionsTable({
           })}
         </tbody>
       </table>
+      {pagination}
     </div>
   );
 }

@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { FaExclamationTriangle, FaShieldAlt } from 'react-icons/fa';
+import { toast } from 'sonner';
 import { Button, Drawer, Dropdown, Input, Pill } from '@/components';
-import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
+import { ButtonVariantEnum, PillVariantEnum, TriageCategoryEnum, VisitTypeEnum } from '@/enum';
 import { InsuranceVerificationMethodEnum } from '@/enum/billing.enum';
-import type { IInsuranceVerification, IOption, IService } from '@/interfaces';
+import { extractErrorMessage } from '@/helpers/errors';
+import { useCheckIn } from '@/hooks';
+import type { IInsuranceVerification, IOption } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
 
 const VAT_RATE = 0.18;
@@ -16,28 +19,78 @@ const methodOptions: IOption[] = [
   { label: 'Card inspected', value: InsuranceVerificationMethodEnum.CARD },
 ];
 
+const visitTypeOptions: IOption[] = [
+  { label: 'Walk-in', value: VisitTypeEnum.WALK_IN },
+  { label: 'Appointment', value: VisitTypeEnum.APPOINTMENT },
+  { label: 'Emergency', value: VisitTypeEnum.EMERGENCY },
+];
+
+const categoryOptions: IOption[] = [
+  { label: 'Red — immediate', value: TriageCategoryEnum.RED },
+  { label: 'Yellow — urgent', value: TriageCategoryEnum.YELLOW },
+  { label: 'Green — can wait', value: TriageCategoryEnum.GREEN },
+];
+
+const single = (value: IOption | IOption[] | null) => (Array.isArray(value) ? (value[0] ?? null) : value);
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  consultationFee: IService | null;
-  patient?: IPatient | null;
-  onConfirm: (insuranceVerification?: IInsuranceVerification) => Promise<void> | void;
-  submitting: boolean;
+  patient: IPatient | null;
+  /** Called after the visit is created; the drawer has already shown the confirmation toast. */
+  onCheckedIn?: () => Promise<unknown> | void;
+  title?: string;
 };
 
-export default function VisitReceiptDrawer({ open, onClose, consultationFee, patient, onConfirm, submitting }: Props) {
+/** Check-in step: visit type (and emergency colour), consultation fee, insurance and consent (R5/R9). */
+export default function VisitReceiptDrawer({ open, onClose, patient, onCheckedIn, title = 'Check-in receipt' }: Props) {
+  const { consultationFee, feeMissing, checkIn } = useCheckIn({ enabled: open });
+  const [visitType, setVisitType] = useState<IOption>(visitTypeOptions[0]);
+  const [category, setCategory] = useState<IOption>(categoryOptions[0]);
   const [method, setMethod] = useState<IOption | null>(null);
   const [reference, setReference] = useState('');
   const [verification, setVerification] = useState<IInsuranceVerification | null>(null);
   const [consented, setConsented] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const isEmergency = visitType.value === VisitTypeEnum.EMERGENCY;
 
   useEffect(() => {
     if (!open) return;
+    setVisitType(visitTypeOptions[0]);
+    setCategory(categoryOptions[0]);
     setMethod(null);
     setReference('');
     setVerification(null);
     setConsented(false);
   }, [open]);
+
+  const confirm = async () => {
+    if (!patient || submitting) return;
+    setSubmitting(true);
+    try {
+      await toast
+        .promise(
+          checkIn({
+            patientId: patient.id,
+            visitType: visitType.value as VisitTypeEnum,
+            triageCategory: isEmergency ? (category.value as TriageCategoryEnum) : undefined,
+            insuranceVerification: verification ?? undefined,
+          }),
+          {
+            loading: 'Checking in…',
+            success: isEmergency ? 'Emergency checked in — flagged in every queue' : 'Checked in — sent to triage',
+            error: (err: unknown) => extractErrorMessage(err, "Couldn't check in — retry"),
+          },
+        )
+        .unwrap();
+      await onCheckedIn?.();
+      onClose();
+    } catch {
+      // The toast already shows the reason.
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const markVerified = () => {
     if (!method || !reference.trim()) return;
@@ -49,8 +102,37 @@ export default function VisitReceiptDrawer({ open, onClose, consultationFee, pat
   const grandTotal = totalFee + vatAmount;
 
   return (
-    <Drawer open={open} onClose={onClose} title="Check-in receipt" width="w-125">
+    <Drawer open={open} onClose={onClose} title={title} width="w-125">
       <div className="flex flex-col gap-6">
+        {patient && (
+          <p className="text-sm text-ink-muted">
+            Patient:{' '}
+            <span className="font-medium text-ink">
+              {patient.firstName} {patient.lastName}
+              {patient.mrn ? ` · ${patient.mrn}` : ''}
+            </span>
+          </p>
+        )}
+        <Dropdown
+          label="Visit type"
+          options={visitTypeOptions}
+          value={visitType}
+          onChange={(value) => setVisitType(single(value) ?? visitTypeOptions[0])}
+        />
+        {isEmergency && (
+          <div className="flex flex-col gap-1">
+            <Dropdown
+              label="Emergency triage colour"
+              options={categoryOptions}
+              value={category}
+              onChange={(value) => setCategory(single(value) ?? categoryOptions[0])}
+            />
+            <p className="text-xs text-ink-muted">
+              An emergency number is issued and the patient jumps every department&apos;s queue. Triage can raise the
+              colour; lowering it needs a reason.
+            </p>
+          </div>
+        )}
         <div className="overflow-hidden rounded-xl border border-zinc-200">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line bg-primary-soft text-primary">
@@ -82,10 +164,12 @@ export default function VisitReceiptDrawer({ open, onClose, consultationFee, pat
           </div>
         </div>
 
-        {!consultationFee && (
+        {feeMissing && (
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <FaExclamationTriangle className="mt-0.5 shrink-0" aria-hidden />
-            <span>No &quot;Consultation&quot; service is priced yet. Ask an admin to add it under Services.</span>
+            <span>
+              No consultation fee is configured. Ask an admin to give a service the code CONSULTATION under Services.
+            </span>
           </div>
         )}
 
@@ -163,11 +247,11 @@ export default function VisitReceiptDrawer({ open, onClose, consultationFee, pat
 
         <Button
           type="button"
-          onClick={() => onConfirm(verification ?? undefined)}
-          disabled={submitting || !consented}
+          onClick={confirm}
+          disabled={submitting || !consented || !patient}
           className="w-full justify-center"
         >
-          {submitting ? 'Checking in…' : 'Confirm & send to triage'}
+          {submitting ? 'Checking in…' : 'Confirm & check in'}
         </Button>
       </div>
     </Drawer>

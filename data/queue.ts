@@ -47,7 +47,7 @@ export const queueEntries: IQueueEntry[] = [
     city: 'Kampala',
     bloodType: 'O+',
     insuranceProvider: 'UAP Old Mutual Insurance',
-    stage: QueueStageEnum.REGISTRATION,
+    stage: QueueStageEnum.RECEPTION,
     status: QueueStatusEnum.PENDING,
     priority: 'routine',
     assignedTo: 'Front Desk 1',
@@ -416,7 +416,7 @@ export function getQueueEntry(id: string) {
 }
 
 export const departmentStageMap: Record<DepartmentEnum, QueueStageEnum> = {
-  [DepartmentEnum.RECEPTION]: QueueStageEnum.REGISTRATION,
+  [DepartmentEnum.RECEPTION]: QueueStageEnum.RECEPTION,
   [DepartmentEnum.TRIAGE]: QueueStageEnum.EXAMINATION,
   [DepartmentEnum.OUTPATIENT_CLINIC]: QueueStageEnum.CONSULTATION,
   [DepartmentEnum.INPATIENT_WARD]: QueueStageEnum.POSTOPERATIVE,
@@ -425,7 +425,7 @@ export const departmentStageMap: Record<DepartmentEnum, QueueStageEnum> = {
   [DepartmentEnum.DENTAL]: QueueStageEnum.DENTAL,
   [DepartmentEnum.ANTENATAL]: QueueStageEnum.ANTENATAL,
   [DepartmentEnum.MAIN_PHARMACY]: QueueStageEnum.PHARMACY,
-  [DepartmentEnum.FINANCE]: QueueStageEnum.DISCHARGE,
+  [DepartmentEnum.FINANCE]: QueueStageEnum.BILLING,
   [DepartmentEnum.ADMINISTRATION]: QueueStageEnum.DISCHARGE,
 };
 
@@ -441,6 +441,27 @@ export const entryStatusMap: Record<QueueEntryStatusEnum, QueueStatusEnum> = {
 export function currentEntry(visit: IVisitRecord) {
   const sorted = [...(visit.queueEntries ?? [])].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
   return sorted.find((entry) => entry.status !== QueueEntryStatusEnum.COMPLETED) ?? sorted[sorted.length - 1] ?? null;
+}
+
+const FINISHED = [QueueEntryStatusEnum.COMPLETED, QueueEntryStatusEnum.SKIPPED];
+
+/** When the patient became free for their current stage: the previous stage's end, not check-in (R7). */
+export function stageReadyAt(visit: IVisitRecord): Date {
+  const sorted = [...(visit.queueEntries ?? [])].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+  const index = sorted.findIndex((entry) => !FINISHED.includes(entry.status));
+  if (index <= 0) return new Date(sorted[0]?.createdAt ?? visit.createdAt);
+  const previousEnd = sorted[index - 1].completedAt;
+  const created = new Date(sorted[index].createdAt);
+  return previousEnd && new Date(previousEnd) > created ? new Date(previousEnd) : created;
+}
+
+/** 0-59 s -> "<1 min", otherwise "1 h 05 min" / "12 min". */
+export function formatDuration(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined) return '—';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 1) return '<1 min';
+  const hours = Math.floor(minutes / 60);
+  return hours > 0 ? `${hours} h ${String(minutes % 60).padStart(2, '0')} min` : `${minutes} min`;
 }
 
 export function initialsOf(name: string) {

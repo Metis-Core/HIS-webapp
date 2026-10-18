@@ -1,5 +1,11 @@
 import type { IBaseEntity } from './base.interface';
-import { DepartmentEnum, QueueEntryStatusEnum, VisitStatusEnum, VisitTypeEnum } from '@/enum/queue.enum';
+import {
+  DepartmentEnum,
+  QueueEntryStatusEnum,
+  TriageCategoryEnum,
+  VisitStatusEnum,
+  VisitTypeEnum,
+} from '@/enum/queue.enum';
 import type { InsuranceVerificationMethodEnum } from '@/enum/billing.enum';
 import type { IPatient } from './patient.interface';
 
@@ -17,6 +23,8 @@ export interface IQueueEntryRecord extends IBaseEntity {
   startedAt: Date | null;
   completedAt: Date | null;
   notes: string | null;
+  /** `review: true` marks the doctor's second look at diagnostic results. */
+  metadata?: { review?: boolean } | null;
 }
 
 export interface IVisitRecord extends IBaseEntity {
@@ -25,6 +33,9 @@ export interface IVisitRecord extends IBaseEntity {
   visitType: VisitTypeEnum;
   status: VisitStatusEnum;
   checkedInById: string;
+  triageCategory: TriageCategoryEnum | null;
+  emergencyNumber: string | null;
+  priority: number;
   metadata: Record<string, unknown>;
   queueEntries: IQueueEntryRecord[];
 }
@@ -37,7 +48,32 @@ export interface IInsuranceVerification {
 export interface ICreateVisitDto {
   patientId: string;
   visitType?: VisitTypeEnum;
+  triageCategory?: TriageCategoryEnum;
   insuranceVerification?: IInsuranceVerification;
+}
+
+export interface IChangePriorityDto {
+  triageCategory: TriageCategoryEnum;
+  reason: string;
+}
+
+export interface IVisitTimelineStage {
+  entryId: string;
+  department: DepartmentEnum;
+  status: QueueEntryStatusEnum;
+  review: boolean;
+  servedById: string | null;
+  servedByName: string | null;
+  readyAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  waitSeconds: number | null;
+  serviceSeconds: number | null;
+}
+
+export interface IVisitTimeline {
+  stages: IVisitTimelineStage[];
+  totalSeconds: number | null;
 }
 
 export interface IUpdateVisitDto {

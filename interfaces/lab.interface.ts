@@ -128,6 +128,8 @@ export interface ILabOrderFilters {
   consultationId?: string;
   visitId?: string;
   orderedById?: string;
-  status?: LabOrderStatusEnum;
+  /** One status or several (sent comma-separated). */
+  status?: LabOrderStatusEnum | LabOrderStatusEnum[];
+  search?: string;
   priority?: LabPriorityEnum;
 }

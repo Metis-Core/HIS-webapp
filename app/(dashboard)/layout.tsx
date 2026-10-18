@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Header, Sidebar } from '@/components';
+import RouteGuard from '@/components/layout/route-guard';
 
 export const metadata: Metadata = {
   title: 'Metis Care',
@@ -17,7 +19,12 @@ export default function DashboardLayout({
         <div className="flex min-w-0 flex-1 flex-col">
           <Header />
           <main className="min-h-0 flex-1 overflow-auto">
-            <div className="w-full px-6 py-4">{children}</div>
+            <div className="w-full px-6 py-4">
+              {/* Lists keep their page in the URL (useSearchParams), which needs a Suspense boundary. */}
+              <Suspense fallback={null}>
+                <RouteGuard>{children}</RouteGuard>
+              </Suspense>
+            </div>
           </main>
         </div>
       </div>

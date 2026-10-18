@@ -1,5 +1,6 @@
 export enum ServiceEndpointEnum {
   BASE = '/services',
+  CONSULTATION_FEE = '/services/consultation-fee',
 }
 
 export enum PatientEndpointEnum {

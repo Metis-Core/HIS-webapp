@@ -1,31 +1,37 @@
 'use client';
 
-import { Button } from '@/components';
+import Button from '../buttons/button';
 import { ButtonVariantEnum } from '@/enum';
+import type { IPageInfo } from '@/helpers/pagination';
 
-interface PaginationFooterProps {
-  page: number;
-  limit: number;
-  total: number;
-  hasNextPage: boolean;
-  loading?: boolean;
+interface PaginationProps extends IPageInfo {
   onPageChange: (page: number) => void;
+  loading?: boolean;
+  /** Names the list for screen readers when a page has more than one table. */
+  label?: string;
+  className?: string;
 }
 
-/** "Showing 21–40 of 312" with previous/next controls. */
-export default function PaginationFooter({
+/** Shared list footer: "Showing 21–40 of 312", page X of Y, Previous / Next. */
+export default function Pagination({
   page,
   limit,
   total,
   hasNextPage,
-  loading = false,
   onPageChange,
-}: PaginationFooterProps) {
+  loading = false,
+  label = 'Pagination',
+  className = '',
+}: PaginationProps) {
   const first = total === 0 ? 0 : (page - 1) * limit + 1;
   const last = Math.min(page * limit, total);
+  const pages = Math.max(1, Math.ceil(total / Math.max(limit, 1)));
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-6 py-3 text-xs text-ink-muted">
+    <nav
+      aria-label={label}
+      className={`flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-xs text-ink-muted ${className}`}
+    >
       <p className="tabular-nums" aria-live="polite">
         {loading ? 'Loading…' : `Showing ${first}–${last} of ${total}`}
       </p>
@@ -38,7 +44,9 @@ export default function PaginationFooter({
         >
           Previous
         </Button>
-        <span className="tabular-nums">Page {page}</span>
+        <span className="tabular-nums" aria-current="page">
+          Page {page} of {pages}
+        </span>
         <Button
           type="button"
           variant={ButtonVariantEnum.SECONDARY}
@@ -48,6 +56,6 @@ export default function PaginationFooter({
           Next
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

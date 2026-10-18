@@ -6,6 +6,7 @@ import { FaFlask, FaHeartbeat, FaHistory, FaPills, FaPlus, FaStethoscope, FaTras
 import { formatDistanceToNow } from 'date-fns';
 import { Button, Drawer, Dropdown, Input, Pill } from '@/components';
 import ConsultationPrescriptionsList from '@/components/consultation/consultation-prescriptions.list';
+import LabTestPicker from '@/components/consultation/lab-test-picker';
 import {
   ButtonVariantEnum,
   ConsultationTypeEnum,
@@ -20,7 +21,6 @@ import {
   useConsultationsByPatient,
   useLabOrdersByConsultation,
   useLabOrdersByPatient,
-  useLabTests,
   useTriageByPatient,
 } from '@/hooks';
 import { labOrdersService } from '@/helpers/lab.service';
@@ -30,6 +30,7 @@ import type {
   IConsultation,
   ICreateConsultationDto,
   ILabOrder,
+  ILabTest,
   IOption,
   IPatient,
   ITriage,
@@ -263,18 +264,13 @@ export default function ConsultationDrawer({
 
 function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultation; onChanged: () => void }) {
   const { orders, mutate } = useLabOrdersByConsultation(consultation.id);
-  const { tests } = useLabTests({ limit: 100, isActive: true });
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedTests, setSelectedTests] = useState<ILabTest[]>([]);
   const [priority, setPriority] = useState<LabPriorityEnum>(LabPriorityEnum.ROUTINE);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const testOptions: IOption[] = tests.map((t) => ({ label: `${t.code} — ${t.name}`, value: t.id }));
-
-  const toggle = (id: string) => setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-
   const submit = async () => {
-    if (selectedIds.length === 0) {
+    if (selectedTests.length === 0) {
       toast.error('Select at least one test');
       return;
     }
@@ -287,7 +283,7 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
           visitId: consultation.visitId ?? undefined,
           priority,
           clinicalNotes: notes.trim() || undefined,
-          items: selectedIds.map((testId) => ({ testId })),
+          items: selectedTests.map((t) => ({ testId: t.id })),
         }),
         {
           loading: 'Ordering tests…',
@@ -295,7 +291,7 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
           error: "Couldn't order — retry",
         },
       );
-      setSelectedIds([]);
+      setSelectedTests([]);
       setNotes('');
       await mutate();
       onChanged();
@@ -339,25 +335,7 @@ function LabOrdersPanel({ consultation, onChanged }: { consultation: IConsultati
 
       <div className="rounded-lg border border-line p-3">
         <p className="mb-2 text-xs font-medium text-ink-muted">Order new tests</p>
-        <div className="flex flex-wrap gap-1.5">
-          {testOptions.map((o) => {
-            const active = selectedIds.includes(o.value as string);
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => toggle(o.value as string)}
-                className={`rounded-full px-2.5 py-1 text-xs ring-1 transition ${
-                  active
-                    ? 'bg-brand text-white ring-brand'
-                    : 'bg-surface text-ink-muted ring-line hover:bg-surface-raised'
-                }`}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
+        <LabTestPicker selected={selectedTests} onChange={setSelectedTests} />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Dropdown
             label="Priority"

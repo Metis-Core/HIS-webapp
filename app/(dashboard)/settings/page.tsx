@@ -63,36 +63,41 @@ export default function SettingsPage() {
 
 function ProfileCard({ onSaved }: { onSaved: () => void }) {
   const { user } = useAuth();
-  const [values, setValues] = useState({ username: '', email: '' });
+  const [values, setValues] = useState({ username: '', email: '', currentPassword: '' });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user) setValues({ username: user.username, email: user.email });
+    if (user) setValues({ username: user.username, email: user.email, currentPassword: '' });
   }, [user]);
 
   if (!user) return null;
 
-  // Usernames and emails are sign-in identifiers, so only administrators may change them (C-1).
-  const canEdit = (RoleGroups.ADMINS as readonly string[]).includes(user.role);
-  const dirty = canEdit && (user.username !== values.username || user.email !== values.email);
+  // Everyone may change their username (re-confirming their password); email stays admin-managed
+  // until there is a way to verify a new address (C-1 follow-up).
+  const isAdmin = (RoleGroups.ADMINS as readonly string[]).includes(user.role);
+  const usernameDirty = values.username.trim() !== user.username;
+  const emailDirty = isAdmin && values.email.trim() !== user.email;
+  const needsPassword = usernameDirty && !isAdmin;
+  const dirty = usernameDirty || emailDirty;
+  const canSubmit = dirty && (!needsPassword || values.currentPassword.length > 0);
+
+  const save = () =>
+    isAdmin
+      ? usersService.update(user.id, { username: values.username.trim(), email: values.email.trim() })
+      : authService.updateProfile(values.username.trim(), values.currentPassword);
 
   const submit = async () => {
-    if (!dirty) return;
+    if (!canSubmit) return;
     setBusy(true);
     try {
       await toast
-        .promise(
-          usersService.update(user.id, {
-            username: values.username.trim(),
-            email: values.email.trim(),
-          }),
-          {
-            loading: 'Saving profile…',
-            success: 'Profile updated',
-            error: (err: unknown) => extractErrorMessage(err, "Couldn't save — retry"),
-          },
-        )
+        .promise(save(), {
+          loading: 'Saving profile…',
+          success: 'Profile updated',
+          error: (err: unknown) => extractErrorMessage(err, "Couldn't save — retry"),
+        })
         .unwrap();
+      setValues((s) => ({ ...s, currentPassword: '' }));
       onSaved();
     } catch {
       // The toast already shows the reason.
@@ -107,7 +112,9 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
         <div>
           <h2 className="text-sm font-semibold text-ink">Profile</h2>
           <p className="text-xs text-ink-muted">
-            {canEdit ? 'Basic account information.' : 'Ask an administrator to change your username or email.'}
+            {isAdmin
+              ? 'Basic account information.'
+              : 'You can change your username. Ask an administrator to change your email.'}
           </p>
         </div>
         <Pill variant={PillVariantEnum.INFO}>{user.role.replaceAll('_', ' ')}</Pill>
@@ -117,16 +124,24 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
         <Input
           label="Username"
           value={values.username}
-          disabled={!canEdit}
           onChange={(e) => setValues((s) => ({ ...s, username: e.target.value }))}
         />
         <Input
           label="Email"
           type="email"
           value={values.email}
-          disabled={!canEdit}
+          disabled={!isAdmin}
           onChange={(e) => setValues((s) => ({ ...s, email: e.target.value }))}
         />
+        {needsPassword && (
+          <Input
+            label="Current password (to confirm)"
+            type="password"
+            autoComplete="current-password"
+            value={values.currentPassword}
+            onChange={(e) => setValues((s) => ({ ...s, currentPassword: e.target.value }))}
+          />
+        )}
         <Input label="Role" value={user.role.replaceAll('_', ' ')} disabled />
         <Input label="Department" value={user.department?.replaceAll('_', ' ') ?? '—'} disabled />
       </div>
@@ -149,11 +164,9 @@ function ProfileCard({ onSaved }: { onSaved: () => void }) {
       </div>
 
       <div className="flex justify-end">
-        {canEdit && (
-          <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={submit} loading={busy} disabled={!dirty}>
-            Save changes
-          </Button>
-        )}
+        <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={submit} loading={busy} disabled={!canSubmit}>
+          Save changes
+        </Button>
       </div>
     </section>
   );

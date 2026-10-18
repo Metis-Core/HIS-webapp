@@ -32,6 +32,12 @@ class AuthService {
     tokenStore.setTokens(data);
   }
 
+  /** Self-service username change; the API asks for the current password again. */
+  async updateProfile(username: string, currentPassword: string): Promise<IUser> {
+    const { data } = await api.patch<IUser>(AuthEndpointEnum.ME, { username, currentPassword });
+    return data;
+  }
+
   async me(): Promise<IUser> {
     const { data } = await api.get<IUser>(AuthEndpointEnum.ME);
     return data;

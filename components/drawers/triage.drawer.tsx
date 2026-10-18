@@ -1,17 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button, Drawer, Dropdown, Input } from '@/components';
 import {
   ButtonVariantEnum,
   ConsciousnessLevelEnum,
-  DepartmentEnum,
   ModalDrawerModeEnum,
   TriageAcuityEnum,
   TriageStatusEnum,
 } from '@/enum';
 import type { ICreateTriageDto, IOption, IPatient, ITriage, IUpdateTriageDto } from '@/interfaces';
+import { usePatient } from '@/hooks';
+import PatientSearchSelect from '@/components/queue/patient-search-select';
 
 const emptyValues = {
   patientId: '',
@@ -30,7 +31,6 @@ const emptyValues = {
   painScore: '',
   allergiesNoted: '',
   assessmentNotes: '',
-  referredToDepartment: '' as DepartmentEnum | '',
 };
 
 type FormState = typeof emptyValues;
@@ -38,7 +38,6 @@ type FormState = typeof emptyValues;
 interface TriageDrawerProps {
   mode: ModalDrawerModeEnum | null;
   triage: ITriage | null;
-  patients: IPatient[];
   prefillPatient?: IPatient | null;
   prefillPatientId?: string;
   prefillVisitId?: string;
@@ -64,7 +63,6 @@ const toNum = (v: string) => (v === '' ? undefined : Number(v));
 export default function TriageDrawer({
   mode,
   triage,
-  patients,
   prefillPatient,
   prefillPatientId,
   prefillVisitId,
@@ -76,25 +74,15 @@ export default function TriageDrawer({
   const [values, setValues] = useState<FormState>(emptyValues);
   const [busy, setBusy] = useState(false);
 
-  const patientOptions: IOption[] = useMemo(() => {
-    const seen = new Set<string>();
-    const options: IOption[] = [];
-    const push = (p: IPatient) => {
-      if (seen.has(p.id)) return;
-      seen.add(p.id);
-      options.push({
-        label: `${p.firstName} ${p.lastName}${p.mrn ? ` (${p.mrn})` : ''}`,
-        value: p.id,
-      });
-    };
-    if (prefillPatient) push(prefillPatient);
-    if (isEdit && triage?.patient) push(triage.patient);
-    patients.forEach(push);
-    return options;
-  }, [patients, prefillPatient, isEdit, triage?.patient]);
+  // Patients are found by server-side search; a prefilled id without its record is fetched once.
+  const [pickedPatient, setPickedPatient] = useState<IPatient | null>(null);
+  const needsFetch = !pickedPatient && Boolean(values.patientId);
+  const { patient: fetchedPatient } = usePatient(needsFetch ? values.patientId : null);
+  const shownPatient = pickedPatient ?? fetchedPatient ?? null;
 
   useEffect(() => {
     if (!open) return;
+    setPickedPatient(isEdit ? (triage?.patient ?? null) : (prefillPatient ?? null));
     if (isEdit && triage) {
       setValues({
         patientId: triage.patientId,
@@ -113,7 +101,6 @@ export default function TriageDrawer({
         painScore: triage.painScore != null ? String(triage.painScore) : '',
         allergiesNoted: triage.allergiesNoted ?? '',
         assessmentNotes: triage.assessmentNotes ?? '',
-        referredToDepartment: triage.referredToDepartment ?? '',
       });
     } else {
       setValues({
@@ -150,7 +137,6 @@ export default function TriageDrawer({
         painScore: toNum(values.painScore),
         allergiesNoted: values.allergiesNoted.trim() || undefined,
         assessmentNotes: values.assessmentNotes.trim() || undefined,
-        referredToDepartment: values.referredToDepartment || undefined,
       };
       await onSave(payload, triage?.id);
       onClose();
@@ -169,11 +155,12 @@ export default function TriageDrawer({
         }}
       >
         <div className="grid grid-cols-2 gap-3">
-          <Dropdown
-            label="Patient"
-            options={patientOptions}
-            value={patientOptions.find((o) => o.value === values.patientId) ?? null}
-            onChange={(o) => set('patientId', (o as IOption).value as string)}
+          <PatientSearchSelect
+            value={shownPatient}
+            onChange={(patient) => {
+              setPickedPatient(patient);
+              set('patientId', patient?.id ?? '');
+            }}
             isDisabled={isEdit}
           />
           <Dropdown

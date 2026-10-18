@@ -2,6 +2,7 @@ import { api } from './axios';
 import { CrudService } from './crud.service';
 import { DepartmentEnum, VisitEndpointEnum } from '@/enum';
 import type {
+  IChangePriorityDto,
   ICreateVisitDto,
   IPagination,
   IQueueEntryRecord,
@@ -79,6 +80,10 @@ class VisitsService extends CrudService<IVisitRecord, ICreateVisitDto, IUpdateVi
       data: { entry: IQueueEntryRecord; next: IQueueEntryRecord | null };
     }>(`${VisitEndpointEnum.QUEUE_ENTRIES}/${id}/skip`, { notes });
     return data.data;
+  }
+
+  async changePriority(visitId: string, dto: IChangePriorityDto): Promise<void> {
+    await api.patch(`${VisitEndpointEnum.BASE}/${visitId}/priority`, dto);
   }
 
   async deleteEntry(id: string): Promise<void> {

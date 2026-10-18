@@ -4,6 +4,7 @@ import useSWR, { useSWRConfig } from 'swr';
 import { ServiceEndpointEnum } from '@/enum';
 import servicesService from '@/helpers/services.service';
 import type { ICreateServiceDto, IPagination, IService, IServiceFilters, IUpdateServiceDto } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isServiceKey = (key: unknown) => typeof key === 'string' && key.startsWith(ServiceEndpointEnum.BASE);
 
@@ -11,7 +12,7 @@ export function useServices(filters: IServiceFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = servicesService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<IService>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<IService>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate(isServiceKey);
 
@@ -35,6 +36,7 @@ export function useServices(filters: IServiceFilters = {}) {
   return {
     services: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     page: data?.page ?? 1,
     limit: data?.limit ?? 20,
     isLoading,

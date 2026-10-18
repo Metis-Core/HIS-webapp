@@ -1,17 +1,16 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { FaArrowLeft, FaStethoscope } from 'react-icons/fa';
-import useSWR from 'swr';
 import { Button, Dropdown, Input, PageHeader, Pill } from '@/components';
 import PatientContextPanel from '@/components/consultation/patient-context.panel';
 import { ButtonVariantEnum, ConsultationTypeEnum, DepartmentEnum, PillVariantEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
-import { api } from '@/helpers/axios';
-import { useConsultations, usePatients } from '@/hooks';
+import { useConsultations, usePatient } from '@/hooks';
+import PatientSearchSelect from '@/components/queue/patient-search-select';
 import type { ICreateConsultationDto, IOption, IPatient } from '@/interfaces';
 
 const typeOptions: IOption[] = Object.values(ConsultationTypeEnum).map((v) => ({
@@ -68,35 +67,16 @@ function NewConsultationForm() {
   const [values, setValues] = useState(emptyValues);
   const [busy, setBusy] = useState(false);
 
-  const { patients } = usePatients({ limit: 100 });
   const { createConsultation } = useConsultations({ limit: 20 });
-
-  const { data: singlePatient } = useSWR<{ data: { data: IPatient } }>(
-    prefillPatientId && !patients.some((p) => p.id === prefillPatientId) ? `/patients/${prefillPatientId}` : null,
-    api,
-  );
-
-  const patientOptions: IOption[] = useMemo(() => {
-    const seen = new Set<string>();
-    const options: IOption[] = [];
-    const push = (p: IPatient) => {
-      if (seen.has(p.id)) return;
-      seen.add(p.id);
-      options.push({
-        label: `${p.firstName} ${p.lastName}${p.mrn ? ` (${p.mrn})` : ''}`,
-        value: p.id,
-      });
-    };
-    if (singlePatient?.data.data) push(singlePatient.data.data);
-    patients.forEach(push);
-    return options;
-  }, [patients, singlePatient]);
+  // Patients are found by server-side search; a prefilled patient is loaded by id.
+  const [pickedPatient, setPickedPatient] = useState<IPatient | null>(null);
+  const { patient: prefillPatient } = usePatient(prefillPatientId);
 
   useEffect(() => {
     if (prefillPatientId) setValues((s) => ({ ...s, patientId: prefillPatientId }));
   }, [prefillPatientId]);
 
-  const currentPatient = patients.find((p) => p.id === values.patientId) ?? singlePatient?.data.data ?? null;
+  const currentPatient = pickedPatient ?? (values.patientId === prefillPatientId ? (prefillPatient ?? null) : null);
 
   const set = <K extends keyof typeof values>(key: K, value: (typeof values)[K]) =>
     setValues((s) => ({ ...s, [key]: value }));
@@ -158,11 +138,12 @@ function NewConsultationForm() {
             <h2 className="text-sm font-semibold text-ink">Encounter</h2>
 
             <div className="grid grid-cols-2 gap-3">
-              <Dropdown
-                label="Patient"
-                options={patientOptions}
-                value={patientOptions.find((o) => o.value === values.patientId) ?? null}
-                onChange={(o) => set('patientId', (o as IOption).value as string)}
+              <PatientSearchSelect
+                value={currentPatient}
+                onChange={(patient) => {
+                  setPickedPatient(patient);
+                  set('patientId', patient?.id ?? '');
+                }}
                 isDisabled={Boolean(prefillPatientId)}
               />
               <Dropdown
