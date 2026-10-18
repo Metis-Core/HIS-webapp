@@ -8,6 +8,7 @@ import type {
   ICancelConsultationDto,
   ICompleteConsultationDto,
   IConsultation,
+  IConsultationAddendum,
   IConsultationFilters,
   ICreateConsultationDto,
   IPageQuery,
@@ -88,4 +89,13 @@ export function useConsultationsByVisit(visitId: string | null | undefined) {
   const key = visitId ? consultationsService.buildByVisitUrl(visitId) : null;
   const { data, error, isLoading, mutate } = useSWR<unknown>(key);
   return { consultations: asList<IConsultation>(data), isLoading, error, mutate };
+}
+
+/** Addenda on a signed consultation, newest first, one page at a time. */
+export function useConsultationAddenda(id: string | null | undefined, query: IPageQuery = {}) {
+  const key = id ? consultationsService.buildAddendaUrl(id, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IConsultationAddendum>>(key, {
+    keepPreviousData: true,
+  });
+  return { addenda: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }

@@ -14,6 +14,7 @@ import {
   PillVariantEnum,
   QueueEntryStatusEnum,
   StatVariantEnum,
+  UserRoleEnum,
 } from '@/enum';
 import { useConsultations, useDepartmentQueue, useListTotal, usePagedSearch } from '@/hooks';
 import consultationsService from '@/helpers/consultations.service';
@@ -21,6 +22,7 @@ import { extractErrorMessage } from '@/helpers/errors';
 import triageService from '@/helpers/triage.service';
 import type { IConsultation, IQueueEntryRecord } from '@/interfaces';
 import PriorityBadge from '@/components/queue/priority-badge';
+import { useAuth } from '@/providers';
 
 type TabId = 'waiting' | 'all';
 
@@ -41,6 +43,7 @@ const entryStatusVariant: Record<QueueEntryStatusEnum, PillVariantEnum> = {
 
 export default function ConsultationsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [tab, setTab] = useState<TabId>('waiting');
   const { page, setPage, search, setSearch, debouncedSearch } = usePagedSearch();
 
@@ -93,6 +96,12 @@ export default function ConsultationsPage() {
   };
 
   const startFromQueue = async (entry: IQueueEntryRecord) => {
+    // Only doctors own a consultation (M-11); anyone else picks the doctor on the new-consultation form.
+    if (user?.role !== UserRoleEnum.DOCTOR) {
+      const patientId = entry.visit?.patient?.id ?? entry.visit?.patientId ?? '';
+      router.push(`/consultations/new?patientId=${patientId}&visitId=${entry.visitId ?? ''}`);
+      return;
+    }
     try {
       if (entry.status === QueueEntryStatusEnum.WAITING) {
         await callEntry(entry.id);

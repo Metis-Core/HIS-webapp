@@ -46,6 +46,7 @@ export {
 } from './queue.enum';
 export {
   ConsultationEndpointEnum,
+  IcdEndpointEnum,
   ConsultationStatusEnum,
   ConsultationTypeEnum,
   ConsultationSortByEnum,

@@ -5,6 +5,7 @@ export {
   useConsultation,
   useConsultationsByPatient,
   useConsultationsByVisit,
+  useConsultationAddenda,
 } from './consultations.hook';
 export { useTriage, useTriageItem, useTriageQueue, useTriageByPatient } from './triage.hook';
 export { useVisits, useVisit, useVisitQueues, useDepartmentQueue } from './visits.hook';

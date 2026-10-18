@@ -133,3 +133,6 @@ export interface ILabOrderFilters {
   search?: string;
   priority?: LabPriorityEnum;
 }
+
+/** Body for POST /consultations/:id/lab-orders; patient, consultation and visit come from the URL. */
+export type IConsultationLabOrderDto = Omit<ICreateLabOrderDto, 'patientId' | 'consultationId' | 'visitId'>;
