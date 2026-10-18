@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Button, Pagination, PatientDrawer, Tabs, VisitReceiptDrawer } from '@/components';
+import { Button, Pagination, PatientDrawer, Tabs } from '@/components';
+import CheckInDrawer from '@/components/check-in/check-in.drawer';
 import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPatientFilters, PatientFormValues } from '@/interfaces';
@@ -229,12 +230,7 @@ function PatientsView() {
         </>
       )}
 
-      <VisitReceiptDrawer
-        open={Boolean(checkInPatient)}
-        patient={checkInPatient}
-        title="Check in the new patient"
-        onClose={() => setCheckInPatient(null)}
-      />
+      <CheckInDrawer open={Boolean(checkInPatient)} patient={checkInPatient} onClose={() => setCheckInPatient(null)} />
 
       <PatientDrawer mode={drawerMode} patient={selected} onClose={closeDrawer} onSave={handleSave} onEdit={openEdit} />
     </div>

@@ -2,7 +2,9 @@ import type { IBaseEntity } from './base.interface';
 import {
   DepartmentEnum,
   QueueEntryStatusEnum,
+  ServiceVisitKindEnum,
   TriageCategoryEnum,
+  VisitIntentEnum,
   VisitStatusEnum,
   VisitTypeEnum,
 } from '@/enum/queue.enum';
@@ -56,6 +58,13 @@ export interface ICreateVisitDto {
   visitType?: VisitTypeEnum;
   triageCategory?: TriageCategoryEnum;
   insuranceVerification?: IInsuranceVerification;
+  /** On unless switched off. */
+  triage?: boolean;
+  /** On unless the patient came only for other services. */
+  consultation?: boolean;
+  service?: ServiceVisitKindEnum;
+  stages?: VisitIntentEnum[];
+  preferredDoctorId?: string;
 }
 
 export interface IChangePriorityDto {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { FaUserMd } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, Input, Modal, Pill } from '@/components';
@@ -83,6 +84,12 @@ export default function DoctorAssignmentCard({ visit, canReassign, onChanged }: 
         <div className="flex flex-col gap-1.5">
           <p className="text-sm font-medium text-ink">Dr {assigned.username}</p>
           {visit.assignmentSource && <Pill variant={PillVariantEnum.INFO}>{SOURCE_LABEL[visit.assignmentSource]}</Pill>}
+          <Link
+            href={`/messages?with=${assigned.id}&visit=${visit.id}`}
+            className="w-fit text-xs font-medium text-brand hover:underline"
+          >
+            Message Dr {assigned.username} about this patient
+          </Link>
         </div>
       ) : (
         <p className="text-sm text-ink-muted">

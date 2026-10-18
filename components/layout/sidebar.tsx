@@ -8,6 +8,7 @@ import {
   FaAngleDoubleRight,
   FaChartLine,
   FaFileInvoiceDollar,
+  FaCommentDots,
   FaHandHoldingMedical,
   FaXRay,
   FaMicroscope,
@@ -19,6 +20,7 @@ import {
   FaWarehouse,
 } from 'react-icons/fa';
 import { UserRoleEnum } from '@/enum/user.enum';
+import { useUnreadMessages } from '@/hooks';
 import { useAuth, useSidebar } from '@/providers';
 
 interface NavItem {
@@ -84,6 +86,12 @@ const NAV: Record<string, NavItem> = {
     href: '/services',
     icon: <FaHandHoldingMedical aria-hidden className="h-5 w-5" />,
   },
+  messages: {
+    key: 'messages',
+    label: 'Messages',
+    href: '/messages',
+    icon: <FaCommentDots aria-hidden className="h-5 w-5" />,
+  },
   users: { key: 'users', label: 'Users', href: '/users', icon: <FaUserShield aria-hidden className="h-5 w-5" /> },
 };
 
@@ -98,6 +106,7 @@ const ALL_NAV: NavItem[] = [
   NAV.billing,
   NAV.inventory,
   NAV.services,
+  NAV.messages,
   NAV.users,
 ];
 
@@ -105,13 +114,29 @@ const ALL_NAV: NavItem[] = [
 const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.SUPER_ADMIN]: ALL_NAV,
   [UserRoleEnum.ADMIN]: ALL_NAV,
-  [UserRoleEnum.DOCTOR]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.orders, NAV.pharmacy],
-  [UserRoleEnum.NURSE]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.orders, NAV.pharmacy],
+  [UserRoleEnum.DOCTOR]: [
+    NAV.dashboard,
+    NAV.patients,
+    NAV.consultations,
+    NAV.lab,
+    NAV.orders,
+    NAV.pharmacy,
+    NAV.messages,
+  ],
+  [UserRoleEnum.NURSE]: [
+    NAV.dashboard,
+    NAV.patients,
+    NAV.consultations,
+    NAV.lab,
+    NAV.orders,
+    NAV.pharmacy,
+    NAV.messages,
+  ],
   // L3: the lab reaches patients through its queue, orders and search; no general patient list.
-  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.lab, NAV.orders, NAV.inventory],
-  [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory],
-  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.billing, NAV.services],
-  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.management, NAV.patients, NAV.billing, NAV.services],
+  [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.lab, NAV.orders, NAV.inventory, NAV.messages],
+  [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory, NAV.messages],
+  [UserRoleEnum.RECEPTIONIST]: [NAV.dashboard, NAV.patients, NAV.billing, NAV.services, NAV.messages],
+  [UserRoleEnum.ACCOUNTANT]: [NAV.dashboard, NAV.management, NAV.patients, NAV.billing, NAV.services, NAV.messages],
 };
 
 function SidebarContent({
@@ -126,6 +151,7 @@ function SidebarContent({
   const pathname = usePathname();
   const { effectiveRole: role } = useAuth();
   const navigation = role ? (navigations[role] ?? ALL_NAV) : ALL_NAV;
+  const unreadMessages = useUnreadMessages();
 
   return (
     <>
@@ -158,6 +184,14 @@ function SidebarContent({
             >
               <span className={active ? 'text-green-700' : 'text-slate-900'}>{item.icon}</span>
               {!collapsed && <span className="truncate">{item.label}</span>}
+              {item.key === 'messages' && unreadMessages > 0 && (
+                <span
+                  aria-label={`${unreadMessages} unread messages`}
+                  className={`rounded-full bg-critical px-1.5 text-[10px] font-semibold text-white ${collapsed ? '' : 'ml-auto'}`}
+                >
+                  {unreadMessages}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -4,6 +4,7 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 
 ## Everyone
 
+- **Messages.** The Messages link in the side bar lets you talk to any colleague. Use **New** to find someone. A badge shows unread messages, and the person you write to also gets a notification that opens the conversation. On a patient's visit page, **Message Dr ... about this patient** starts a message linked to that visit.
 - **Your status.** The chip in the top bar shows Available, Busy, On leave or Out of office. Click it to change.
   - Busy needs a length of time (30 min to 4 hours). You return to Available by yourself when it ends.
   - Leave and Out of office take a first and last day. Plan them ahead; you return automatically after the last day. Leave the last day empty to stay away until you mark yourself available.
@@ -14,22 +15,23 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 ## Reception
 
 1. Search the patient (name, MRN, phone or national ID). The selected patient shows in the box.
-2. **Check in to see a doctor** adds the consultation fee. For lab, antenatal, birth or immunization, see Other check-ins below.
+2. **Check in**, then choose what the patient came for (see Checking a patient in below).
 3. Emergency arrivals: choose Emergency. They are red until triage says otherwise and sit at the top of every queue.
 4. Billing: open **Billing**, find the invoice, record the payment. Mobile money, card and insurance need a reference. Print the PDF receipt from the same drawer.
 5. A patient waiting for a doctor can be moved: open the visit, **Change doctor**, pick a doctor who is available and give a reason.
 
-## Other check-ins (lab, antenatal, birth, immunization)
+## Checking a patient in
 
-Each button under **Check in a registered patient** skips triage and the consultation fee.
+**Check in** always opens one screen, whatever the patient came for. Choose one or more reasons:
 
-- **Lab tests only** opens the lab order form: pick the tests, priority and referring clinician. The tests are billed straight away and the patient goes to the lab.
-- **Antenatal and birth** asks what the patient needs:
-  - **Antenatal visit**: a pregnancy check-up. Free in a government programme, so the fee is 0 and shows as **Free** unless you set a fee in Services.
-  - **Giving birth**: the delivery fee is billed now and the patient is sent to billing as well as to the maternity queue.
-  - **Postnatal visit**: a check of the mother and baby after birth.
-- **Immunization** goes straight to the queue. Routine vaccines are free, so nothing is billed at check-in; a private vaccine is billed when the nurse records it.
-- A visit with only free services needs no payment. Fees are the services with codes ANTENATAL_VISIT, DELIVERY, POSTNATAL_VISIT and IMMUNIZATION in **Services**.
+- **See a doctor**: the consultation fee is billed. The doctor is chosen by the system unless the patient asked for one by name (see below).
+- **Lab tests**: pick the tests. They are billed now and the patient goes to the lab.
+- **Procedure or imaging**: pick from the catalogue (a dressing, an injection, an X-ray). It is billed at its price and the patient goes to that department. A patient who came only for a procedure is not sent to a doctor.
+- **Antenatal visit**, **Giving birth**, **Postnatal visit** or **Immunization**: one of these at a time. Each is billed from its service in **Services**. Antenatal visits and routine immunization are free (shown as **Free**); giving birth carries a fee.
+- **Triage first** is on by default and stays on for emergencies. Turn it off only when the patient does not need vitals checked, for example an immunization or a lab-only visit.
+- **Specific doctor**: only if the patient asks for a doctor by name. Pick from the doctors who can take a patient now. That doctor gets a notification straight away. If the doctor becomes unavailable, another doctor is given the patient and you are told.
+- A visit with only free services needs no payment. The fees are the services with codes CONSULTATION, ANTENATAL_VISIT, DELIVERY, POSTNATAL_VISIT and IMMUNIZATION in **Services**.
+- The table on the screen shows what is billed now; a price marked **Not set** needs an admin to add it in **Services**.
 
 ## Nurse (antenatal, birth and immunization)
 
@@ -49,7 +51,7 @@ Open the patient from the queue. For these visits the page shows **Antenatal, bi
 
 ## Doctor
 
-1. **Consultations** shows your patients: those assigned to you, plus any patient nobody was free to take.
+1. **Consultations → Waiting** lists only patients still waiting to be seen; once you start, the patient moves to **All** with the consultation in progress. It shows your patients: those assigned to you, plus any patient nobody was free to take.
 2. Open the patient. You cannot open a consultation for a patient assigned to a colleague; ask reception to move the patient.
 3. Examination and assessment is one field. Pick diagnoses from the ICD list.
 4. Everything ordered is billed as it is ordered: the consultation fee (at check-in, or the moment you open the consultation if it was missed), lab tests, imaging and procedures, prescribed medicines and the admission fee. Cancelling an order or prescription removes its charge while it is unpaid. Order from the tabs: **Lab**, **Imaging & procedures** (pick from the catalogue; the price is billed automatically), **Prescriptions**. Lab results show only after the lab verifies them.

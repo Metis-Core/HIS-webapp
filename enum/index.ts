@@ -68,6 +68,7 @@ export {
   DocumentEndpointEnum,
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
+export { MessageEndpointEnum } from './message.enum';
 export { ClinicRecordKindEnum, ClinicEndpointEnum } from './clinic.enum';
 export {
   LedgerEndpointEnum,

@@ -24,6 +24,7 @@ const STALE_PREFIXES: Partial<Record<NotificationTypeEnum, string[]>> = {
   [NotificationTypeEnum.QUEUE]: ['/visits', '/triage'],
   [NotificationTypeEnum.VISIT]: ['/visits', '/triage'],
   [NotificationTypeEnum.INVENTORY]: ['/inventory'],
+  [NotificationTypeEnum.MESSAGE]: ['/messages'],
 };
 
 type SseHandler = (event: string, data: string) => void;
