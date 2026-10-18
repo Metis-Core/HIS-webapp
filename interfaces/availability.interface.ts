@@ -34,6 +34,7 @@ export interface IStaffAvailability {
   username: string;
   role: UserRoleEnum;
   department: DepartmentEnum;
+  accountStatus: string;
   availability: AvailabilityStatusEnum;
   until: string | null;
   note: string | null;
@@ -42,6 +43,8 @@ export interface IStaffAvailability {
 export interface IStaffAvailabilityFilters extends IPageQuery {
   role?: UserRoleEnum;
   search?: string;
+  /** Administrators only: also accounts that are not active yet or are suspended. */
+  includeInactive?: boolean;
 }
 
 export interface IDoctorSummary {

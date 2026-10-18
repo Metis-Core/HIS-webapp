@@ -21,6 +21,7 @@ export * from './lab.interface';
 export * from './inventory.interface';
 export * from './pharmacy.interface';
 export * from './billing.interface';
+export * from './admission.interface';
 export * from './clinic.interface';
 export * from './message.interface';
 export * from './availability.interface';

@@ -3,7 +3,15 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { MessageEndpointEnum } from '@/enum/message.enum';
 import { messagesService } from '@/helpers/messages.service';
-import type { IStaffContact, IConversation, IMessage, IPagination, ISendMessageDto } from '@/interfaces';
+import type { MessageTeamEnum } from '@/enum/message.enum';
+import type {
+  IStaffContact,
+  IConversation,
+  IMessage,
+  IPagination,
+  ISendMessageDto,
+  ITeamConversation,
+} from '@/interfaces';
 
 const POLL_MS = 30_000;
 
@@ -57,4 +65,42 @@ export function useContacts(search: string, enabled = true) {
     keepPreviousData: true,
   });
   return data ?? [];
+}
+
+export function useTeamConversations() {
+  const { data } = useSWR<ITeamConversation[]>(messagesService.teamsUrl(), {
+    refreshInterval: POLL_MS,
+  });
+  return data ?? [];
+}
+
+export function useTeamThread(team: MessageTeamEnum | null) {
+  const { mutate } = useSWRConfig();
+  const { data } = useSWR<IPagination<IMessage>>(team ? messagesService.teamThreadUrl(team) : null, {
+    refreshInterval: POLL_MS,
+  });
+
+  const markRead = async () => {
+    if (!team) return;
+    await messagesService.markTeamRead(team);
+    await mutate(isMessageKey);
+  };
+
+  const send = async (dto: ISendMessageDto) => {
+    const message = await messagesService.send(dto);
+    await mutate(isMessageKey);
+    return message;
+  };
+
+  return { messages: [...(data?.items ?? [])].reverse(), markRead, send };
+}
+
+/** Writes to a team from anywhere, e.g. a lab order or a prescription. */
+export function useSendMessage() {
+  const { mutate } = useSWRConfig();
+  return async (dto: ISendMessageDto) => {
+    const message = await messagesService.send(dto);
+    await mutate(isMessageKey);
+    return message;
+  };
 }

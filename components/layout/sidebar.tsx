@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   FaAngleDoubleLeft,
+  FaBaby,
   FaAngleDoubleRight,
   FaChartLine,
   FaFileInvoiceDollar,
@@ -48,6 +49,12 @@ const NAV: Record<string, NavItem> = {
     label: 'Consultations',
     href: '/consultations',
     icon: <FaNotesMedical aria-hidden className="h-5 w-5" />,
+  },
+  maternity: {
+    key: 'maternity',
+    label: 'Mother & child',
+    href: '/maternity',
+    icon: <FaBaby aria-hidden className="h-5 w-5" />,
   },
   lab: { key: 'lab', label: 'Lab', href: '/lab', icon: <FaMicroscope aria-hidden className="h-5 w-5" /> },
   pharmacy: {
@@ -100,6 +107,7 @@ const ALL_NAV: NavItem[] = [
   NAV.management,
   NAV.patients,
   NAV.consultations,
+  NAV.maternity,
   NAV.lab,
   NAV.orders,
   NAV.pharmacy,
@@ -118,6 +126,7 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
     NAV.dashboard,
     NAV.patients,
     NAV.consultations,
+    NAV.maternity,
     NAV.lab,
     NAV.orders,
     NAV.pharmacy,
@@ -127,6 +136,7 @@ const navigations: Record<UserRoleEnum, NavItem[]> = {
     NAV.dashboard,
     NAV.patients,
     NAV.consultations,
+    NAV.maternity,
     NAV.lab,
     NAV.orders,
     NAV.pharmacy,

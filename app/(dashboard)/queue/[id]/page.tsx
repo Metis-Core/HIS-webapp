@@ -26,6 +26,8 @@ import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum, QueueEntryStatusEnu
 import visitsService from '@/helpers/visits.service';
 import { useConsultationsByVisit, useLabOrdersByConsultation, useVisit } from '@/hooks';
 import { formatDuration } from '@/data/queue';
+import MessageTeamButton from '@/components/messages/message-team.button';
+import AdmissionCard from '@/components/admissions/admission-card';
 import ClinicRecordsPanel from '@/components/clinic/clinic-records.panel';
 import DoctorAssignmentCard from '@/components/queue/doctor-assignment-card';
 import PriorityBadge from '@/components/queue/priority-badge';
@@ -87,6 +89,7 @@ export default function QueueDetailPage() {
   const { effectiveRole } = useAuth();
   const canChangePriority = roleInGroup(effectiveRole, 'PRIORITY_MANAGERS');
   const canRecordClinic = roleInGroup(effectiveRole, 'CLINICAL_STAFF');
+  const canDischarge = roleInGroup(effectiveRole, 'PROVIDERS');
   const canReassignDoctor = roleInGroup(effectiveRole, 'RECEPTION');
 
   const { visit, isLoading, mutate } = useVisit(params.id);
@@ -227,6 +230,10 @@ export default function QueueDetailPage() {
               )}
             </dl>
           </section>
+
+          <MessageTeamButton visitId={visit.id} label="Message a team about this visit" />
+
+          <AdmissionCard visitId={visit.id} canDischarge={canDischarge} />
 
           <DoctorAssignmentCard visit={visit} canReassign={canReassignDoctor} onChanged={() => mutate()} />
 

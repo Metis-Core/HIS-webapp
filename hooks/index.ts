@@ -11,8 +11,18 @@ export { useTriage, useTriageItem, useTriageQueue, useTriageByPatient } from './
 export { useVisits, useVisit, useVisitQueues, useDepartmentQueue, useRefreshQueues } from './visits.hook';
 export { useServices, useService } from './services.hook';
 export { useVisitBill } from './billing.hook';
+export { useAdmissions } from './admissions.hook';
 export { useClinicRecords, useClinicTemplates } from './clinic.hook';
-export { useContact, useContacts, useConversations, useThread, useUnreadMessages } from './messages.hook';
+export {
+  useContact,
+  useContacts,
+  useConversations,
+  useSendMessage,
+  useTeamConversations,
+  useTeamThread,
+  useThread,
+  useUnreadMessages,
+} from './messages.hook';
 export { useOtp } from './otp.hook';
 export { useRoles } from './roles.hook';
 export { useUser } from './user.hook';

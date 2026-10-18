@@ -4,7 +4,7 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 
 ## Everyone
 
-- **Messages.** The Messages link in the side bar lets you talk to any colleague. Use **New** to find someone. A badge shows unread messages, and the person you write to also gets a notification that opens the conversation. On a patient's visit page, **Message Dr ... about this patient** starts a message linked to that visit.
+- **Messages.** The Messages link in the side bar lets you talk to any colleague. Use **New** to find someone. **New** also lists teams (Reception, Nurses, Doctors, Laboratory, Pharmacy, Accounts, Administration): a message to a team reaches everyone on duty in it, and anyone there can read it and reply to the team or privately to the sender. Doctors and nurses also have **Message Laboratory** or **Message Pharmacy** on the lab, imaging and prescription tabs, and **Message a team about this visit** on the visit page, which links the message to the patient. A badge shows unread messages, and the person you write to also gets a notification that opens the conversation. On a patient's visit page, **Message Dr ... about this patient** starts a message linked to that visit.
 - **Your status.** The chip in the top bar shows Available, Busy, On leave or Out of office. Click it to change.
   - Busy needs a length of time (30 min to 4 hours). You return to Available by yourself when it ends.
   - Leave and Out of office take a first and last day. Plan them ahead; you return automatically after the last day. Leave the last day empty to stay away until you mark yourself available.
@@ -33,9 +33,13 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 - A visit with only free services needs no payment. The fees are the services with codes CONSULTATION, ANTENATAL_VISIT, DELIVERY, POSTNATAL_VISIT and IMMUNIZATION in **Services**.
 - The table on the screen shows what is billed now; a price marked **Not set** needs an admin to add it in **Services**.
 
+## Checking a patient in: one visit at a time
+
+A patient can have only one open visit. While a visit is still in a queue, or the patient is admitted and not yet discharged, **Check in** shows a warning with a link to the open visit and cannot be confirmed. Add tests or services from that visit instead. A patient who is still in the ward must be discharged first.
+
 ## Nurse (antenatal, birth and immunization)
 
-Open the patient from the queue. For these visits the page shows **Antenatal, birth and immunization** with one button per form. Fields outside the normal range are flagged on the saved record.
+The **Mother & child** page in the side bar lists who is waiting for this clinic and has a register for each kind of record: antenatal, births, postnatal and immunization. Search by patient name or MRN, filter by date, and click a row to see the full record. Records are added from the patient's visit page. Open the patient from the queue. For these visits the page shows **Antenatal, birth and immunization** with one button per form. Fields outside the normal range are flagged on the saved record.
 
 - **Antenatal visit**: contact number (1 to 8 or more), gestation, blood pressure, fetal heart rate and presentation, swelling and pallor, haemoglobin, urine protein, HIV, syphilis and malaria tests, malaria prevention (IPTp), iron and folic acid, Td, mosquito net, deworming, danger signs and risk status.
 - **Delivery**: time, gestation, place and mode of delivery, third stage, blood loss, tears, complications, and for the baby outcome, sex, weight, Apgar, resuscitation and whether the birth doses were given.
@@ -65,7 +69,8 @@ Open the patient from the queue. For these visits the page shows **Antenatal, bi
 3. The **Admission fee** (service code ADMISSION_FEE) is billed at that moment.
 4. Bed days are not automatic yet. Billing adds **Ward bed, general (per day)** or **Ward bed, private (per day)** from the service list, with the number of days as the quantity.
 5. A patient cannot be admitted twice for the same visit.
-6. Not built yet: ward and bed lists, ward rounds and nursing notes, discharge and automatic bed-day billing.
+6. **Discharge.** A doctor opens the visit and chooses **Discharge patient** on the Admission card, with an optional note. The patient returns to outpatient and can start a new visit.
+7. Not built yet: ward and bed lists, ward rounds and nursing notes, and automatic bed-day billing at discharge. Add the bed days in Billing before discharging.
 
 ## Laboratory
 
@@ -85,7 +90,7 @@ Dispense from the waiting queue. A patient leaves the pharmacy queue only when e
 
 ## Administrators and managers
 
-- **Users → Availability** shows who is around and lets you change anyone's status.
+- **Users → Availability** shows every staff account, including ones that have not signed in yet or are suspended (marked with their account status). Filter by role or search by name, and change anyone's status.
 - Suspending or deleting a doctor moves their waiting patients to other doctors immediately.
 - **Imaging & procedures → Catalogue** is where you add or edit what can be ordered: price, patient preparation and the result template. Only active entries appear in the doctor's picker.
 - **Management** shows visits, money received and owed, waiting times by department, clinical activity, the live queue and each doctor's workload.

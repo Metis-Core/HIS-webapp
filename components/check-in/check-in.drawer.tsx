@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { toast } from 'sonner';
@@ -7,7 +8,7 @@ import useSWR from 'swr';
 import { Drawer, Dropdown } from '@/components';
 import Button from '@/components/buttons/button';
 import LabTestPicker from '@/components/consultation/lab-test-picker';
-import { ButtonVariantEnum, TriageCategoryEnum, VisitTypeEnum } from '@/enum';
+import { ButtonVariantEnum, TriageCategoryEnum, VisitEndpointEnum, VisitTypeEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
 import { labOrdersService } from '@/helpers/lab.service';
 import { ordersService } from '@/helpers/ledger.service';
@@ -71,6 +72,10 @@ function CheckInForm({ onClose, patient, onCheckedIn }: Omit<Props, 'open'>) {
   const { data: services } = useSWR<IPagination<IService>>(
     servicesService.buildListUrl({ isActive: true, limit: 100 }),
   );
+  // A patient has one visit at a time; until it is finished or they are discharged, a new one cannot start.
+  const { data: activeVisit } = useSWR<{ id: string } | null>(
+    patient ? `${VisitEndpointEnum.BASE}/active/${patient.id}` : null,
+  );
   const [choice, setChoice] = useState<CheckInChoice>(emptyChoice);
   const [category, setCategory] = useState<IOption>(categoryOptions[0]);
   const [verification, setVerification] = useState<IInsuranceVerification | null>(null);
@@ -84,7 +89,7 @@ function CheckInForm({ onClose, patient, onCheckedIn }: Omit<Props, 'open'>) {
   const set = (patch: Partial<CheckInChoice>) => setChoice((current) => ({ ...current, ...patch }));
 
   const confirm = async () => {
-    if (!patient || submitting) return;
+    if (!patient || submitting || activeVisit) return;
     const problem = validateChoice(choice);
     if (problem) return void toast.error(problem);
     setSubmitting(true);
@@ -130,6 +135,20 @@ function CheckInForm({ onClose, patient, onCheckedIn }: Omit<Props, 'open'>) {
               {patient.mrn ? ` · ${patient.mrn}` : ''}
             </span>
           </p>
+        )}
+
+        {activeVisit && (
+          <div className="flex items-start gap-2 rounded-lg bg-critical-soft px-3 py-2 text-sm text-critical">
+            <FaExclamationTriangle className="mt-0.5 shrink-0" aria-hidden />
+            <span>
+              This patient already has an open visit, so a new one cannot start until it is finished or the patient is
+              discharged.{' '}
+              <Link href={`/queue/${activeVisit.id}`} className="font-semibold underline" onClick={onClose}>
+                Open the current visit
+              </Link>{' '}
+              to add tests or services there.
+            </span>
+          </div>
         )}
 
         <ReasonPicker reasons={choice.reasons} onChange={(reasons) => set({ reasons })} />
@@ -248,7 +267,7 @@ function CheckInForm({ onClose, patient, onCheckedIn }: Omit<Props, 'open'>) {
           type="button"
           variant={ButtonVariantEnum.PRIMARY}
           onClick={() => void confirm()}
-          disabled={submitting || !consented || !patient}
+          disabled={submitting || !consented || !patient || Boolean(activeVisit)}
           className="w-full justify-center"
         >
           {submitting ? 'Checking in…' : 'Confirm and check in'}

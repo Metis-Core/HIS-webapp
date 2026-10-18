@@ -3,6 +3,7 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { ClinicEndpointEnum } from '@/enum/clinic.enum';
 import { clinicService } from '@/helpers/clinic.service';
+import { pageInfo } from '@/helpers/pagination';
 import type {
   IClinicRecord,
   IClinicRecordFilters,
@@ -33,5 +34,5 @@ export function useClinicRecords(filters: IClinicRecordFilters, enabled = true) 
     return created;
   };
 
-  return { records: data?.items ?? [], isLoading, record };
+  return { records: data?.items ?? [], pagination: pageInfo(data, filters.limit), isLoading, record };
 }

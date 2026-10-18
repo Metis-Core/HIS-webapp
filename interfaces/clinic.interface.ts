@@ -1,6 +1,7 @@
 import type { ClinicRecordKindEnum } from '@/enum/clinic.enum';
 import type { IBaseEntity, IPageQuery } from './base.interface';
 import type { ILabResultData, ILabResultFlags, ILabResultSchema } from './lab-result.interface';
+import type { IPatient } from './patient.interface';
 import type { IUser } from './user.interface';
 
 export interface IVaccine {
@@ -26,6 +27,7 @@ export interface IClinicRecord extends IBaseEntity {
   data: ILabResultData;
   flags: ILabResultFlags | null;
   recordedBy?: Pick<IUser, 'id' | 'username'>;
+  patient?: IPatient;
 }
 
 export interface ICreateClinicRecordDto {
@@ -39,4 +41,7 @@ export interface IClinicRecordFilters extends IPageQuery {
   patientId?: string;
   visitId?: string;
   kind?: ClinicRecordKindEnum;
+  search?: string;
+  from?: string;
+  to?: string;
 }
