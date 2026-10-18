@@ -23,10 +23,7 @@ export interface IConsultation extends IBaseEntity {
   department: DepartmentEnum;
   chiefComplaint: string;
   historyOfPresentIllness?: string | null;
-  examinationFindings?: string | null;
-  assessment?: string | null;
   examinationAndAssessment?: string | null;
-  icd10Codes?: string | null;
   diagnosis?: string | null;
   diagnoses?: IConsultationDiagnosis[];
   plan?: string | null;
@@ -44,14 +41,10 @@ export interface ICreateConsultationDto {
   visitId?: string;
   triageId?: string;
   type?: ConsultationTypeEnum;
-  status?: ConsultationStatusEnum;
   department?: DepartmentEnum;
   chiefComplaint: string;
   historyOfPresentIllness?: string;
-  examinationFindings?: string;
-  assessment?: string;
   examinationAndAssessment?: string;
-  icd10Codes?: string;
   diagnosis?: string;
   diagnoses?: IConsultationDiagnosisDto[];
   plan?: string;
