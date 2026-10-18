@@ -5,11 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Button, PatientDrawer, Tabs } from '@/components';
+import { Button, PatientDrawer, Tabs, VisitReceiptDrawer } from '@/components';
 import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import type { IPatientFilters, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
+import { unwrapData } from '@/helpers/envelope';
 import { extractErrorMessage } from '@/helpers/errors';
 import { toPatientPayload } from '@/helpers/patients.service';
 import { roleInGroup } from '@/helpers/role-groups';
@@ -61,6 +62,9 @@ function PatientsView() {
   const searchParams = useSearchParams();
   const canTriage = roleInGroup(effectiveRole, 'FRONT_DESK_CLINICAL');
   const canDelete = roleInGroup(effectiveRole, 'ADMINS');
+  const canCheckIn = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
+  // One guided step (R8): a newly registered patient goes straight to the check-in receipt.
+  const [checkInPatient, setCheckInPatient] = useState<IPatient | null>(null);
   const [tab, setTab] = useState<PatientsTab>(searchParams.get('tab') === 'triage' ? 'triage' : 'registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
@@ -121,13 +125,14 @@ function PatientsView() {
     const payload = toPatientPayload(values);
 
     if (drawerMode === ModalDrawerModeEnum.ADD) {
-      await toast
+      const created = await toast
         .promise(createPatient(payload), {
           loading: 'Registering patient…',
-          success: 'Patient registered',
+          success: canCheckIn ? 'Patient registered — confirm check-in' : 'Patient registered',
           error: (err: unknown) => extractErrorMessage(err, "Couldn't register — retry"),
         })
         .unwrap();
+      if (canCheckIn) setCheckInPatient(unwrapData(created));
     } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
       await toast
         .promise(updatePatient(selected.id, payload), {
@@ -224,6 +229,13 @@ function PatientsView() {
           </div>
         </>
       )}
+
+      <VisitReceiptDrawer
+        open={Boolean(checkInPatient)}
+        patient={checkInPatient}
+        title="Check in the new patient"
+        onClose={() => setCheckInPatient(null)}
+      />
 
       <PatientDrawer mode={drawerMode} patient={selected} onClose={closeDrawer} onSave={handleSave} onEdit={openEdit} />
     </div>
