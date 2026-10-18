@@ -26,6 +26,7 @@ import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum, QueueEntryStatusEnu
 import visitsService from '@/helpers/visits.service';
 import { useConsultationsByVisit, useLabOrdersByConsultation, useVisit } from '@/hooks';
 import { formatDuration } from '@/data/queue';
+import ClinicRecordsPanel from '@/components/clinic/clinic-records.panel';
 import DoctorAssignmentCard from '@/components/queue/doctor-assignment-card';
 import PriorityBadge from '@/components/queue/priority-badge';
 import PriorityControl from '@/components/queue/priority-control';
@@ -85,6 +86,7 @@ export default function QueueDetailPage() {
   const { mutate: globalMutate } = useSWRConfig();
   const { effectiveRole } = useAuth();
   const canChangePriority = roleInGroup(effectiveRole, 'PRIORITY_MANAGERS');
+  const canRecordClinic = roleInGroup(effectiveRole, 'CLINICAL_STAFF');
   const canReassignDoctor = roleInGroup(effectiveRole, 'RECEPTION');
 
   const { visit, isLoading, mutate } = useVisit(params.id);
@@ -241,7 +243,10 @@ export default function QueueDetailPage() {
           {consultations.length > 0 && <ConsultationSummaries consultations={consultations} />}
         </aside>
 
-        <section className="lg:col-span-8">
+        <section className="flex flex-col gap-5 lg:col-span-8">
+          {canRecordClinic && patient && entries.some((e) => e.department === DepartmentEnum.ANTENATAL) && (
+            <ClinicRecordsPanel patient={patient} visitId={visit.id} />
+          )}
           <div className="rounded-lg border border-line bg-surface-raised">
             <header className="flex items-center justify-between border-b border-line px-5 py-3">
               <div>

@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button, VisitReceiptDrawer } from '@/components';
+import LabOrderDrawer from '@/components/lab/page/lab-order.drawer';
 import { ButtonVariantEnum, ServiceVisitKindEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
-import { labWorkService } from '@/helpers/lab-work.service';
 import visitsService from '@/helpers/visits.service';
 import { useRefreshQueues } from '@/hooks';
 import type { IPatient } from '@/interfaces/patient.interface';
 import PatientSearchSelect from './patient-search-select';
+import ServiceCheckInDrawer from './service-check-in.drawer';
 
 type Props = {
   onCheckedIn: () => Promise<unknown> | void;
@@ -18,8 +19,9 @@ type Props = {
 export default function WalkInCheckIn({ onCheckedIn }: Props) {
   const [patient, setPatient] = useState<IPatient | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
-  const [sendingToLab, setSendingToLab] = useState(false);
-  const [serviceBusy, setServiceBusy] = useState<ServiceVisitKindEnum | null>(null);
+  const [labOpen, setLabOpen] = useState(false);
+  const [maternityOpen, setMaternityOpen] = useState(false);
+  const [immunizing, setImmunizing] = useState(false);
   const refreshQueues = useRefreshQueues();
 
   const done = async () => {
@@ -27,33 +29,18 @@ export default function WalkInCheckIn({ onCheckedIn }: Props) {
     setPatient(null);
   };
 
-  // L1: lab-only walk-ins skip consultation (and its fee); the lab orders and bills the tests.
-  const sendToLab = async () => {
+  // Immunization is free under the national programme: no triage, no consultation fee; the nurse records which vaccine.
+  const checkInForImmunization = async () => {
     if (!patient) return;
-    setSendingToLab(true);
+    setImmunizing(true);
     try {
-      await labWorkService.checkInForLab(patient.id);
-      toast.success('Sent to the laboratory queue');
-      await done();
-    } catch (err) {
-      toast.error(extractErrorMessage(err, "Couldn't send to the lab — retry"));
-    } finally {
-      setSendingToLab(false);
-    }
-  };
-
-  // Antenatal care and immunization skip triage and the consultation fee; their service line is billed as set up in Services.
-  const checkInForService = async (service: ServiceVisitKindEnum) => {
-    if (!patient) return;
-    setServiceBusy(service);
-    try {
-      await visitsService.checkInForService(patient.id, service);
-      toast.success(service === ServiceVisitKindEnum.ANTENATAL ? 'Sent to antenatal care' : 'Sent to immunization');
+      await visitsService.checkInForService(patient.id, ServiceVisitKindEnum.IMMUNIZATION);
+      toast.success('Sent to immunization');
       await done();
     } catch (err) {
       toast.error(extractErrorMessage(err, "Couldn't check the patient in — retry"));
     } finally {
-      setServiceBusy(null);
+      setImmunizing(false);
     }
   };
 
@@ -62,50 +49,41 @@ export default function WalkInCheckIn({ onCheckedIn }: Props) {
       <div className="border-b border-line py-2">
         <h3 className="text-md font-bold text-primary">Check in a registered patient</h3>
         <p className="text-xs text-ink-muted">
-          Search the patient, then confirm the visit type and consultation fee. New patients: use &quot;New
-          patient&quot; — you&apos;ll be offered check-in right after registering. For lab tests only, antenatal care or
-          immunization (no consultation fee), use the buttons below.
+          Search the patient, then choose what they came for. New patients: use &quot;New patient&quot; — you&apos;ll be
+          offered check-in right after registering. Lab tests only, antenatal and birth, and immunization have no
+          consultation fee.
         </p>
       </div>
       <PatientSearchSelect value={patient} onChange={setPatient} />
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          onClick={() => setReceiptOpen(true)}
-          disabled={!patient}
-          className="flex-1 justify-center"
-        >
-          Check in
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" onClick={() => setReceiptOpen(true)} disabled={!patient} className="justify-center">
+          Check in to see a doctor
         </Button>
         <Button
           type="button"
           variant={ButtonVariantEnum.SECONDARY}
-          onClick={sendToLab}
-          loading={sendingToLab}
+          onClick={() => setLabOpen(true)}
           disabled={!patient}
-          className="flex-1 justify-center"
+          className="justify-center"
         >
           Lab tests only
         </Button>
-      </div>
-      <div className="flex gap-2">
         <Button
           type="button"
           variant={ButtonVariantEnum.SECONDARY}
-          onClick={() => void checkInForService(ServiceVisitKindEnum.ANTENATAL)}
-          loading={serviceBusy === ServiceVisitKindEnum.ANTENATAL}
-          disabled={!patient || serviceBusy !== null}
-          className="flex-1 justify-center"
+          onClick={() => setMaternityOpen(true)}
+          disabled={!patient}
+          className="justify-center"
         >
-          Antenatal care
+          Antenatal and birth
         </Button>
         <Button
           type="button"
           variant={ButtonVariantEnum.SECONDARY}
-          onClick={() => void checkInForService(ServiceVisitKindEnum.IMMUNIZATION)}
-          loading={serviceBusy === ServiceVisitKindEnum.IMMUNIZATION}
-          disabled={!patient || serviceBusy !== null}
-          className="flex-1 justify-center"
+          onClick={() => void checkInForImmunization()}
+          loading={immunizing}
+          disabled={!patient || immunizing}
+          className="justify-center"
         >
           Immunization
         </Button>
@@ -115,6 +93,21 @@ export default function WalkInCheckIn({ onCheckedIn }: Props) {
         open={receiptOpen}
         onClose={() => setReceiptOpen(false)}
         patient={patient}
+        onCheckedIn={done}
+      />
+      <LabOrderDrawer
+        open={labOpen}
+        patient={patient}
+        onClose={() => setLabOpen(false)}
+        onOrdered={async () => {
+          setLabOpen(false);
+          await done();
+        }}
+      />
+      <ServiceCheckInDrawer
+        open={maternityOpen}
+        patient={patient}
+        onClose={() => setMaternityOpen(false)}
         onCheckedIn={done}
       />
     </div>

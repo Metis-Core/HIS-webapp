@@ -11,6 +11,7 @@ export { useTriage, useTriageItem, useTriageQueue, useTriageByPatient } from './
 export { useVisits, useVisit, useVisitQueues, useDepartmentQueue, useRefreshQueues } from './visits.hook';
 export { useServices, useService } from './services.hook';
 export { useVisitBill } from './billing.hook';
+export { useClinicRecords, useClinicTemplates } from './clinic.hook';
 export { useOtp } from './otp.hook';
 export { useRoles } from './roles.hook';
 export { useUser } from './user.hook';
