@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { FaBell, FaClipboardList, FaStethoscope, FaUserInjured } from 'react-icons/fa';
-import { Button, EmptyState, Pill, Stats, WalkInCheckIn } from '@/components';
+import { Button, EmptyState, Pill, Stats } from '@/components';
 import { ButtonVariantEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
 import { QueueEntryStatusEnum } from '@/enum/queue.enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
@@ -17,15 +17,18 @@ import { useConsultations, useUnreadNotificationsCount } from '@/hooks';
 import useSWR from 'swr';
 import { api } from '@/helpers/axios';
 
-export default function ReceptionistDashboard() {
+type Props = {
+  /** Extra header action, e.g. reception's "Register & check in". */
+  primaryAction?: { label: string; href: string };
+};
+
+// Shared overview for every role; front-desk check-in now lives under Patients > Triage (R4).
+export default function OverviewDashboard({ primaryAction }: Props) {
   const router = useRouter();
   const { data } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', api);
   const patients = useMemo(() => data?.data.data.items || [], [data]);
 
-  const { data: visitsData, mutate: mutateVisits } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>(
-    '/visits/queues',
-    api,
-  );
+  const { data: visitsData } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', api);
   const visits = useMemo(() => visitsData?.data.data.items || [], [visitsData]);
 
   const { consultations } = useConsultations({ limit: 10 });
@@ -77,18 +80,19 @@ export default function ReceptionistDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-lg font-bold text-primary">Patient flow</h2>
         <div className="flex flex-wrap gap-3">
+          {primaryAction && (
+            <Button type="button" onClick={() => router.push(primaryAction.href)} variant={ButtonVariantEnum.PRIMARY}>
+              {primaryAction.label}
+            </Button>
+          )}
           <Button type="button" onClick={() => router.push('/patients')} variant={ButtonVariantEnum.SECONDARY}>
             View all patients
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          <WalkInCheckIn onCheckedIn={mutateVisits} />
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-line bg-surface-raised lg:col-span-2">
+      <div>
+        <div className="overflow-hidden rounded-xl border border-line bg-surface-raised">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="border-b border-line bg-surface text-primary">

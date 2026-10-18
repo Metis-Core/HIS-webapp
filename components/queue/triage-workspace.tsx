@@ -19,6 +19,8 @@ import {
 import { useDepartmentQueue, usePatients, useTriage } from '@/hooks';
 import { extractErrorMessage } from '@/helpers/errors';
 import type { ICreateTriageDto, IQueueEntryRecord, ITriage, IUpdateTriageDto } from '@/interfaces';
+import { roleInGroup } from '@/helpers/role-groups';
+import { useAuth } from '@/providers';
 
 type TabId = 'waiting' | 'all';
 
@@ -49,6 +51,8 @@ const queueStatusVariant: Record<QueueEntryStatusEnum, PillVariantEnum> = {
 };
 
 export default function TriageWorkspace() {
+  const { effectiveRole } = useAuth();
+  const canCheckIn = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
   const [tab, setTab] = useState<TabId>('waiting');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<ITriage | null>(null);
@@ -166,10 +170,12 @@ export default function TriageWorkspace() {
 
       {tab === 'waiting' ? (
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <WalkInCheckIn onCheckedIn={refreshQueue} />
-          </div>
-          <div className="lg:col-span-2">
+          {canCheckIn && (
+            <div className="lg:col-span-1">
+              <WalkInCheckIn onCheckedIn={refreshQueue} />
+            </div>
+          )}
+          <div className={canCheckIn ? 'lg:col-span-2' : 'lg:col-span-3'}>
             {entries.length === 0 ? (
               <EmptyState message="Nobody waiting for triage. Check in a walk-in to start." icon={FaStethoscope} />
             ) : (

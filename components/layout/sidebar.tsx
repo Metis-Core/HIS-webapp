@@ -10,9 +10,7 @@ import {
   FaMicroscope,
   FaNotesMedical,
   FaPills,
-  FaProcedures,
   FaTachometerAlt,
-  FaTasks,
   FaUserInjured,
   FaUserShield,
   FaWarehouse,
@@ -40,8 +38,6 @@ const NAV: Record<string, NavItem> = {
     href: '/patients',
     icon: <FaUserInjured aria-hidden className="h-5 w-5" />,
   },
-  queue: { key: 'queue', label: 'Queue', href: '/queue', icon: <FaTasks aria-hidden className="h-5 w-5" /> },
-  triage: { key: 'triage', label: 'Triage', href: '/triage', icon: <FaProcedures aria-hidden className="h-5 w-5" /> },
   consultations: {
     key: 'consultations',
     label: 'Consultations',
@@ -73,8 +69,6 @@ const NAV: Record<string, NavItem> = {
 const ALL_NAV: NavItem[] = [
   NAV.dashboard,
   NAV.patients,
-  NAV.queue,
-  NAV.triage,
   NAV.consultations,
   NAV.lab,
   NAV.pharmacy,
@@ -83,10 +77,11 @@ const ALL_NAV: NavItem[] = [
   NAV.users,
 ];
 
+// Triage lives under Patients and the queue board under the admin Dashboard (R4); their routes stay for deep links.
 const navigations: Record<UserRoleEnum, NavItem[]> = {
   [UserRoleEnum.SUPER_ADMIN]: ALL_NAV,
   [UserRoleEnum.ADMIN]: ALL_NAV,
-  [UserRoleEnum.DOCTOR]: [NAV.dashboard, NAV.patients, NAV.queue, NAV.triage, NAV.consultations, NAV.lab, NAV.pharmacy],
+  [UserRoleEnum.DOCTOR]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.pharmacy],
   [UserRoleEnum.NURSE]: [NAV.dashboard, NAV.patients, NAV.consultations, NAV.lab, NAV.pharmacy],
   [UserRoleEnum.LAB_TECH]: [NAV.dashboard, NAV.patients, NAV.lab, NAV.inventory],
   [UserRoleEnum.PHARMACIST]: [NAV.dashboard, NAV.patients, NAV.pharmacy, NAV.inventory],

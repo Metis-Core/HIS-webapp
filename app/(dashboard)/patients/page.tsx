@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -48,10 +49,19 @@ function toQuery(filters: PatientsFilterValue, search: string, page: number): IP
 }
 
 export default function PatientsPage() {
+  return (
+    <Suspense>
+      <PatientsView />
+    </Suspense>
+  );
+}
+
+function PatientsView() {
   const { effectiveRole } = useAuth();
-  const canTriage = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
+  const searchParams = useSearchParams();
+  const canTriage = roleInGroup(effectiveRole, 'FRONT_DESK_CLINICAL');
   const canDelete = roleInGroup(effectiveRole, 'ADMINS');
-  const [tab, setTab] = useState<PatientsTab>('registry');
+  const [tab, setTab] = useState<PatientsTab>(searchParams.get('tab') === 'triage' ? 'triage' : 'registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
