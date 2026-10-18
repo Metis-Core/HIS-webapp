@@ -40,6 +40,7 @@ export {
   QueueStageEnum,
   VisitTypeEnum,
   VisitIntentEnum,
+  ServiceVisitKindEnum,
   VisitStatusEnum,
   QueueEntryStatusEnum,
   TriageCategoryEnum,

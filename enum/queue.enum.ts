@@ -44,6 +44,7 @@ export enum VisitIntentEnum {
   RADIOLOGY = 'radiology',
   DENTAL = 'dental',
   ANTENATAL = 'antenatal',
+  IMMUNIZATION = 'immunization',
   PHARMACY = 'pharmacy',
   SURGERY = 'surgery',
   POSTOPERATIVE = 'postoperative',
@@ -80,4 +81,9 @@ export enum DepartmentEnum {
   MAIN_PHARMACY = 'main_pharmacy',
   FINANCE = 'finance',
   ADMINISTRATION = 'administrator',
+}
+
+export enum ServiceVisitKindEnum {
+  ANTENATAL = 'antenatal',
+  IMMUNIZATION = 'immunization',
 }

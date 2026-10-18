@@ -19,6 +19,12 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 4. Billing: open **Billing**, find the invoice, record the payment. Mobile money, card and insurance need a reference. Print the PDF receipt from the same drawer.
 5. A patient waiting for a doctor can be moved: open the visit, **Change doctor**, pick a doctor who is available and give a reason.
 
+## Free services (antenatal care and immunization)
+
+- Under **Check in a registered patient**, use **Antenatal care** or **Immunization**. The patient skips triage and the consultation fee and goes to the antenatal and immunization queue.
+- These are priced in **Services** (codes ANTENATAL_VISIT and IMMUNIZATION). Routine immunization and antenatal care are free under the Ministry of Health, so they are set to 0 and show as **Free** on the invoice. A visit with only free services needs no payment. If your facility charges for a visit, change the fee and the patient is sent to billing.
+- The consultation fee comes from the service with code CONSULTATION. If **Services** shows the consultation fee as "Not set", nothing is billed at check-in.
+
 ## Nurse (triage)
 
 1. **Waiting queue** lists patients ready for triage. Start triage, record vitals and acuity, save.
@@ -30,7 +36,7 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 1. **Consultations** shows your patients: those assigned to you, plus any patient nobody was free to take.
 2. Open the patient. You cannot open a consultation for a patient assigned to a colleague; ask reception to move the patient.
 3. Examination and assessment is one field. Pick diagnoses from the ICD list.
-4. Order from the tabs: **Lab**, **Imaging & procedures** (pick from the catalogue; the price is billed automatically), **Prescriptions**. Lab results show only after the lab verifies them.
+4. Everything ordered is billed as it is ordered: consultation at check-in, lab tests, imaging and procedures, prescribed medicines and the admission fee. Cancelling an order or prescription removes its charge while it is unpaid. Order from the tabs: **Lab**, **Imaging & procedures** (pick from the catalogue; the price is billed automatically), **Prescriptions**. Lab results show only after the lab verifies them.
 5. **Sign** the encounter to send the patient on (lab, radiology, pharmacy, admit). Signed encounters are locked; add an addendum for changes.
 6. Going away? Set your status. Patients waiting for you are shared out to the other doctors straight away.
 

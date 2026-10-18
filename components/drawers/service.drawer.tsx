@@ -2,6 +2,7 @@
 
 import * as Yup from 'yup';
 import { useField } from 'formik';
+import { formatFee } from '../billing/billing-format';
 import Drawer from './drawer';
 import Button from '../buttons/button';
 import Form from '../forms/form';
@@ -75,7 +76,7 @@ export default function ServiceDrawer({ mode, service, onClose, onSave, onEdit }
           </div>
 
           <dl className="grid gap-4 sm:grid-cols-2">
-            <ViewField label="Fee (UGX)" value={service.fee.toLocaleString()} />
+            <ViewField label="Fee" value={formatFee(service.fee)} />
             <ViewField label="Code" value={service.code} />
             <ViewField label="Description" value={service.description} />
           </dl>

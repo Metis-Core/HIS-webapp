@@ -41,7 +41,7 @@ const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.MAIN_LABORATORY]: 'Laboratory',
   [DepartmentEnum.RADIOLOGY]: 'Radiology',
   [DepartmentEnum.DENTAL]: 'Dental',
-  [DepartmentEnum.ANTENATAL]: 'Antenatal (ANC)',
+  [DepartmentEnum.ANTENATAL]: 'Antenatal and immunization',
   [DepartmentEnum.MAIN_PHARMACY]: 'Pharmacy',
   [DepartmentEnum.FINANCE]: 'Billing',
   [DepartmentEnum.ADMINISTRATION]: 'Administration',

@@ -5,6 +5,7 @@ import { FaConciergeBell, FaPlus } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button, EmptyState, Input, PageHeader, Pagination, Pill, ServiceDrawer, Stats } from '@/components';
 import { ButtonVariantEnum, ModalDrawerModeEnum, PillVariantEnum, StatVariantEnum } from '@/enum';
+import { formatFee } from '@/components/billing/billing-format';
 import { useCheckIn, useListTotal, usePagedSearch, useServices } from '@/hooks';
 import servicesService from '@/helpers/services.service';
 import type { ICreateServiceDto, IService, IUpdateServiceDto, ServiceFormValues } from '@/interfaces';
@@ -29,7 +30,7 @@ export default function ServicesPage() {
     { label: 'Inactive', value: inactiveCount, icon: FaConciergeBell, variant: StatVariantEnum.Amber },
     {
       label: 'Consultation fee',
-      value: consultationFee ? `UGX ${consultationFee.fee.toLocaleString()}` : 'Not set',
+      value: consultationFee ? formatFee(consultationFee.fee) : 'Not set',
       icon: FaConciergeBell,
       variant: StatVariantEnum.Blue,
     },
@@ -134,7 +135,7 @@ export default function ServicesPage() {
                     {s.code && <span className="ml-2 font-mono text-[11px] text-ink-muted">{s.code}</span>}
                   </td>
                   <td className="px-4 py-3 text-sm text-ink-muted">{s.description ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm tabular-nums text-ink">UGX {s.fee.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-ink">{formatFee(s.fee)}</td>
                   <td className="px-4 py-3">
                     <Pill variant={s.isActive ? PillVariantEnum.SUCCESS : PillVariantEnum.DEFAULT}>
                       {s.isActive ? 'active' : 'inactive'}

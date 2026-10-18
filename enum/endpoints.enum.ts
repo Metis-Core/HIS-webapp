@@ -13,6 +13,7 @@ export enum VisitEndpointEnum {
   QUEUE_BY_DEPARTMENT = '/visits/queue/department',
   QUEUE_BY_VISIT = '/visits/queue/visit',
   QUEUE_ENTRIES = '/visits/queue/entries',
+  SERVICE_VISIT = '/visits/service',
 }
 
 export enum OtpEndpointEnum {

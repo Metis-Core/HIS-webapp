@@ -4,6 +4,9 @@ import { InvoiceStatusEnum, PaymentMethodEnum, PaymentStatusEnum, PillVariantEnu
 
 export const formatUGX = (value: number) => `UGX ${value.toLocaleString('en-US')}`;
 
+/** A price or charge line: 0 is a free service, not a missing price. */
+export const formatFee = (value: number) => (value === 0 ? 'Free' : formatUGX(value));
+
 export const formatDay = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
