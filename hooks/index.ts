@@ -59,6 +59,7 @@ export {
   useDayClosings,
   useProcedureOrders,
 } from './ledger.hook';
+export { useProcedureTests } from './procedure-tests.hook';
 export { useAvailability, useStaffAvailability, useDoctors } from './availability.hook';
 export { useDebouncedValue } from './use-debounced-value';
 export { useUrlPage } from './use-url-page';

@@ -7,7 +7,9 @@ import { ButtonVariantEnum, OrderKindEnum, OrderStatusEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
 import { useProcedureOrders } from '@/hooks';
 import type { IProcedureOrder, IUpdateOrderStatusDto } from '@/interfaces';
-import { KIND_LABEL, PRIORITY_LABEL } from './order-format';
+import { CATEGORY_LABEL, isOpenOrder, KIND_LABEL, PRIORITY_LABEL } from './order-format';
+import OrderResultForm from './order-result-form';
+import OrderResultView from './order-result-view';
 import OrderStatusPill from './order-status-pill';
 
 type Mode = 'schedule' | 'complete' | 'cancel' | null;
@@ -57,25 +59,15 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
     if (mode === 'schedule') {
       return run({ status: OrderStatusEnum.SCHEDULED, scheduledFor: new Date(when).toISOString() }, 'Order scheduled');
     }
-    if (mode === 'complete') {
-      if (text.trim().length < 3) {
-        return setError(
-          order?.kind === OrderKindEnum.RADIOLOGY ? 'Write the findings first' : 'Write the operation notes first',
-        );
-      }
-      return run({ status: OrderStatusEnum.COMPLETED, report: text.trim() }, 'Order completed');
-    }
     if (!text.trim()) return setError('Give a reason for cancelling');
     return run({ status: OrderStatusEnum.CANCELLED, reason: text.trim() }, 'Order cancelled');
   };
 
   const status = order?.status;
   const isRadiology = order?.kind === OrderKindEnum.RADIOLOGY;
-  const textLabel =
-    mode === 'cancel' ? 'Reason for cancelling' : isRadiology ? 'Findings and impression' : 'Operation notes';
 
   return (
-    <Drawer open={Boolean(order)} onClose={close} title={order ? order.name : 'Order'} width="w-[560px]">
+    <Drawer open={Boolean(order)} onClose={close} title={order ? order.name : 'Order'} width="w-[640px]">
       {order && (
         <div className="flex flex-col gap-6">
           <section className="flex flex-wrap items-start justify-between gap-3">
@@ -84,7 +76,8 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
                 {order.patient ? `${order.patient.firstName} ${order.patient.lastName}` : 'Patient'}
               </p>
               <p className="text-xs text-ink-muted">
-                {order.patient?.mrn} · {KIND_LABEL[order.kind]} · {PRIORITY_LABEL[order.priority]}
+                {order.patient?.mrn} · {order.test ? CATEGORY_LABEL[order.test.category] : KIND_LABEL[order.kind]} ·{' '}
+                {PRIORITY_LABEL[order.priority]}
               </p>
             </div>
             <OrderStatusPill status={order.status} />
@@ -107,12 +100,10 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
                 <dd className="text-ink">{new Date(order.scheduledFor).toLocaleString('en-GB')}</dd>
               </div>
             )}
-            {order.report && (
+            {order.test?.preparation && isOpenOrder(order.status) && (
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                  {isRadiology ? 'Findings' : 'Operation notes'}
-                </dt>
-                <dd className="whitespace-pre-wrap text-ink">{order.report}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Patient preparation</dt>
+                <dd className="text-ink">{order.test.preparation}</dd>
               </div>
             )}
             {order.cancellationReason && (
@@ -122,6 +113,8 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
               </div>
             )}
           </dl>
+
+          <OrderResultView order={order} />
 
           {status && status !== OrderStatusEnum.COMPLETED && status !== OrderStatusEnum.CANCELLED && !mode && (
             <div className="flex flex-wrap gap-2">
@@ -151,7 +144,18 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
             </div>
           )}
 
-          {mode && (
+          {mode === 'complete' && (
+            <OrderResultForm
+              key={order.id}
+              order={order}
+              busy={busy}
+              serverError={error}
+              onBack={() => setMode(null)}
+              onSubmit={(dto) => void run({ status: OrderStatusEnum.COMPLETED, ...dto }, 'Order completed')}
+            />
+          )}
+
+          {(mode === 'schedule' || mode === 'cancel') && (
             <form onSubmit={submit} className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
               {mode === 'schedule' ? (
                 <Input
@@ -164,10 +168,10 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
                 />
               ) : (
                 <label className="flex flex-col gap-1.5 text-xs font-medium text-ink-muted">
-                  {textLabel}
+                  Reason for cancelling
                   <textarea
-                    rows={6}
-                    maxLength={mode === 'cancel' ? 255 : 8000}
+                    rows={4}
+                    maxLength={255}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     className="w-full rounded-lg border border-line bg-surface-raised px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -188,7 +192,7 @@ export default function OrderDrawer({ order, onClose }: OrderDrawerProps) {
                   variant={mode === 'cancel' ? ButtonVariantEnum.DANGER : ButtonVariantEnum.PRIMARY}
                   loading={busy}
                 >
-                  {mode === 'schedule' ? 'Schedule' : mode === 'complete' ? 'Complete order' : 'Cancel order'}
+                  {mode === 'schedule' ? 'Schedule' : 'Cancel order'}
                 </Button>
               </div>
             </form>

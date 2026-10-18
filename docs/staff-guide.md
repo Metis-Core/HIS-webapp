@@ -30,7 +30,7 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 1. **Consultations** shows your patients: those assigned to you, plus any patient nobody was free to take.
 2. Open the patient. You cannot open a consultation for a patient assigned to a colleague; ask reception to move the patient.
 3. Examination and assessment is one field. Pick diagnoses from the ICD list.
-4. Order from the tabs: **Lab**, **Imaging & procedures** (priced from the service list), **Prescriptions**. Lab results show only after the lab verifies them.
+4. Order from the tabs: **Lab**, **Imaging & procedures** (pick from the catalogue; the price is billed automatically), **Prescriptions**. Lab results show only after the lab verifies them.
 5. **Sign** the encounter to send the patient on (lab, radiology, pharmacy, admit). Signed encounters are locked; add an addendum for changes.
 6. Going away? Set your status. Patients waiting for you are shared out to the other doctors straight away.
 
@@ -38,7 +38,7 @@ One page per role. Everything below is how the system behaves after Sprints 1 to
 
 1. **Lab → Waiting**: call, enter results, verify. Abnormal and critical values are flagged from the age and sex of the patient.
 2. Results are released to the doctor only after verification. Amendments keep a trail.
-3. **Imaging & procedures** lists radiology orders: schedule, start, then write the findings to complete.
+3. **Imaging & procedures** lists radiology and procedure orders: schedule, start, then fill in the findings from the test's template. For imaging also write the impression and classify the result as normal, abnormal or critical (the form suggests one from the flagged findings). Completed reports can be printed.
 
 ## Pharmacy
 
@@ -54,6 +54,7 @@ Dispense from the waiting queue. A patient leaves the pharmacy queue only when e
 
 - **Users → Availability** shows who is around and lets you change anyone's status.
 - Suspending or deleting a doctor moves their waiting patients to other doctors immediately.
+- **Imaging & procedures → Catalogue** is where you add or edit what can be ordered: price, patient preparation and the result template. Only active entries appear in the doctor's picker.
 - **Management** shows visits, money received and owed, waiting times by department, clinical activity, the live queue and each doctor's workload.
 - Settings that need a decision are environment variables on the API: `PASSWORD_MIN_LENGTH` (8 to 32, default 10), `ATTACHMENTS_DIR`, `CORS_ORIGINS`, `TRUST_PROXY`.
 

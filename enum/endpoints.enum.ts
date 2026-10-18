@@ -32,4 +32,5 @@ export enum DocumentEndpointEnum {
   PRESCRIPTION = '/documents/prescription',
   DISCHARGE = '/documents/discharge',
   RECEIPT = '/documents/receipt',
+  PROCEDURE_REPORT = '/documents/procedure-report',
 }

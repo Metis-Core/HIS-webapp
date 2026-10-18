@@ -76,6 +76,8 @@ export {
   OrderKindEnum,
   OrderStatusEnum,
   OrderPriorityEnum,
+  ProcedureCategoryEnum,
+  ResultClassificationEnum,
 } from './ledger.enum';
 export {
   AvailabilityEndpointEnum,
