@@ -24,6 +24,14 @@ export {
   useLabOrdersByConsultation,
 } from './lab.hook';
 export {
+  useLabItemActions,
+  useLabBoard,
+  useLabBoardSummary,
+  useLabReport,
+  useLabAttachments,
+  useLabAmendments,
+} from './lab-work.hook';
+export {
   useInventoryItems,
   useInventoryItem,
   useInventoryStores,

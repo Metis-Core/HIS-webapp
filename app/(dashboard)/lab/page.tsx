@@ -5,8 +5,8 @@ import { FaClipboardList, FaFlask, FaPlus, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { Button, EmptyState, Input, PageHeader, Pagination, Pill, Stats, Tabs } from '@/components';
-import LabResultDrawer from '@/components/drawers/lab-result.drawer';
-import LabTestDrawer from '@/components/drawers/lab-test.drawer';
+import LabResultDrawer from '@/components/lab/result/lab-result.drawer';
+import LabTestDrawer from '@/components/lab/tests/lab-test.drawer';
 import {
   ButtonVariantEnum,
   DepartmentEnum,

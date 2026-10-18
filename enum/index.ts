@@ -83,6 +83,8 @@ export {
   LabOrderStatusEnum,
   LabOrderItemStatusEnum,
   LabPriorityEnum,
+  LabResultFlagEnum,
+  LabAgeBandEnum,
 } from './lab.enum';
 export {
   InventoryEndpointEnum,

@@ -13,7 +13,13 @@ import {
   FaStethoscope,
 } from 'react-icons/fa';
 import { Pill } from '@/components';
-import { ConsultationStatusEnum, LabOrderStatusEnum, PillVariantEnum, TriageAcuityEnum } from '@/enum';
+import {
+  ConsultationStatusEnum,
+  LabOrderItemStatusEnum,
+  LabOrderStatusEnum,
+  PillVariantEnum,
+  TriageAcuityEnum,
+} from '@/enum';
 import {
   useConsultationsByPatient,
   useLabOrders,
@@ -279,7 +285,7 @@ function VisitLabOrdersCard({
     id: string;
     status: string;
     priority: string;
-    items?: Array<{ test?: { code?: string; name?: string }; resultValue?: string | null }>;
+    items?: Array<{ test?: { code?: string; name?: string }; status?: string; isAbnormal?: boolean }>;
     createdAt: Date;
   }>;
 }) {
@@ -314,7 +320,15 @@ function VisitLabOrdersCard({
                     {i.test?.code ?? '—'} — {i.test?.name ?? ''}
                   </span>
                   <span className="font-medium tabular-nums">
-                    {i.resultValue ? i.resultValue : <span className="text-ink-muted">pending</span>}
+                    {i.status === LabOrderItemStatusEnum.VERIFIED ? (
+                      i.isAbnormal ? (
+                        <span className="text-critical">abnormal</span>
+                      ) : (
+                        'normal'
+                      )
+                    ) : (
+                      <span className="text-ink-muted">pending</span>
+                    )}
                   </span>
                 </li>
               ))}

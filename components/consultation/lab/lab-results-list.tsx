@@ -35,8 +35,8 @@ export default function LabResultsList({ ready, onView }: LabResultsListProps) {
                   {item.test ? `${item.test.code} — ${item.test.name}` : 'Test'}
                 </div>
                 <div className="text-xs capitalize text-ink-muted">
-                  {item.resultedAt && (
-                    <span className="tabular-nums">{format(new Date(item.resultedAt), 'dd MMM yyyy HH:mm')} · </span>
+                  {item.verifiedAt && (
+                    <span className="tabular-nums">{format(new Date(item.verifiedAt), 'dd MMM yyyy HH:mm')} · </span>
                   )}
                   Priority {order.priority}
                 </div>

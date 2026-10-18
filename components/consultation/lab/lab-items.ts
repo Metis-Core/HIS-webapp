@@ -6,22 +6,26 @@ export interface OrderItem {
   item: ILabOrderItem;
 }
 
-export const hasResult = (i: ILabOrderItem) =>
-  i.status === LabOrderItemStatusEnum.RESULT_READY || Boolean(i.resultValue);
+/** H-10: clinicians act only on verified results; the API withholds anything earlier. */
+export const hasResult = (i: ILabOrderItem) => i.status === LabOrderItemStatusEnum.VERIFIED;
 
-const resultedTime = (i: ILabOrderItem) => (i.resultedAt ? new Date(i.resultedAt).getTime() : 0);
+const isOpen = (i: ILabOrderItem) => !hasResult(i) && i.status !== LabOrderItemStatusEnum.CANCELLED;
 
-/** Resulted tests across all orders, newest result first. */
+const resultedTime = (i: ILabOrderItem) => {
+  const at = i.verifiedAt ?? i.resultedAt;
+  return at ? new Date(at).getTime() : 0;
+};
+
+/** Verified tests across all orders, newest first. */
 export const readyItems = (orders: ILabOrder[]): OrderItem[] =>
   orders
     .flatMap((order) => order.items.filter(hasResult).map((item) => ({ order, item })))
     .sort((a, b) => resultedTime(b.item) - resultedTime(a.item));
 
-export const pendingCount = (orders: ILabOrder[]) =>
-  orders.reduce((n, o) => n + o.items.filter((i) => !hasResult(i)).length, 0);
+export const pendingCount = (orders: ILabOrder[]) => orders.reduce((n, o) => n + o.items.filter(isOpen).length, 0);
 
 export const resultReadyCount = (orders: ILabOrder[]) =>
-  orders.reduce((n, o) => n + o.items.filter((i) => i.status === LabOrderItemStatusEnum.RESULT_READY).length, 0);
+  orders.reduce((n, o) => n + o.items.filter(hasResult).length, 0);
 
 export const orderStatusVariant: Record<LabOrderStatusEnum, PillVariantEnum> = {
   [LabOrderStatusEnum.PENDING]: PillVariantEnum.WARNING,
