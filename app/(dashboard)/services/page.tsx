@@ -38,7 +38,10 @@ export default function ServicesPage() {
       {
         label: 'Consultation fee',
         value: (() => {
-          const consultation = services.find((s) => s.isActive && s.name.toLowerCase().startsWith('consultation'));
+          // Same rule as the API: the CONSULTATION code wins, the old name match is only a fallback.
+          const consultation =
+            services.find((s) => s.isActive && s.code === 'CONSULTATION') ??
+            services.find((s) => s.isActive && s.name.toLowerCase().startsWith('consultation'));
           return consultation ? `UGX ${consultation.fee.toLocaleString()}` : 'Not set';
         })(),
         icon: FaConciergeBell,
@@ -65,6 +68,7 @@ export default function ServicesPage() {
   const save = async (values: ServiceFormValues) => {
     const payload: ICreateServiceDto | IUpdateServiceDto = {
       name: values.name.trim(),
+      code: values.code.trim().toUpperCase() || undefined,
       fee: Number(values.fee),
       description: values.description.trim() || undefined,
       isActive: values.isActive,
@@ -137,7 +141,10 @@ export default function ServicesPage() {
             <tbody>
               {filtered.map((s) => (
                 <tr key={s.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 text-sm font-medium text-ink">{s.name}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-ink">
+                    {s.name}
+                    {s.code && <span className="ml-2 font-mono text-[11px] text-ink-muted">{s.code}</span>}
+                  </td>
                   <td className="px-4 py-3 text-sm text-ink-muted">{s.description ?? '—'}</td>
                   <td className="px-4 py-3 text-sm tabular-nums text-ink">UGX {s.fee.toLocaleString()}</td>
                   <td className="px-4 py-3">

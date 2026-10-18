@@ -12,6 +12,7 @@ export interface IService extends IBaseEntity {
 
 export interface ICreateServiceDto {
   name: string;
+  code?: string;
   fee: number;
   description?: string;
   isActive?: boolean;
@@ -29,6 +30,7 @@ export interface IServiceFilters {
 
 export type ServiceFormValues = {
   name: string;
+  code: string;
   fee: string;
   description: string;
   isActive: boolean;
