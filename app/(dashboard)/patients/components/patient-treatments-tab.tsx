@@ -14,7 +14,6 @@ export default function PatientTreatmentsTab({ patientId }: { patientId: string 
   return (
     <PatientRecordsPanel<Consultation>
       url={`/consultations/patient/${patientId}`}
-      selectItems={(data) => data ?? []}
       emptyMessage="No treatments recorded."
       renderItem={(item) => (
         <RecordCard

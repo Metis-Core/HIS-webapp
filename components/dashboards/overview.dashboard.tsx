@@ -11,12 +11,7 @@ import { QueueEntryStatusEnum } from '@/enum/queue.enum';
 import { PatientTypeEnum } from '@/enum/patient.enum';
 import { patientFullName, patientInitials } from '@/data/patients';
 import { currentEntry, departmentStageMap, entryStatusMap, stageReadyAt, statusVariants } from '@/data/queue';
-import type { IPagination } from '@/interfaces';
-import type { IPatient } from '@/interfaces/patient.interface';
-import type { IVisitRecord } from '@/interfaces/queue.interfaces';
-import { useConsultations, useUnreadNotificationsCount } from '@/hooks';
-import useSWR from 'swr';
-import { api } from '@/helpers/axios';
+import { useConsultations, usePatients, useUnreadNotificationsCount, useVisitQueues } from '@/hooks';
 
 type Props = {
   /** Extra header action, e.g. reception's "Register & check in". */
@@ -26,11 +21,8 @@ type Props = {
 // Shared overview for every role; front-desk check-in now lives under Patients > Triage (R4).
 export default function OverviewDashboard({ primaryAction }: Props) {
   const router = useRouter();
-  const { data } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', api);
-  const patients = useMemo(() => data?.data.data.items || [], [data]);
-
-  const { data: visitsData } = useSWR<{ data: { data: IPagination<IVisitRecord> } }>('/visits/queues', api);
-  const visits = useMemo(() => visitsData?.data.data.items || [], [visitsData]);
+  const { patients, total: patientTotal } = usePatients();
+  const { visits } = useVisitQueues();
 
   const { consultations } = useConsultations({ limit: 10 });
   const { unread } = useUnreadNotificationsCount();
@@ -53,7 +45,7 @@ export default function OverviewDashboard({ primaryAction }: Props) {
     () => [
       {
         label: 'Registered patients',
-        value: data?.data.data.total ?? patients.length,
+        value: patientTotal,
         icon: FaUserInjured,
         variant: StatVariantEnum.Green,
       },
@@ -71,7 +63,7 @@ export default function OverviewDashboard({ primaryAction }: Props) {
       },
       { label: 'Unread alerts', value: unread, icon: FaBell, variant: StatVariantEnum.Amber },
     ],
-    [data, patients, activeQueue, consultations, unread],
+    [patientTotal, activeQueue, consultations, unread],
   );
 
   return (

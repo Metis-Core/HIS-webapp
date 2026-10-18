@@ -93,14 +93,7 @@ export default function Dropdown({
         isLoading={isLoading}
         isClearable={isClearable}
         inputValue={inputValue}
-        onInputChange={
-          isAsync
-            ? (next, meta) => {
-                // Keep the typed text when an option is picked or the menu closes.
-                if (meta.action === 'input-change') onInputChange(next);
-              }
-            : undefined
-        }
+        onInputChange={isAsync ? (next) => onInputChange(next) : undefined}
         filterOption={isAsync ? null : undefined}
         noOptionsMessage={noOptionsMessage ? () => noOptionsMessage : undefined}
         classNamePrefix="rs"

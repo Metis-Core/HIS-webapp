@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import useSWR from 'swr';
 import { toast } from 'sonner';
 import { FaEdit, FaShieldAlt } from 'react-icons/fa';
 import { Button, PatientDrawer } from '@/components';
@@ -11,8 +10,8 @@ import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import { api } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { toPatientPayload } from '@/helpers/patients.service';
+import { usePatient } from '@/hooks';
 import type { PatientFormValues } from '@/interfaces';
-import type { IPatient } from '@/interfaces/patient.interface';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -35,9 +34,8 @@ function DetailField({ label, value }: { label: string; value?: string | null })
 export default function PatientOverviewPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { data, mutate } = useSWR<{ data: { data: IPatient } }>(`/patients/${params.id}`, api);
+  const { patient, mutate } = usePatient(params.id);
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
-  const patient = data?.data.data;
 
   if (!patient) {
     return (

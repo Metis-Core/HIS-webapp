@@ -1,24 +1,23 @@
 import { format } from 'date-fns';
 import PatientRecordsPanel, { RecordCard } from './patient-records-panel';
 
-type QueueEntry = {
+type Visit = {
   id: string;
-  department: string;
   status: string;
-  visit: { serviceDate: string; visitType: string };
+  visitType: string;
+  createdAt: string;
 };
 
 export default function PatientAppointmentsTab({ patientId }: { patientId: string }) {
   return (
-    <PatientRecordsPanel<QueueEntry>
-      url={`/queue?patientId=${patientId}&visitType=APPOINTMENT`}
-      selectItems={(data) => data?.data ?? []}
+    <PatientRecordsPanel<Visit>
+      url={`/visits?patientId=${patientId}&visitType=appointment`}
       emptyMessage="No appointments scheduled."
       renderItem={(item) => (
         <RecordCard
-          title={item.department}
-          meta={format(new Date(item.visit.serviceDate), 'dd MMM yyyy')}
-          badge={item.status}
+          title="Appointment"
+          meta={format(new Date(item.createdAt), 'dd MMM yyyy')}
+          badge={item.status.replaceAll('_', ' ')}
         />
       )}
     />

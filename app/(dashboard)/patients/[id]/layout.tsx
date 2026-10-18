@@ -1,18 +1,15 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import useSWR from 'swr';
 import { FaCalendarCheck, FaFileMedical, FaHeartbeat, FaHistory, FaIdCard } from 'react-icons/fa';
 import { LinkTabs } from '@/components';
 import type { LinkTabItem } from '@/components/layout/link-tabs';
-import { api } from '@/helpers/axios';
-import type { IPatient } from '@/interfaces/patient.interface';
+import { usePatient } from '@/hooks';
 import PatientBanner from '../components/patient-banner';
 
 export default function PatientDetailLayout({ children }: { children: React.ReactNode }) {
   const params = useParams<{ id: string }>();
-  const { data, isLoading } = useSWR<{ data: { data: IPatient } }>(`/patients/${params.id}`, api);
-  const patient = data?.data.data;
+  const { patient, isLoading } = usePatient(params.id);
 
   const base = `/patients/${params.id}`;
   const tabs: LinkTabItem[] = [

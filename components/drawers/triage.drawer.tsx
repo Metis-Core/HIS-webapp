@@ -17,7 +17,7 @@ import PatientSearchSelect from '@/components/queue/patient-search-select';
 const emptyValues = {
   patientId: '',
   acuity: TriageAcuityEnum.LEVEL_3,
-  status: TriageStatusEnum.WAITING,
+  status: TriageStatusEnum.COMPLETED,
   chiefComplaint: '',
   consciousness: ConsciousnessLevelEnum.ALERT,
   temperatureC: '',

@@ -23,15 +23,15 @@ import { toast } from 'sonner';
 import useSWR, { useSWRConfig } from 'swr';
 import { Button, EmptyState, Pill } from '@/components';
 import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum, QueueEntryStatusEnum } from '@/enum';
-import { api } from '@/helpers/axios';
 import visitsService from '@/helpers/visits.service';
-import { useConsultationsByVisit, useLabOrdersByConsultation } from '@/hooks';
+import { useConsultationsByVisit, useLabOrdersByConsultation, useVisit } from '@/hooks';
 import { formatDuration } from '@/data/queue';
+import DoctorAssignmentCard from '@/components/queue/doctor-assignment-card';
 import PriorityBadge from '@/components/queue/priority-badge';
 import PriorityControl from '@/components/queue/priority-control';
 import { roleInGroup } from '@/helpers/role-groups';
 import { useAuth } from '@/providers';
-import type { IConsultation, IQueueEntryRecord, IVisitRecord, IVisitTimeline, IVisitTimelineStage } from '@/interfaces';
+import type { IConsultation, IQueueEntryRecord, IVisitTimeline, IVisitTimelineStage } from '@/interfaces';
 
 const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.RECEPTION]: 'Reception',
@@ -85,12 +85,9 @@ export default function QueueDetailPage() {
   const { mutate: globalMutate } = useSWRConfig();
   const { effectiveRole } = useAuth();
   const canChangePriority = roleInGroup(effectiveRole, 'PRIORITY_MANAGERS');
+  const canReassignDoctor = roleInGroup(effectiveRole, 'RECEPTION');
 
-  const { data, isLoading, mutate } = useSWR<{ data: { data: IVisitRecord } }>(
-    params.id ? `/visits/${params.id}` : null,
-    api,
-  );
-  const visit = data?.data.data;
+  const { visit, isLoading, mutate } = useVisit(params.id);
   const { data: timelineData, mutate: mutateTimeline } = useSWR<IVisitTimeline>(
     params.id ? `/visits/${params.id}/timeline` : null,
   );
@@ -228,6 +225,8 @@ export default function QueueDetailPage() {
               )}
             </dl>
           </section>
+
+          <DoctorAssignmentCard visit={visit} canReassign={canReassignDoctor} onChanged={() => mutate()} />
 
           {canChangePriority && activeEntry && (
             <PriorityControl

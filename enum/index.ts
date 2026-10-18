@@ -67,6 +67,22 @@ export {
   DocumentEndpointEnum,
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
+export {
+  LedgerEndpointEnum,
+  PaymentMethodEnum,
+  PaymentStatusEnum,
+  InvoiceStatusEnum,
+  OrderEndpointEnum,
+  OrderKindEnum,
+  OrderStatusEnum,
+  OrderPriorityEnum,
+} from './ledger.enum';
+export {
+  AvailabilityEndpointEnum,
+  DoctorEndpointEnum,
+  AvailabilityStatusEnum,
+  AssignmentSourceEnum,
+} from './availability.enum';
 export { ChargeSourceEnum, ChargeStatusEnum, InsuranceVerificationMethodEnum } from './billing.enum';
 export {
   NotificationEndpointEnum,

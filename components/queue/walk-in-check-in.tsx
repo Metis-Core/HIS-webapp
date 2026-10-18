@@ -6,6 +6,7 @@ import { Button, VisitReceiptDrawer } from '@/components';
 import { ButtonVariantEnum } from '@/enum';
 import { extractErrorMessage } from '@/helpers/errors';
 import { labWorkService } from '@/helpers/lab-work.service';
+import { useRefreshQueues } from '@/hooks';
 import type { IPatient } from '@/interfaces/patient.interface';
 import PatientSearchSelect from './patient-search-select';
 
@@ -17,9 +18,10 @@ export default function WalkInCheckIn({ onCheckedIn }: Props) {
   const [patient, setPatient] = useState<IPatient | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [sendingToLab, setSendingToLab] = useState(false);
+  const refreshQueues = useRefreshQueues();
 
   const done = async () => {
-    await onCheckedIn();
+    await Promise.all([onCheckedIn(), refreshQueues()]);
     setPatient(null);
   };
 

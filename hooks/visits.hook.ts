@@ -15,6 +15,15 @@ import { pageInfo } from '@/helpers/pagination';
 
 const isVisitKey = (key: unknown) => typeof key === 'string' && key.startsWith(VisitEndpointEnum.BASE);
 
+const QUEUE_PREFIXES = [VisitEndpointEnum.BASE, '/triage', '/lab', '/pharmacy', '/doctors'];
+const QUEUE_REFRESH_MS = 15_000;
+
+/** Refreshes every cached queue, board and list a patient moving between stages can change. */
+export function useRefreshQueues() {
+  const { mutate } = useSWRConfig();
+  return () => mutate((key) => typeof key === 'string' && QUEUE_PREFIXES.some((prefix) => key.startsWith(prefix)));
+}
+
 export function useVisits(filters: IVisitFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = visitsService.buildListUrl(filters);
@@ -71,7 +80,10 @@ export function useDepartmentQueue(department: DepartmentEnum | null | undefined
   const { mutate: globalMutate } = useSWRConfig();
   const key = department ? visitsService.buildDepartmentQueueUrl(department) : null;
   const fetcher = () => visitsService.listDepartmentQueue(department as DepartmentEnum);
-  const { data, error, isLoading, mutate } = useSWR<IQueueEntryRecord[]>(key, key ? fetcher : null);
+  const { data, error, isLoading, mutate } = useSWR<IQueueEntryRecord[]>(key, key ? fetcher : null, {
+    refreshInterval: QUEUE_REFRESH_MS,
+    revalidateOnFocus: true,
+  });
 
   const invalidate = () => globalMutate(isVisitKey);
 

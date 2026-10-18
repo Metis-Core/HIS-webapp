@@ -11,6 +11,9 @@ const ROUTE_ACCESS: { prefix: string; roles: readonly UserRoleEnum[] }[] = [
   { prefix: '/lab', roles: [SUPER_ADMIN, ADMIN, DOCTOR, NURSE, LAB_TECH] },
   { prefix: '/pharmacy', roles: [SUPER_ADMIN, ADMIN, DOCTOR, NURSE, PHARMACIST] },
   { prefix: '/inventory', roles: [SUPER_ADMIN, ADMIN, LAB_TECH, PHARMACIST] },
+  { prefix: '/management', roles: RoleGroups.FINANCE_MANAGERS },
+  { prefix: '/billing', roles: RoleGroups.BILLING },
+  { prefix: '/orders', roles: [SUPER_ADMIN, ADMIN, DOCTOR, NURSE, LAB_TECH] },
   { prefix: '/services', roles: [SUPER_ADMIN, ADMIN, RECEPTIONIST, ACCOUNTANT] },
 ];
 

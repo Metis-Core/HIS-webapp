@@ -10,7 +10,9 @@ import usersService from '@/helpers/users.service';
 import authService from '@/helpers/auth.service';
 import { extractErrorMessage } from '@/helpers/errors';
 import { RoleGroups } from '@/helpers/role-groups';
-import PasswordChecklist, { isValidPassword, PASSWORD_MIN_LENGTH } from '@/components/forms/password-checklist';
+import PasswordChecklist from '@/components/forms/password-checklist';
+import { isValidPassword } from '@/helpers/password-policy';
+import { usePasswordPolicy } from '@/hooks';
 
 type TabId = 'profile' | 'security' | 'preferences';
 
@@ -176,6 +178,7 @@ function SecurityCard() {
   const { user } = useAuth();
   const [values, setValues] = useState({ current: '', next: '', confirm: '' });
   const [busy, setBusy] = useState(false);
+  const { minLength } = usePasswordPolicy();
 
   if (!user) return null;
 
@@ -184,7 +187,7 @@ function SecurityCard() {
       toast.error('Enter your current password');
       return;
     }
-    if (!isValidPassword(values.next)) {
+    if (!isValidPassword(values.next, minLength)) {
       toast.error('New password does not meet the rules');
       return;
     }
@@ -214,8 +217,8 @@ function SecurityCard() {
       <header>
         <h2 className="text-sm font-semibold text-ink">Change password</h2>
         <p className="text-xs text-ink-muted">
-          Use at least {PASSWORD_MIN_LENGTH} characters with a letter and a number. Changing it signs you out on every
-          other device.
+          Use at least {minLength} characters with a letter and a number. Changing it signs you out on every other
+          device.
         </p>
       </header>
 

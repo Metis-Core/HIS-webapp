@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { FaArrowLeft, FaFlask, FaHandHoldingMedical, FaPills, FaStethoscope } from 'react-icons/fa';
+import { FaArrowLeft, FaFlask, FaHandHoldingMedical, FaPills, FaStethoscope, FaXRay } from 'react-icons/fa';
 import { Button, Tabs } from '@/components';
 import CompleteStageDrawer from '@/components/drawers/complete-stage.drawer';
 import PatientContextPanel from '@/components/consultation/patient-context.panel';
@@ -19,6 +19,7 @@ import { useEncounter } from '@/components/consultation/encounter/use-encounter'
 import { useEncounterActions } from '@/components/consultation/encounter/use-encounter-actions';
 import { resultReadyCount } from '@/components/consultation/lab/lab-items';
 import LabTab from '@/components/consultation/lab/lab-tab';
+import OrdersTab from '@/components/consultation/orders/orders-tab';
 import PrescriptionsPanel from '@/components/consultation/prescriptions/prescriptions-panel';
 import { ButtonVariantEnum } from '@/enum';
 import { RoleGroups } from '@/helpers/role-groups';
@@ -26,7 +27,7 @@ import { useLabOrdersByConsultation, usePrescriptionsByConsultation } from '@/ho
 import type { ICompleteConsultationDto } from '@/interfaces';
 import { useAuth } from '@/providers';
 
-type ConsultationTab = 'encounter' | 'lab' | 'prescriptions' | 'charges';
+type ConsultationTab = 'encounter' | 'lab' | 'orders' | 'prescriptions' | 'charges';
 
 const labTabLabel = (ready: number, orders: number) =>
   ready > 0 ? `Lab · ${ready} ready` : orders > 0 ? `Lab (${orders})` : 'Lab orders';
@@ -88,6 +89,7 @@ export default function ConsultationDetailPage() {
         tabs={[
           { id: 'encounter', label: 'Encounter', icon: FaStethoscope },
           { id: 'lab', label: labTabLabel(resultsReady, labOrders.length), icon: FaFlask },
+          { id: 'orders', label: 'Imaging & procedures', icon: FaXRay },
           { id: 'prescriptions', label: 'Prescriptions', icon: FaPills },
           { id: 'charges', label: 'Services & charges', icon: FaHandHoldingMedical },
         ]}
@@ -112,6 +114,7 @@ export default function ConsultationDetailPage() {
               readOnly={!isOpen}
             />
           )}
+          {tab === 'orders' && <OrdersTab consultation={consultation} readOnly={!isOpen} />}
           {tab === 'prescriptions' && <PrescriptionsPanel consultation={consultation} readOnly={!isOpen} />}
           {tab === 'charges' && <VisitChargesPanel visitId={consultation.visitId ?? null} readOnly={!isOpen} />}
         </div>

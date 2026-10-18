@@ -1,32 +1,35 @@
 'use client';
 
 import RemoteSearchSelect from '@/components/inputs/remote-search-select';
-import { UserRoleEnum, UserStatusEnum } from '@/enum';
+import { AVAILABILITY_LABEL } from '@/components/availability/availability-status';
+import { AvailabilityStatusEnum } from '@/enum';
+import { availabilityService } from '@/helpers/availability.service';
 import { PICKER_PAGE_SIZE } from '@/helpers/pagination';
-import usersService from '@/helpers/users.service';
-import type { IOption, IUser } from '@/interfaces';
+import type { IDoctorSummary, IOption } from '@/interfaces';
 
-const nameOf = (u: IUser) => `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.username;
-const toOption = (u: IUser): IOption => ({ label: `Dr ${nameOf(u)}`, value: u.id });
+const toOption = (d: IDoctorSummary): IOption => ({
+  label:
+    d.availability === AvailabilityStatusEnum.AVAILABLE
+      ? `Dr ${d.username} · ${d.waiting} waiting`
+      : `Dr ${d.username} · ${AVAILABILITY_LABEL[d.availability]}`,
+  value: d.id,
+});
 const buildUrl = (search: string) =>
-  usersService.buildListUrl({
-    role: UserRoleEnum.DOCTOR,
-    status: UserStatusEnum.ACTIVE,
-    search: search || undefined,
-    limit: PICKER_PAGE_SIZE,
-  });
+  availabilityService.doctorsUrl({ search: search || undefined, limit: PICKER_PAGE_SIZE });
 
-/** Administrators open consultations on a doctor's behalf; only doctors can be assigned (M-11). */
+/** Finds an active doctor with their availability and current workload. */
 export default function DoctorSearchSelect({
   value,
   onChange,
+  label = 'Doctor',
 }: {
-  value: IUser | null;
-  onChange: (u: IUser | null) => void;
+  value: IDoctorSummary | null;
+  onChange: (d: IDoctorSummary | null) => void;
+  label?: string;
 }) {
   return (
-    <RemoteSearchSelect<IUser>
-      label="Doctor"
+    <RemoteSearchSelect<IDoctorSummary>
+      label={label}
       placeholder="Search doctors"
       value={value}
       onChange={onChange}
