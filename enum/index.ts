@@ -62,6 +62,7 @@ export {
   VisitEndpointEnum,
   OtpEndpointEnum,
   ChargeEndpointEnum,
+  DocumentEndpointEnum,
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
 export { ChargeSourceEnum, ChargeStatusEnum, InsuranceVerificationMethodEnum } from './billing.enum';

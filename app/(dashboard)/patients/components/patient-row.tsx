@@ -17,7 +17,8 @@ export default function PatientRow({
 }: {
   patient: IPatient;
   onEdit: (patient: IPatient) => void;
-  onDelete: (id: string) => void;
+  /** Omit to hide the delete action (only administrators may archive patients). */
+  onDelete?: (id: string) => void;
 }) {
   const edgeColor = patient.type === PatientTypeEnum.INPATIENT ? 'bg-info' : 'bg-normal';
   return (
@@ -95,15 +96,17 @@ export default function PatientRow({
           >
             <FaEdit />
           </button>
-          <button
-            type="button"
-            title="Delete"
-            aria-label="Delete patient"
-            className={`${actionBtn} hover:bg-critical-soft hover:text-critical`}
-            onClick={() => onDelete(patient.id)}
-          >
-            <FaTrash />
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              title="Archive"
+              aria-label="Archive patient"
+              className={`${actionBtn} hover:bg-critical-soft hover:text-critical`}
+              onClick={() => onDelete(patient.id)}
+            >
+              <FaTrash />
+            </button>
+          )}
         </div>
       </td>
     </tr>

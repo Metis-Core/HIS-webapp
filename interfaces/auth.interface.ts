@@ -1,4 +1,4 @@
-import type { AuthErrorCodeEnum, AuthStatusEnum, JwtTokenTypeEnum, UserRoleEnum } from '@/enum';
+import type { AuthStatusEnum, JwtTokenTypeEnum, UserRoleEnum } from '@/enum';
 import type { DepartmentEnum, UserStatusEnum } from '@/enum';
 import type { IUser } from './user.interface';
 
@@ -25,7 +25,8 @@ export interface IJwtPayload {
 }
 
 export interface IAuthError {
-  code: AuthErrorCodeEnum;
+  /** Envelope code from the API, e.g. `UNAUTHORIZED` or `TOO_MANY_REQUESTS`. */
+  code: string;
   message: string;
   statusCode?: number;
 }

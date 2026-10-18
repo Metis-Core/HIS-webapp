@@ -167,7 +167,7 @@ export default function TriageWorkspace() {
       {tab === 'waiting' ? (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <WalkInCheckIn patients={patients} onCheckedIn={refreshQueue} />
+            <WalkInCheckIn onCheckedIn={refreshQueue} />
           </div>
           <div className="lg:col-span-2">
             {entries.length === 0 ? (

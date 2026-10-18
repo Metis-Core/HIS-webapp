@@ -79,7 +79,7 @@ export default function PatientsFilter({ value, onChange }: PatientsFilterProps)
         <Input
           value={value.search}
           onChange={(event) => onChange({ ...value, search: event.target.value })}
-          placeholder="Search name, phone, or email"
+          placeholder="Search name, MRN, phone, email or national ID"
           className={`${controlClass} pl-9`}
         />
       </div>

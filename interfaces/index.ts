@@ -52,6 +52,12 @@ export interface ISelectProps {
   placeholder?: string;
   isDisabled?: boolean;
   compact?: boolean;
+  /** Async search: controlled text and change handler; options are then filtered by the server. */
+  inputValue?: string;
+  onInputChange?: (value: string) => void;
+  isLoading?: boolean;
+  isClearable?: boolean;
+  noOptionsMessage?: string;
 }
 
 export interface IPhoneInputProps {

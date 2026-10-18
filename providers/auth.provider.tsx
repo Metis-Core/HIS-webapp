@@ -7,6 +7,7 @@ import { AuthStatusEnum, UserRoleEnum } from '@/enum';
 import authService from '@/helpers/auth.service';
 import { roleInGroup } from '@/helpers/role-groups';
 import tokenStore from '@/helpers/tokens';
+import { extractErrorCode, extractErrorMessage } from '@/helpers/errors';
 
 const AuthContext = createContext<IAuthContext | null>(null);
 
@@ -78,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({ status: AuthStatusEnum.AUTHENTICATED, user, error: null });
         router.replace('/');
         return user;
-      } catch (err: any) {
-        const message = err?.response?.data?.message ?? 'Login failed';
-        const error = { code: err?.response?.data?.code ?? 'UNKNOWN', message };
+      } catch (err: unknown) {
+        const message = extractErrorMessage(err, 'Login failed');
+        const error = { code: extractErrorCode(err), message };
         setState({ status: AuthStatusEnum.UNAUTHENTICATED, user: null, error });
         throw error;
       }

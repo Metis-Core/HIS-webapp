@@ -4,11 +4,11 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { FaBoxes, FaClipboardList, FaPills, FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
-import { API_URL } from '@/helpers/axios';
+import { Button, DocumentButton, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
 import { extractErrorMessage } from '@/helpers/errors';
 import { formatStockQuantity } from '@/helpers/inventory.format';
 import {
+  DocumentEndpointEnum,
   ButtonVariantEnum,
   DepartmentEnum,
   InventoryItemTypeEnum,
@@ -517,14 +517,9 @@ function PrescriptionsTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-3">
-                    <a
-                      href={`${API_URL}/documents/prescription/${p.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface-raised"
-                    >
+                    <DocumentButton endpoint={DocumentEndpointEnum.PRESCRIPTION} id={p.id}>
                       Print
-                    </a>
+                    </DocumentButton>
                     {!complete && (
                       <>
                         <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={() => onDispense(p)}>

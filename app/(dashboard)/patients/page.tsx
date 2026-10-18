@@ -2,21 +2,24 @@
 
 import { useMemo, useState } from 'react';
 import { FaPlus, FaProcedures, FaUserInjured } from 'react-icons/fa';
-import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
-import useSWR from 'swr';
 import { Button, PatientDrawer, Tabs } from '@/components';
 import TriageWorkspace from '@/components/queue/triage-workspace';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
-import type { IPagination, PatientFormValues } from '@/interfaces';
+import type { IPatientFilters, PatientFormValues } from '@/interfaces';
 import type { IPatient } from '@/interfaces/patient.interface';
-import { api } from '@/helpers/axios';
 import { extractErrorMessage } from '@/helpers/errors';
 import { toPatientPayload } from '@/helpers/patients.service';
 import { roleInGroup } from '@/helpers/role-groups';
+import { useDebouncedValue, usePatients } from '@/hooks';
 import { useAuth } from '@/providers';
 import PatientsFilter, { type PatientsFilterValue } from './components/filter';
+import PaginationFooter from './components/pagination-footer';
 import PatientRow from './components/patient-row';
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
 
 type PatientsTab = 'registry' | 'triage';
 
@@ -31,16 +34,48 @@ const initialFilters: PatientsFilterValue = {
   },
 };
 
+/** Translates the filter bar into API query parameters (search, type and registration dates run server-side). */
+function toQuery(filters: PatientsFilterValue, search: string, page: number): IPatientFilters {
+  const hasRange = filters.dateActive && filters.range.startDate && filters.range.endDate;
+  return {
+    page,
+    limit: PAGE_SIZE,
+    search: search.trim() || undefined,
+    type: filters.type ?? undefined,
+    registeredFrom: hasRange ? format(filters.range.startDate!, 'yyyy-MM-dd') : undefined,
+    registeredTo: hasRange ? format(filters.range.endDate!, 'yyyy-MM-dd') : undefined,
+  };
+}
+
 export default function PatientsPage() {
   const { effectiveRole } = useAuth();
   const canTriage = roleInGroup(effectiveRole, 'CHECK_IN_STAFF');
+  const canDelete = roleInGroup(effectiveRole, 'ADMINS');
   const [tab, setTab] = useState<PatientsTab>('registry');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IPatient | null>(null);
   const [filters, setFilters] = useState<PatientsFilterValue>(initialFilters);
+  const [page, setPage] = useState(1);
+  const search = useDebouncedValue(filters.search, SEARCH_DEBOUNCE_MS);
 
-  const { data, mutate } = useSWR<{ data: { data: IPagination<IPatient> } }>('/patients', api);
-  const patients = data?.data.data.items;
+  const query = useMemo(() => toQuery(filters, search, page), [filters, search, page]);
+  const {
+    patients,
+    total,
+    limit,
+    hasNextPage,
+    isLoading,
+    isValidating,
+    error,
+    createPatient,
+    updatePatient,
+    removePatient,
+  } = usePatients(query);
+
+  const changeFilters = (next: PatientsFilterValue) => {
+    setFilters(next);
+    setPage(1);
+  };
 
   const openAdd = () => {
     setSelected(null);
@@ -58,75 +93,42 @@ export default function PatientsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await toast.promise(api.delete(`/patients/${id}`), {
-      loading: 'Removing patient…',
-      success: 'Patient removed',
-      error: "Couldn't remove — retry",
-    });
-    await mutate();
+    if (!window.confirm('Archive this patient? Their clinical records are kept.')) return;
+    try {
+      await toast
+        .promise(removePatient(id), {
+          loading: 'Archiving patient…',
+          success: 'Patient archived',
+          error: (err: unknown) => extractErrorMessage(err, "Couldn't archive — retry"),
+        })
+        .unwrap();
+    } catch {
+      // The toast already shows the reason.
+    }
   };
 
   const handleSave = async (values: PatientFormValues) => {
     const payload = toPatientPayload(values);
 
     if (drawerMode === ModalDrawerModeEnum.ADD) {
-      await toast.promise(api.post<IPatient>('/patients', payload), {
-        loading: 'Registering patient…',
-        success: 'Patient registered',
-        error: (err) => extractErrorMessage(err, "Couldn't register — retry"),
-      });
+      await toast
+        .promise(createPatient(payload), {
+          loading: 'Registering patient…',
+          success: 'Patient registered',
+          error: (err: unknown) => extractErrorMessage(err, "Couldn't register — retry"),
+        })
+        .unwrap();
     } else if (drawerMode === ModalDrawerModeEnum.EDIT && selected) {
-      await toast.promise(api.patch(`/patients/${selected.id}`, payload), {
-        loading: 'Saving patient…',
-        success: 'Patient updated',
-        error: (err) => extractErrorMessage(err, "Couldn't save — retry"),
-      });
+      await toast
+        .promise(updatePatient(selected.id, payload), {
+          loading: 'Saving patient…',
+          success: 'Patient updated',
+          error: (err: unknown) => extractErrorMessage(err, "Couldn't save — retry"),
+        })
+        .unwrap();
     }
-    await mutate();
     closeDrawer();
   };
-
-  const filtered = useMemo(() => {
-    const query = filters.search.trim().toLowerCase();
-    const hasRange = filters.dateActive && Boolean(filters.range.startDate && filters.range.endDate);
-
-    return patients
-      ? patients.filter((patient) => {
-          if (filters.type && patient.type !== filters.type) return false;
-
-          if (query) {
-            const haystack = [
-              patient.firstName,
-              patient.lastName,
-              patient.middleName,
-              patient.phone,
-              patient.email,
-              patient.nationalId,
-              patient.city,
-              patient.insuranceProvider,
-            ]
-              .filter(Boolean)
-              .join(' ')
-              .toLowerCase();
-            if (!haystack.includes(query)) return false;
-          }
-
-          if (hasRange) {
-            const createdAt = new Date(patient.createdAt);
-            if (
-              !isWithinInterval(createdAt, {
-                start: startOfDay(filters.range.startDate!),
-                end: endOfDay(filters.range.endDate!),
-              })
-            ) {
-              return false;
-            }
-          }
-
-          return true;
-        })
-      : [];
-  }, [patients, filters]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -155,7 +157,7 @@ export default function PatientsPage() {
         <TriageWorkspace />
       ) : (
         <>
-          <PatientsFilter value={filters} onChange={setFilters} />
+          <PatientsFilter value={filters} onChange={changeFilters} />
 
           <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
             <div className="overflow-x-auto">
@@ -172,26 +174,43 @@ export default function PatientsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {patients.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-16 text-center">
                         <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-ink-muted">
                           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface">
                             <FaUserInjured className="h-5 w-5" />
                           </div>
-                          <p className="text-sm font-medium text-ink">No patients found</p>
-                          <p className="text-xs">Try adjusting your filters or add a new patient.</p>
+                          <p className="text-sm font-medium text-ink">
+                            {isLoading ? 'Loading patients…' : error ? "Couldn't load patients" : 'No patients found'}
+                          </p>
+                          <p className="text-xs">
+                            {error ? extractErrorMessage(error) : 'Try adjusting your filters or add a new patient.'}
+                          </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((patient) => (
-                      <PatientRow key={patient.id} patient={patient} onEdit={openEdit} onDelete={handleDelete} />
+                    patients.map((patient) => (
+                      <PatientRow
+                        key={patient.id}
+                        patient={patient}
+                        onEdit={openEdit}
+                        onDelete={canDelete ? handleDelete : undefined}
+                      />
                     ))
                   )}
                 </tbody>
               </table>
             </div>
+            <PaginationFooter
+              page={page}
+              limit={limit}
+              total={total}
+              hasNextPage={hasNextPage}
+              loading={isValidating}
+              onPageChange={setPage}
+            />
           </div>
         </>
       )}
