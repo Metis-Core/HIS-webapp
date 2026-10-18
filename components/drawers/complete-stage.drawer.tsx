@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { FaCheckCircle, FaExclamationTriangle, FaSignature } from 'react-icons/fa';
 import { Button, Drawer, Input } from '@/components';
 import { ButtonVariantEnum, VisitIntentEnum } from '@/enum';
+import { UserRoleEnum } from '@/enum/user.enum';
 import { useAuth } from '@/providers';
 
 export interface SignEncounterWarning {
@@ -58,7 +59,9 @@ export default function CompleteStageDrawer({
   onConfirm,
   submitting,
 }: CompleteStageDrawerProps) {
-  const { user } = useAuth();
+  const { user, effectiveRole } = useAuth();
+  // Only doctors route patients onward (R6); the API enforces the same rule.
+  const canRoute = effectiveRole === UserRoleEnum.DOCTOR;
   const [intents, setIntents] = useState<VisitIntentEnum[]>([]);
   const [notes, setNotes] = useState('');
   const [attested, setAttested] = useState(false);
@@ -128,11 +131,19 @@ export default function CompleteStageDrawer({
           </section>
         )}
 
-        <section className="flex flex-col gap-2">
+        {!canRoute && (
+          <p className="rounded-lg border border-line bg-surface p-3 text-xs text-ink-muted">
+            Only a doctor can send the patient to lab, radiology, pharmacy or other departments. Signing here sends the
+            patient on to billing.
+          </p>
+        )}
+
+        <section className={canRoute ? 'flex flex-col gap-2' : 'hidden'}>
           <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Route patient (optional)</p>
           <p className="text-xs text-ink-muted">
-            Pick where the patient needs to go next, or leave empty to end the visit here. Labs and prescriptions are
-            ordered from their tabs, not here.
+            Pick where the patient goes next. Lab or radiology automatically brings the patient back to you for a review
+            before pharmacy; with nothing picked the patient goes to billing. Labs and prescriptions are ordered from
+            their tabs, not here.
           </p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <button
@@ -145,7 +156,7 @@ export default function CompleteStageDrawer({
               }`}
             >
               <FaCheckCircle className="text-[11px]" />
-              End visit
+              Send to billing
             </button>
             {OPTIONS.map((intent) => {
               const active = intents.includes(intent);
@@ -218,7 +229,7 @@ export default function CompleteStageDrawer({
             disabled={!canSign}
           >
             <FaSignature className="text-xs" />
-            {intents.length === 0 ? 'Sign & end visit' : `Sign & route (${intents.length})`}
+            {intents.length === 0 ? 'Sign & send to billing' : `Sign & route (${intents.length})`}
           </Button>
         </div>
       </div>

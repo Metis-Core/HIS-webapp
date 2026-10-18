@@ -6,7 +6,6 @@ import { Button, Drawer, Dropdown, Input } from '@/components';
 import {
   ButtonVariantEnum,
   ConsciousnessLevelEnum,
-  DepartmentEnum,
   ModalDrawerModeEnum,
   TriageAcuityEnum,
   TriageStatusEnum,
@@ -30,7 +29,6 @@ const emptyValues = {
   painScore: '',
   allergiesNoted: '',
   assessmentNotes: '',
-  referredToDepartment: '' as DepartmentEnum | '',
 };
 
 type FormState = typeof emptyValues;
@@ -113,7 +111,6 @@ export default function TriageDrawer({
         painScore: triage.painScore != null ? String(triage.painScore) : '',
         allergiesNoted: triage.allergiesNoted ?? '',
         assessmentNotes: triage.assessmentNotes ?? '',
-        referredToDepartment: triage.referredToDepartment ?? '',
       });
     } else {
       setValues({
@@ -150,7 +147,6 @@ export default function TriageDrawer({
         painScore: toNum(values.painScore),
         allergiesNoted: values.allergiesNoted.trim() || undefined,
         assessmentNotes: values.assessmentNotes.trim() || undefined,
-        referredToDepartment: values.referredToDepartment || undefined,
       };
       await onSave(payload, triage?.id);
       onClose();

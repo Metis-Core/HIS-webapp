@@ -223,7 +223,10 @@ export default function ConsultationDetailPage() {
       }
       await toast.promise(completeConsultation(consultation.id, { nextIntents, notes }), {
         loading: 'Signing…',
-        success: nextIntents.length > 0 ? `Signed — routed to ${nextIntents.join(', ')}` : 'Encounter signed',
+        success:
+          nextIntents.length > 0
+            ? `Signed — routed to ${nextIntents.join(', ')}`
+            : 'Encounter signed — sent to billing',
         error: (err) => extractErrorMessage(err, "Couldn't sign — retry"),
       });
       setCompleting(false);
