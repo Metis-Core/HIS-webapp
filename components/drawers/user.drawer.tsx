@@ -7,7 +7,9 @@ import Button from '../buttons/button';
 import Form from '../forms/form';
 import FormDropdown from '../forms/form-dropdown';
 import FormInput from '../forms/form-input';
-import { FormPasswordChecklist, isValidPassword } from '../forms/password-checklist';
+import { FormPasswordChecklist } from '../forms/password-checklist';
+import { isValidPassword } from '@/helpers/password-policy';
+import { usePasswordPolicy } from '@/hooks';
 import Pill from '../pills/pill';
 import { ButtonVariantEnum, ModalDrawerModeEnum } from '@/enum';
 import { DepartmentEnum, UserRoleEnum, UserStatusEnum } from '@/enum/user.enum';
@@ -30,7 +32,7 @@ const emptyValues: UserFormValues = {
   status: UserStatusEnum.ACTIVE,
 };
 
-function buildSchema(mode: ModalDrawerModeEnum | null) {
+function buildSchema(mode: ModalDrawerModeEnum | null, minLength: number) {
   return Yup.object({
     username: Yup.string()
       .required('Username is required')
@@ -40,11 +42,13 @@ function buildSchema(mode: ModalDrawerModeEnum | null) {
       mode === ModalDrawerModeEnum.ADD
         ? Yup.string()
             .required('Password is required')
-            .test('policy', 'Password does not meet the rules below', (value) => isValidPassword(value ?? ''))
+            .test('policy', 'Password does not meet the rules below', (value) =>
+              isValidPassword(value ?? '', minLength),
+            )
         : Yup.string().test(
             'policy',
             'Password does not meet the rules below',
-            (value) => !value || isValidPassword(value),
+            (value) => !value || isValidPassword(value, minLength),
           ),
     role: Yup.string().oneOf(Object.values(UserRoleEnum)).required('Role is required'),
     department: Yup.string().oneOf(Object.values(DepartmentEnum)).required('Department is required'),
@@ -62,6 +66,7 @@ function ViewField({ label, value }: { label: string; value?: string | null }) {
 }
 
 export default function UserDrawer({ mode, user, onClose, onSave, onEdit }: IUserDrawerProps) {
+  const { minLength } = usePasswordPolicy();
   const title =
     mode === ModalDrawerModeEnum.ADD ? 'Add user' : mode === ModalDrawerModeEnum.EDIT ? 'Edit user' : 'User details';
 
@@ -113,7 +118,7 @@ export default function UserDrawer({ mode, user, onClose, onSave, onEdit }: IUse
         <Form
           key={user?.id ?? 'new'}
           initialValues={initialValues}
-          validationSchema={buildSchema(mode)}
+          validationSchema={buildSchema(mode, minLength)}
           onSubmit={(values, { resetForm }) => {
             onSave(values);
             resetForm();

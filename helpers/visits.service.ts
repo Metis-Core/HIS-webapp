@@ -1,7 +1,8 @@
 import { api } from './axios';
 import { CrudService } from './crud.service';
-import { DepartmentEnum, VisitEndpointEnum } from '@/enum';
+import { DepartmentEnum, VisitEndpointEnum, type ServiceVisitKindEnum } from '@/enum';
 import type {
+  IChangePriorityDto,
   ICreateVisitDto,
   IPagination,
   IQueueEntryRecord,
@@ -79,6 +80,19 @@ class VisitsService extends CrudService<IVisitRecord, ICreateVisitDto, IUpdateVi
       data: { entry: IQueueEntryRecord; next: IQueueEntryRecord | null };
     }>(`${VisitEndpointEnum.QUEUE_ENTRIES}/${id}/skip`, { notes });
     return data.data;
+  }
+
+  async changePriority(visitId: string, dto: IChangePriorityDto): Promise<void> {
+    await api.patch(`${VisitEndpointEnum.BASE}/${visitId}/priority`, dto);
+  }
+
+  /** Antenatal or immunization only: no triage and no consultation fee; reuses an open visit. */
+  async checkInForService(patientId: string, service: ServiceVisitKindEnum): Promise<IVisitRecord> {
+    const { data } = await api.post<IVisitRecord | { data: IVisitRecord }>(VisitEndpointEnum.SERVICE_VISIT, {
+      patientId,
+      service,
+    });
+    return 'data' in data ? data.data : data;
   }
 
   async deleteEntry(id: string): Promise<void> {

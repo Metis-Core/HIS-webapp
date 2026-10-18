@@ -23,10 +23,18 @@ import { toast } from 'sonner';
 import useSWR, { useSWRConfig } from 'swr';
 import { Button, EmptyState, Pill } from '@/components';
 import { ButtonVariantEnum, DepartmentEnum, PillVariantEnum, QueueEntryStatusEnum } from '@/enum';
-import { api } from '@/helpers/axios';
 import visitsService from '@/helpers/visits.service';
-import { useConsultationsByVisit, useLabOrdersByConsultation } from '@/hooks';
-import type { IConsultation, IQueueEntryRecord, IVisitRecord } from '@/interfaces';
+import { useConsultationsByVisit, useLabOrdersByConsultation, useVisit } from '@/hooks';
+import { formatDuration } from '@/data/queue';
+import MessageTeamButton from '@/components/messages/message-team.button';
+import AdmissionCard from '@/components/admissions/admission-card';
+import ClinicRecordsPanel from '@/components/clinic/clinic-records.panel';
+import DoctorAssignmentCard from '@/components/queue/doctor-assignment-card';
+import PriorityBadge from '@/components/queue/priority-badge';
+import PriorityControl from '@/components/queue/priority-control';
+import { roleInGroup } from '@/helpers/role-groups';
+import { useAuth } from '@/providers';
+import type { IConsultation, IQueueEntryRecord, IVisitTimeline, IVisitTimelineStage } from '@/interfaces';
 
 const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.RECEPTION]: 'Reception',
@@ -36,9 +44,9 @@ const DEPT_LABEL: Record<DepartmentEnum, string> = {
   [DepartmentEnum.MAIN_LABORATORY]: 'Laboratory',
   [DepartmentEnum.RADIOLOGY]: 'Radiology',
   [DepartmentEnum.DENTAL]: 'Dental',
-  [DepartmentEnum.ANTENATAL]: 'Antenatal (ANC)',
+  [DepartmentEnum.ANTENATAL]: 'Antenatal and immunization',
   [DepartmentEnum.MAIN_PHARMACY]: 'Pharmacy',
-  [DepartmentEnum.FINANCE]: 'Finance',
+  [DepartmentEnum.FINANCE]: 'Billing',
   [DepartmentEnum.ADMINISTRATION]: 'Administration',
 };
 
@@ -78,12 +86,20 @@ export default function QueueDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { mutate: globalMutate } = useSWRConfig();
+  const { effectiveRole } = useAuth();
+  const canChangePriority = roleInGroup(effectiveRole, 'PRIORITY_MANAGERS');
+  const canRecordClinic = roleInGroup(effectiveRole, 'CLINICAL_STAFF');
+  const canDischarge = roleInGroup(effectiveRole, 'PROVIDERS');
+  const canReassignDoctor = roleInGroup(effectiveRole, 'RECEPTION');
 
-  const { data, isLoading, mutate } = useSWR<{ data: { data: IVisitRecord } }>(
-    params.id ? `/visits/${params.id}` : null,
-    api,
+  const { visit, isLoading, mutate } = useVisit(params.id);
+  const { data: timelineData, mutate: mutateTimeline } = useSWR<IVisitTimeline>(
+    params.id ? `/visits/${params.id}/timeline` : null,
   );
-  const visit = data?.data.data;
+  const stageTimes = useMemo(
+    () => new Map((timelineData?.stages ?? []).map((stage) => [stage.entryId, stage])),
+    [timelineData],
+  );
 
   const entries = useMemo(
     () => (visit ? [...(visit.queueEntries ?? [])].sort((a, b) => a.sequenceNumber - b.sequenceNumber) : []),
@@ -108,7 +124,7 @@ export default function QueueDetailPage() {
       success: 'Stage completed — next stage advanced',
       error: "Couldn't complete — retry",
     });
-    await mutate();
+    await Promise.all([mutate(), mutateTimeline()]);
     await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
   };
 
@@ -119,7 +135,7 @@ export default function QueueDetailPage() {
       success: 'Stage removed',
       error: "Couldn't remove — retry",
     });
-    await mutate();
+    await Promise.all([mutate(), mutateTimeline()]);
     await globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'));
   };
 
@@ -164,6 +180,7 @@ export default function QueueDetailPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-ink">{patientName}</h1>
+          <PriorityBadge visit={visit} />
           <p className="text-sm text-ink-muted">
             {activeEntry
               ? `Currently at ${DEPT_LABEL[activeEntry.department]} — ${activeEntry.status.replaceAll('_', ' ')}`
@@ -214,16 +231,35 @@ export default function QueueDetailPage() {
             </dl>
           </section>
 
+          <MessageTeamButton visitId={visit.id} label="Message a team about this visit" />
+
+          <AdmissionCard visitId={visit.id} canDischarge={canDischarge} />
+
+          <DoctorAssignmentCard visit={visit} canReassign={canReassignDoctor} onChanged={() => mutate()} />
+
+          {canChangePriority && activeEntry && (
+            <PriorityControl
+              visitId={visit.id}
+              current={visit.triageCategory}
+              onChanged={() =>
+                Promise.all([mutate(), globalMutate((key) => typeof key === 'string' && key.startsWith('/visits'))])
+              }
+            />
+          )}
+
           {consultations.length > 0 && <ConsultationSummaries consultations={consultations} />}
         </aside>
 
-        <section className="lg:col-span-8">
+        <section className="flex flex-col gap-5 lg:col-span-8">
+          {canRecordClinic && patient && entries.some((e) => e.department === DepartmentEnum.ANTENATAL) && (
+            <ClinicRecordsPanel patient={patient} visitId={visit.id} />
+          )}
           <div className="rounded-lg border border-line bg-surface-raised">
             <header className="flex items-center justify-between border-b border-line px-5 py-3">
               <div>
                 <h2 className="text-sm font-semibold text-ink">Care pathway</h2>
                 <p className="text-xs text-ink-muted">
-                  Timeline of every stage in the visit — from check-in to discharge.
+                  Every stage of the visit from reception to billing, with how long the patient waited at each.
                 </p>
               </div>
             </header>
@@ -237,6 +273,7 @@ export default function QueueDetailPage() {
                   <PathwayRow
                     key={entry.id}
                     entry={entry}
+                    times={stageTimes.get(entry.id)}
                     isFirst={i === 0}
                     isLast={i === entries.length - 1}
                     onComplete={() => completeEntry(entry)}
@@ -267,12 +304,14 @@ function ProfileRow({ icon, label, value }: { icon: React.ReactNode; label: stri
 
 function PathwayRow({
   entry,
+  times,
   isFirst,
   isLast,
   onComplete,
   onRemove,
 }: {
   entry: IQueueEntryRecord;
+  times?: IVisitTimelineStage;
   isFirst: boolean;
   isLast: boolean;
   onComplete: () => void;
@@ -281,8 +320,6 @@ function PathwayRow({
   const isDone = entry.status === QueueEntryStatusEnum.COMPLETED || entry.status === QueueEntryStatusEnum.SKIPPED;
   const isActive = entry.status === QueueEntryStatusEnum.CALLED || entry.status === QueueEntryStatusEnum.IN_SERVICE;
   const isWaiting = entry.status === QueueEntryStatusEnum.WAITING;
-
-  const timestamp = entry.completedAt ?? entry.startedAt ?? entry.calledAt ?? (entry.createdAt as unknown as string);
 
   return (
     <li className="relative flex gap-4 px-5 py-4">
@@ -311,6 +348,7 @@ function PathwayRow({
           <div>
             <p className="text-sm font-medium text-ink">
               #{entry.sequenceNumber} · {DEPT_LABEL[entry.department]}
+              {entry.metadata?.review && <span className="ml-2 text-xs font-normal text-info">Doctor review</span>}
             </p>
             <p className="text-xs text-ink-muted">
               {entry.completedAt
@@ -335,6 +373,13 @@ function PathwayRow({
           {entry.calledAt && <span>Called {format(new Date(entry.calledAt), 'HH:mm')}</span>}
           {entry.startedAt && <span>Started {format(new Date(entry.startedAt), 'HH:mm')}</span>}
           {entry.completedAt && <span>Ended {format(new Date(entry.completedAt), 'HH:mm')}</span>}
+          {times?.waitSeconds !== null && times?.waitSeconds !== undefined && (
+            <span>Waited {formatDuration(times.waitSeconds)}</span>
+          )}
+          {times?.serviceSeconds !== null && times?.serviceSeconds !== undefined && (
+            <span>Served {formatDuration(times.serviceSeconds)}</span>
+          )}
+          {times?.servedByName && <span>by {times.servedByName}</span>}
         </div>
 
         {!isDone && (

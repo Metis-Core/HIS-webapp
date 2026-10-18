@@ -1,16 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { FaHandHoldingMedical, FaPlus, FaTrash } from 'react-icons/fa';
-import { Button, Dropdown, Input, Pill } from '@/components';
+import { Button, Input, Pill } from '@/components';
+import { formatFee } from '@/components/billing/billing-format';
 import { ButtonVariantEnum, PillVariantEnum } from '@/enum';
 import { ChargeStatusEnum } from '@/enum/billing.enum';
 import { extractErrorMessage } from '@/helpers/errors';
-import { useServices, useVisitBill } from '@/hooks';
-import type { IOption } from '@/interfaces';
+import RemoteSearchSelect from '@/components/inputs/remote-search-select';
+import { PICKER_PAGE_SIZE } from '@/helpers/pagination';
+import servicesService from '@/helpers/services.service';
+import { useVisitBill } from '@/hooks';
+import type { IOption, IService } from '@/interfaces';
 
-const OTHER = '__other__';
+const serviceOption = (s: IService): IOption => ({ label: `${s.name} · ${formatFee(s.fee)}`, value: s.id });
+// The price list is searched on the server rather than loaded whole into the dropdown.
+const buildServiceUrl = (search: string) =>
+  servicesService.buildListUrl({ search: search || undefined, isActive: true, limit: PICKER_PAGE_SIZE });
 
 const statusVariant: Record<ChargeStatusEnum, PillVariantEnum> = {
   [ChargeStatusEnum.PENDING]: PillVariantEnum.WARNING,
@@ -20,23 +27,15 @@ const statusVariant: Record<ChargeStatusEnum, PillVariantEnum> = {
 
 export default function VisitChargesPanel({ visitId, readOnly }: { visitId: string | null; readOnly: boolean }) {
   const { charges, total, outstanding, addCharge, removeCharge } = useVisitBill(visitId);
-  const { services } = useServices({ isActive: true, limit: 100 });
-  const [choice, setChoice] = useState<IOption | null>(null);
+  const [service, setService] = useState<IService | null>(null);
+  const [isOther, setIsOther] = useState(false);
   const [description, setDescription] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [busy, setBusy] = useState(false);
 
-  const options = useMemo<IOption[]>(
-    () => [
-      ...services.map((s) => ({ label: `${s.name} · UGX ${s.fee.toLocaleString()}`, value: s.id })),
-      { label: 'Other (not in the price list)', value: OTHER },
-    ],
-    [services],
-  );
-
-  const isOther = choice?.value === OTHER;
-  const canSubmit = choice && (!isOther || (description.trim() && unitPrice !== '')) && Number(quantity) >= 1;
+  const canSubmit =
+    (isOther ? Boolean(description.trim() && unitPrice !== '') : Boolean(service)) && Number(quantity) >= 1;
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -45,9 +44,7 @@ export default function VisitChargesPanel({ visitId, readOnly }: { visitId: stri
       await toast.promise(
         addCharge({
           quantity: Number(quantity),
-          ...(isOther
-            ? { description: description.trim(), unitPrice: Number(unitPrice) }
-            : { serviceId: choice.value as string }),
+          ...(isOther ? { description: description.trim(), unitPrice: Number(unitPrice) } : { serviceId: service?.id }),
         }),
         {
           loading: 'Adding service…',
@@ -55,7 +52,8 @@ export default function VisitChargesPanel({ visitId, readOnly }: { visitId: stri
           error: (err) => extractErrorMessage(err, "Couldn't add — retry"),
         },
       );
-      setChoice(null);
+      setService(null);
+      setIsOther(false);
       setDescription('');
       setUnitPrice('');
       setQuantity('1');
@@ -113,7 +111,7 @@ export default function VisitChargesPanel({ visitId, readOnly }: { visitId: stri
                       <span className="ml-2 text-xs capitalize text-ink-muted">{c.source}</span>
                     </td>
                     <td className="px-3 py-2 tabular-nums text-ink-muted">{c.quantity}</td>
-                    <td className="px-3 py-2 tabular-nums text-ink">UGX {c.amount.toLocaleString()}</td>
+                    <td className="px-3 py-2 tabular-nums text-ink">{formatFee(c.amount)}</td>
                     <td className="px-3 py-2">
                       <Pill variant={statusVariant[c.status]}>{c.status}</Pill>
                     </td>
@@ -157,13 +155,29 @@ export default function VisitChargesPanel({ visitId, readOnly }: { visitId: stri
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <Dropdown
-                label="Service"
-                placeholder="Search the price list"
-                options={options}
-                value={choice}
-                onChange={(value) => setChoice(Array.isArray(value) ? (value[0] ?? null) : value)}
-              />
+              {isOther ? (
+                <Input label="Service" value="Other (not in the price list)" disabled />
+              ) : (
+                <RemoteSearchSelect<IService>
+                  label="Service"
+                  placeholder="Search the price list"
+                  value={service}
+                  onChange={setService}
+                  buildUrl={buildServiceUrl}
+                  toOption={serviceOption}
+                  noun="services"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOther((v) => !v);
+                  setService(null);
+                }}
+                className="mt-1 text-xs text-brand hover:underline"
+              >
+                {isOther ? 'Pick from the price list instead' : 'Not in the price list? Enter it manually'}
+              </button>
             </div>
             <Input
               label="Quantity"

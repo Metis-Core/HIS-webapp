@@ -3,6 +3,8 @@ import type { IBaseEntity } from './base.interface';
 
 export interface IService extends IBaseEntity {
   name: string;
+  /** Stable lookup key, e.g. CONSULTATION for the check-in fee. */
+  code?: string | null;
   fee: number;
   description?: string | null;
   isActive: boolean;
@@ -10,6 +12,7 @@ export interface IService extends IBaseEntity {
 
 export interface ICreateServiceDto {
   name: string;
+  code?: string;
   fee: number;
   description?: string;
   isActive?: boolean;
@@ -27,6 +30,7 @@ export interface IServiceFilters {
 
 export type ServiceFormValues = {
   name: string;
+  code: string;
   fee: string;
   description: string;
   isActive: boolean;

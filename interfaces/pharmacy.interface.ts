@@ -51,7 +51,9 @@ export interface IPrescriptionFilters {
   patientId?: string;
   consultationId?: string;
   prescribedById?: string;
-  status?: PrescriptionStatusEnum;
+  /** One status or several (sent comma-separated). */
+  status?: PrescriptionStatusEnum | PrescriptionStatusEnum[];
+  search?: string;
 }
 
 export interface IDispenseItemDto {
@@ -79,4 +81,12 @@ export interface IDispense extends IBaseEntity {
   store?: IInventoryStore;
   notes?: string | null;
   items: IDispenseItem[];
+}
+
+/** Body for POST /consultations/:id/prescriptions; patient, consultation and visit come from the URL. */
+export interface IConsultationPrescriptionDto extends Omit<
+  ICreatePrescriptionDto,
+  'patientId' | 'consultationId' | 'visitId'
+> {
+  allergyAcknowledged?: boolean;
 }

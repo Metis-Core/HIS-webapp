@@ -40,11 +40,14 @@ export {
   QueueStageEnum,
   VisitTypeEnum,
   VisitIntentEnum,
+  ServiceVisitKindEnum,
   VisitStatusEnum,
   QueueEntryStatusEnum,
+  TriageCategoryEnum,
 } from './queue.enum';
 export {
   ConsultationEndpointEnum,
+  IcdEndpointEnum,
   ConsultationStatusEnum,
   ConsultationTypeEnum,
   ConsultationSortByEnum,
@@ -62,8 +65,30 @@ export {
   VisitEndpointEnum,
   OtpEndpointEnum,
   ChargeEndpointEnum,
+  DocumentEndpointEnum,
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
+export { MessageEndpointEnum, MessageTeamEnum, MESSAGE_TEAM_LABEL, isMessageTeam } from './message.enum';
+export { ClinicRecordKindEnum, ClinicEndpointEnum } from './clinic.enum';
+export { AdmissionEndpointEnum } from './admission.enum';
+export {
+  LedgerEndpointEnum,
+  PaymentMethodEnum,
+  PaymentStatusEnum,
+  InvoiceStatusEnum,
+  OrderEndpointEnum,
+  OrderKindEnum,
+  OrderStatusEnum,
+  OrderPriorityEnum,
+  ProcedureCategoryEnum,
+  ResultClassificationEnum,
+} from './ledger.enum';
+export {
+  AvailabilityEndpointEnum,
+  DoctorEndpointEnum,
+  AvailabilityStatusEnum,
+  AssignmentSourceEnum,
+} from './availability.enum';
 export { ChargeSourceEnum, ChargeStatusEnum, InsuranceVerificationMethodEnum } from './billing.enum';
 export {
   NotificationEndpointEnum,
@@ -80,6 +105,8 @@ export {
   LabOrderStatusEnum,
   LabOrderItemStatusEnum,
   LabPriorityEnum,
+  LabResultFlagEnum,
+  LabAgeBandEnum,
 } from './lab.enum';
 export {
   InventoryEndpointEnum,

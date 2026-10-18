@@ -69,4 +69,7 @@ export interface IPatientFilters {
   city?: string;
   dateOfBirthFrom?: string;
   dateOfBirthTo?: string;
+  /** Registration date range, `yyyy-MM-dd` (inclusive). */
+  registeredFrom?: string;
+  registeredTo?: string;
 }

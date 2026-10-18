@@ -12,6 +12,7 @@ import type { INotification } from '@/interfaces';
 import { useAuth } from '@/providers';
 
 const STREAM_URL = `${API_URL}${NotificationEndpointEnum.ME}/stream`;
+const QUEUE_PREFIXES = ['/visits', '/triage', '/lab', '/pharmacy', '/doctors'];
 const MIN_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 30_000;
 
@@ -23,6 +24,7 @@ const STALE_PREFIXES: Partial<Record<NotificationTypeEnum, string[]>> = {
   [NotificationTypeEnum.QUEUE]: ['/visits', '/triage'],
   [NotificationTypeEnum.VISIT]: ['/visits', '/triage'],
   [NotificationTypeEnum.INVENTORY]: ['/inventory'],
+  [NotificationTypeEnum.MESSAGE]: ['/messages'],
 };
 
 type SseHandler = (event: string, data: string) => void;
@@ -76,6 +78,10 @@ export default function NotificationStream() {
       mutate((key) => typeof key === 'string' && prefixes.some((p) => key.startsWith(p)));
 
     const onEvent: SseHandler = (event, raw) => {
+      if (event === 'queue-changed') {
+        void revalidate(QUEUE_PREFIXES);
+        return;
+      }
       if (event !== 'notification') return;
       const notification = JSON.parse(raw) as INotification;
       showNotificationToast(notification, (url) => routerRef.current.push(url));

@@ -4,11 +4,27 @@ export interface IBaseEntity {
   updatedAt: Date;
 }
 
-export interface IPagination<T> {
-  items: T[];
+/** Paging details returned by list endpoints alongside `items`. */
+export interface IPaginationMeta {
   total: number;
   page: number;
   limit: number;
+  hasNextPage: boolean;
+}
+
+/** page/limit for any paged list (API default 20, max 100). */
+export interface IPageQuery {
+  page?: number;
+  limit?: number;
+}
+
+export interface IPagination<T> {
+  items: T[];
+  total: number;
+  /** Legacy top-level paging fields; newer endpoints return `meta` instead. */
+  page?: number;
+  limit?: number;
+  meta?: IPaginationMeta;
 }
 
 export interface IResponse<T> {

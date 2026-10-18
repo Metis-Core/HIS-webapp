@@ -23,6 +23,21 @@ class AuthService {
     return data;
   }
 
+  /**
+   * Changes the signed-in user's password. The API revokes every other session and
+   * returns fresh tokens for this one, so store them immediately.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const { data } = await api.post<IAuthTokens>(AuthEndpointEnum.CHANGE_PASSWORD, { currentPassword, newPassword });
+    tokenStore.setTokens(data);
+  }
+
+  /** Self-service username change; the API asks for the current password again. */
+  async updateProfile(username: string, currentPassword: string): Promise<IUser> {
+    const { data } = await api.patch<IUser>(AuthEndpointEnum.ME, { username, currentPassword });
+    return data;
+  }
+
   async me(): Promise<IUser> {
     const { data } = await api.get<IUser>(AuthEndpointEnum.ME);
     return data;

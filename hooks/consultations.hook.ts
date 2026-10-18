@@ -8,11 +8,14 @@ import type {
   ICancelConsultationDto,
   ICompleteConsultationDto,
   IConsultation,
+  IConsultationAddendum,
   IConsultationFilters,
   ICreateConsultationDto,
+  IPageQuery,
   IPagination,
   IUpdateConsultationDto,
 } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isConsultationKey = (key: unknown) => typeof key === 'string' && key.startsWith(ConsultationEndpointEnum.BASE);
 
@@ -20,7 +23,7 @@ export function useConsultations(filters: IConsultationFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = consultationsService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<IConsultation>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<IConsultation>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate(isConsultationKey);
 
@@ -56,6 +59,7 @@ export function useConsultations(filters: IConsultationFilters = {}) {
   return {
     consultations: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     page: data?.page ?? 1,
     limit: data?.limit ?? 20,
     isLoading,
@@ -74,14 +78,24 @@ export function useConsultation(id: string | null | undefined) {
   return { consultation: data, isLoading, error, mutate };
 }
 
-export function useConsultationsByPatient(patientId: string | null | undefined) {
-  const key = patientId ? consultationsService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
-  return { consultations: asList<IConsultation>(data), isLoading, error, mutate };
+/** One page of the patient's history, newest first. */
+export function useConsultationsByPatient(patientId: string | null | undefined, query: IPageQuery = {}) {
+  const key = patientId ? consultationsService.buildByPatientUrl(patientId, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IConsultation>>(key, { keepPreviousData: true });
+  return { consultations: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }
 
 export function useConsultationsByVisit(visitId: string | null | undefined) {
   const key = visitId ? consultationsService.buildByVisitUrl(visitId) : null;
   const { data, error, isLoading, mutate } = useSWR<unknown>(key);
   return { consultations: asList<IConsultation>(data), isLoading, error, mutate };
+}
+
+/** Addenda on a signed consultation, newest first, one page at a time. */
+export function useConsultationAddenda(id: string | null | undefined, query: IPageQuery = {}) {
+  const key = id ? consultationsService.buildAddendaUrl(id, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<IConsultationAddendum>>(key, {
+    keepPreviousData: true,
+  });
+  return { addenda: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }

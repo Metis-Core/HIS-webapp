@@ -39,6 +39,7 @@ export interface INotificationFilters {
   limit?: number;
   userId?: string;
   status?: NotificationStatusEnum;
+  priority?: NotificationPriorityEnum;
   type?: NotificationTypeEnum;
 }
 

@@ -3,18 +3,27 @@
 import useSWR, { useSWRConfig } from 'swr';
 import { TriageEndpointEnum, TriageStatusEnum } from '@/enum';
 import triageService from '@/helpers/triage.service';
-import type { ICreateTriageDto, IPagination, ITriage, ITriageFilters, IUpdateTriageDto } from '@/interfaces';
+import type {
+  ICreateTriageDto,
+  IPageQuery,
+  IPagination,
+  ITriage,
+  ITriageFilters,
+  IUpdateTriageDto,
+} from '@/interfaces';
 import { asList } from './utils';
+import { pageInfo } from '@/helpers/pagination';
 
-const isTriageKey = (key: unknown) => typeof key === 'string' && key.startsWith(TriageEndpointEnum.BASE);
+const isTriageOrQueueKey = (key: unknown) =>
+  typeof key === 'string' && (key.startsWith(TriageEndpointEnum.BASE) || key.startsWith('/visits'));
 
 export function useTriage(filters: ITriageFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = triageService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<ITriage>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<ITriage>>(url, { keepPreviousData: true });
 
-  const invalidate = () => mutate(isTriageKey);
+  const invalidate = () => mutate(isTriageOrQueueKey);
 
   const createTriage = async (dto: ICreateTriageDto) => {
     const triage = await triageService.create(dto);
@@ -36,6 +45,7 @@ export function useTriage(filters: ITriageFilters = {}) {
   return {
     triages: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     page: data?.page ?? 1,
     limit: data?.limit ?? 20,
     isLoading,
@@ -58,8 +68,9 @@ export function useTriageQueue(status?: TriageStatusEnum) {
   return { queue: asList<ITriage>(data), isLoading, error, mutate };
 }
 
-export function useTriageByPatient(patientId: string | null | undefined) {
-  const key = patientId ? triageService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
-  return { triages: asList<ITriage>(data), isLoading, error, mutate };
+/** One page of the patient's history, newest first. */
+export function useTriageByPatient(patientId: string | null | undefined, query: IPageQuery = {}) {
+  const key = patientId ? triageService.buildByPatientUrl(patientId, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<ITriage>>(key, { keepPreviousData: true });
+  return { triages: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }

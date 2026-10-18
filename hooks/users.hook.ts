@@ -4,12 +4,13 @@ import useSWR, { useSWRConfig } from 'swr';
 import { UserEndpointEnum } from '@/enum';
 import usersService from '@/helpers/users.service';
 import type { ICreateUserDto, IPagination, IUpdateUserDto, IUser, IUserFilters } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 export function useUsers(filters: IUserFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = usersService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<IUser>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<IUser>>(url, { keepPreviousData: true });
 
   const invalidate = () => mutate((key) => typeof key === 'string' && key.startsWith(UserEndpointEnum.BASE));
 
@@ -33,6 +34,7 @@ export function useUsers(filters: IUserFilters = {}) {
   return {
     users: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     page: data?.page ?? 1,
     limit: data?.limit ?? 20,
     isLoading,

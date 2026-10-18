@@ -2,6 +2,10 @@ export enum ConsultationEndpointEnum {
   BASE = '/consultations',
 }
 
+export enum IcdEndpointEnum {
+  BASE = '/icd',
+}
+
 export enum ConsultationStatusEnum {
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',

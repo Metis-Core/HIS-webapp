@@ -8,9 +8,11 @@ import type {
   IInventoryItem,
   IInventoryItemFilters,
   IInventoryStock,
+  IInventoryStockFilters,
   IInventoryStore,
   IInventoryTransaction,
   IInventoryTransactionFilters,
+  IPageQuery,
   IPagination,
   IUpdateInventoryItemDto,
   IUpdateInventoryStoreDto,
@@ -27,7 +29,12 @@ class InventoryItemsService extends CrudService<
   }
 }
 
-class InventoryStoresService extends CrudService<IInventoryStore, ICreateInventoryStoreDto, IUpdateInventoryStoreDto> {
+class InventoryStoresService extends CrudService<
+  IInventoryStore,
+  ICreateInventoryStoreDto,
+  IUpdateInventoryStoreDto,
+  IPageQuery
+> {
   constructor() {
     super(InventoryEndpointEnum.STORES);
   }
@@ -39,17 +46,21 @@ class InventoryStoresService extends CrudService<IInventoryStore, ICreateInvento
 }
 
 class InventoryStockService {
-  buildStockUrl(storeId?: string): string {
-    return `${InventoryEndpointEnum.STOCK}${buildQuery({ storeId })}`;
+  buildStockUrl(filters: IInventoryStockFilters = {}): string {
+    return `${InventoryEndpointEnum.STOCK}${buildQuery(filters)}`;
   }
 
-  async listStock(storeId?: string): Promise<IInventoryStock[]> {
-    const { data } = await api.get<IInventoryStock[]>(this.buildStockUrl(storeId));
+  buildLowStockUrl(query: IPageQuery = {}): string {
+    return `${InventoryEndpointEnum.STOCK_LOW}${buildQuery(query)}`;
+  }
+
+  async listStock(filters: IInventoryStockFilters = {}): Promise<IPagination<IInventoryStock>> {
+    const { data } = await api.get<IPagination<IInventoryStock>>(this.buildStockUrl(filters));
     return data;
   }
 
-  async listLowStock(): Promise<IInventoryStock[]> {
-    const { data } = await api.get<IInventoryStock[]>(InventoryEndpointEnum.STOCK_LOW);
+  async listLowStock(query: IPageQuery = {}): Promise<IPagination<IInventoryStock>> {
+    const { data } = await api.get<IPagination<IInventoryStock>>(this.buildLowStockUrl(query));
     return data;
   }
 

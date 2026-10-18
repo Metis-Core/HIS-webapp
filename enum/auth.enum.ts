@@ -3,6 +3,8 @@ export enum AuthEndpointEnum {
   REFRESH = '/auth/refresh',
   LOGOUT = '/auth/logout',
   ME = '/auth/me',
+  CHANGE_PASSWORD = '/auth/change-password',
+  PASSWORD_POLICY = '/auth/password-policy',
 }
 
 export enum AuthCookieEnum {

@@ -11,11 +11,13 @@ import type {
   ILabOrderFilters,
   ILabTest,
   ILabTestFilters,
+  IPageQuery,
   IPagination,
   IUpdateLabOrderDto,
   IUpdateLabOrderItemDto,
   IUpdateLabTestDto,
 } from '@/interfaces';
+import { pageInfo } from '@/helpers/pagination';
 
 const isLabKey = (key: unknown) => typeof key === 'string' && key.startsWith('/lab');
 
@@ -23,7 +25,7 @@ export function useLabTests(filters: ILabTestFilters = {}) {
   const { mutate } = useSWRConfig();
   const url = labTestsService.buildListUrl(filters);
 
-  const { data, error, isLoading } = useSWR<IPagination<ILabTest>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<ILabTest>>(url, { keepPreviousData: true });
   const invalidate = () => mutate(isLabKey);
 
   const createTest = async (dto: ICreateLabTestDto) => {
@@ -46,6 +48,7 @@ export function useLabTests(filters: ILabTestFilters = {}) {
   return {
     tests: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     createTest,
@@ -60,11 +63,11 @@ export function useLabTest(id: string | null | undefined) {
   return { test: data, isLoading, error, mutate };
 }
 
-export function useLabOrders(filters: ILabOrderFilters = {}) {
+export function useLabOrders(filters: ILabOrderFilters = {}, { enabled = true }: { enabled?: boolean } = {}) {
   const { mutate } = useSWRConfig();
-  const url = labOrdersService.buildListUrl(filters);
+  const url = enabled ? labOrdersService.buildListUrl(filters) : null;
 
-  const { data, error, isLoading } = useSWR<IPagination<ILabOrder>>(url);
+  const { data, error, isLoading } = useSWR<IPagination<ILabOrder>>(url, { keepPreviousData: true });
   const invalidate = () => mutate(isLabKey);
 
   const createOrder = async (dto: ICreateLabOrderDto) => {
@@ -94,6 +97,7 @@ export function useLabOrders(filters: ILabOrderFilters = {}) {
   return {
     orders: data?.items ?? [],
     total: data?.total ?? 0,
+    pagination: pageInfo(data, filters.limit),
     isLoading,
     error,
     createOrder,
@@ -109,10 +113,11 @@ export function useLabOrder(id: string | null | undefined) {
   return { order: data, isLoading, error, mutate };
 }
 
-export function useLabOrdersByPatient(patientId: string | null | undefined) {
-  const key = patientId ? labOrdersService.buildByPatientUrl(patientId) : null;
-  const { data, error, isLoading, mutate } = useSWR<unknown>(key);
-  return { orders: asList<ILabOrder>(data), isLoading, error, mutate };
+/** One page of the patient's history, newest first. */
+export function useLabOrdersByPatient(patientId: string | null | undefined, query: IPageQuery = {}) {
+  const key = patientId ? labOrdersService.buildByPatientUrl(patientId, query) : null;
+  const { data, error, isLoading, mutate } = useSWR<IPagination<ILabOrder>>(key, { keepPreviousData: true });
+  return { orders: data?.items ?? [], pagination: pageInfo(data, query.limit), isLoading, error, mutate };
 }
 
 export function useLabOrdersByConsultation(consultationId: string | null | undefined) {

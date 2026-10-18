@@ -13,15 +13,25 @@ import {
   FaStethoscope,
 } from 'react-icons/fa';
 import { Pill } from '@/components';
-import { ConsultationStatusEnum, LabOrderStatusEnum, PillVariantEnum, TriageAcuityEnum } from '@/enum';
+import {
+  ConsultationStatusEnum,
+  LabOrderItemStatusEnum,
+  LabOrderStatusEnum,
+  PillVariantEnum,
+  TriageAcuityEnum,
+} from '@/enum';
 import {
   useConsultationsByPatient,
+  useLabOrders,
   useLabOrdersByConsultation,
   useLabOrdersByPatient,
   usePrescriptionsByPatient,
   useTriageByPatient,
 } from '@/hooks';
+import { PAGE_SIZE } from '@/helpers/pagination';
 import type { IPatient, ITriage } from '@/interfaces';
+
+const PREVIEW_SIZE = 5;
 
 const acuityVariant: Record<TriageAcuityEnum, PillVariantEnum> = {
   [TriageAcuityEnum.LEVEL_1]: PillVariantEnum.DANGER,
@@ -47,28 +57,31 @@ interface PatientContextPanelProps {
 }
 
 export default function PatientContextPanel({ patient, visitId, consultationId }: PatientContextPanelProps) {
-  const { triages } = useTriageByPatient(patient?.id);
-  const { consultations } = useConsultationsByPatient(patient?.id);
-  const { orders: allOrders } = useLabOrdersByPatient(patient?.id);
-  const { prescriptions } = usePrescriptionsByPatient(patient?.id);
+  // A sidebar preview: each history is fetched as one small newest-first page; "x of total" says how much exists.
+  const { triages } = useTriageByPatient(patient?.id, { limit: 1 });
+  const { consultations, pagination: consultationsPage } = useConsultationsByPatient(patient?.id, {
+    limit: PREVIEW_SIZE + 1,
+  });
+  const { orders: recentOrders, pagination: ordersPage } = useLabOrdersByPatient(patient?.id, {
+    limit: PREVIEW_SIZE + 1,
+  });
+  const { orders: visitOrders } = useLabOrders(
+    { visitId: visitId ?? undefined, limit: PAGE_SIZE },
+    { enabled: Boolean(visitId) },
+  );
+  const { prescriptions, pagination: prescriptionsPage } = usePrescriptionsByPatient(patient?.id, {
+    limit: PREVIEW_SIZE,
+  });
 
-  const latestTriage = useMemo<ITriage | null>(() => {
-    if (triages.length === 0) return null;
-    return [...triages].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  }, [triages]);
+  const latestTriage: ITriage | null = triages[0] ?? null;
 
   const priorConsultations = useMemo(
-    () => consultations.filter((c) => c.id !== consultationId).slice(0, 5),
+    () => consultations.filter((c) => c.id !== consultationId).slice(0, PREVIEW_SIZE),
     [consultations, consultationId],
   );
-
-  const visitOrders = useMemo(
-    () => (visitId ? allOrders.filter((o) => o.visitId === visitId) : []),
-    [allOrders, visitId],
-  );
   const otherOrders = useMemo(
-    () => (visitId ? allOrders.filter((o) => o.visitId !== visitId).slice(0, 5) : allOrders.slice(0, 5)),
-    [allOrders, visitId],
+    () => recentOrders.filter((o) => !visitId || o.visitId !== visitId).slice(0, PREVIEW_SIZE),
+    [recentOrders, visitId],
   );
 
   if (!patient) {
@@ -131,6 +144,7 @@ export default function PatientContextPanel({ patient, visitId, consultationId }
           <header className="flex items-center gap-2 border-b border-line px-5 py-3">
             <FaStethoscope className="text-ink-muted" />
             <h3 className="text-sm font-semibold text-ink">Prior consultations</h3>
+            <PreviewCount shown={priorConsultations.length} total={consultationsPage.total} />
           </header>
           <ul className="flex flex-col divide-y divide-line">
             {priorConsultations.map((c) => (
@@ -163,16 +177,23 @@ export default function PatientContextPanel({ patient, visitId, consultationId }
         </section>
       )}
 
-      {otherOrders.length > 0 && <VisitLabOrdersCard title="Recent lab history" orders={otherOrders} />}
+      {otherOrders.length > 0 && (
+        <VisitLabOrdersCard
+          title="Recent lab history"
+          orders={otherOrders}
+          count={<PreviewCount shown={otherOrders.length} total={ordersPage.total} />}
+        />
+      )}
 
       {prescriptions.length > 0 && (
         <section className="rounded-lg border border-line bg-surface-raised">
           <header className="flex items-center gap-2 border-b border-line px-5 py-3">
             <FaPills className="text-ink-muted" />
             <h3 className="text-sm font-semibold text-ink">Prescriptions</h3>
+            <PreviewCount shown={prescriptions.length} total={prescriptionsPage.total} />
           </header>
           <ul className="flex flex-col divide-y divide-line">
-            {prescriptions.slice(0, 5).map((p) => (
+            {prescriptions.map((p) => (
               <li key={p.id} className="flex flex-col gap-1 px-5 py-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-ink">{format(new Date(p.createdAt), 'dd MMM yyyy')}</p>
@@ -185,6 +206,16 @@ export default function PatientContextPanel({ patient, visitId, consultationId }
         </section>
       )}
     </div>
+  );
+}
+
+/** "5 of 23" so a clinician knows the preview is not the whole history. */
+function PreviewCount({ shown, total }: { shown: number; total: number }) {
+  if (total <= shown) return null;
+  return (
+    <span className="ml-auto text-[11px] text-ink-muted">
+      {shown} of {total}
+    </span>
   );
 }
 
@@ -246,13 +277,15 @@ function TriageCard({ triage }: { triage: ITriage }) {
 function VisitLabOrdersCard({
   title,
   orders,
+  count,
 }: {
   title: string;
+  count?: React.ReactNode;
   orders: Array<{
     id: string;
     status: string;
     priority: string;
-    items?: Array<{ test?: { code?: string; name?: string }; resultValue?: string | null }>;
+    items?: Array<{ test?: { code?: string; name?: string }; status?: string; isAbnormal?: boolean }>;
     createdAt: Date;
   }>;
 }) {
@@ -261,6 +294,7 @@ function VisitLabOrdersCard({
       <header className="flex items-center gap-2 border-b border-line px-5 py-3">
         <FaFlask className="text-ink-muted" />
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        {count}
       </header>
       <ul className="flex flex-col divide-y divide-line">
         {orders.map((o) => (
@@ -286,7 +320,15 @@ function VisitLabOrdersCard({
                     {i.test?.code ?? '—'} — {i.test?.name ?? ''}
                   </span>
                   <span className="font-medium tabular-nums">
-                    {i.resultValue ? i.resultValue : <span className="text-ink-muted">pending</span>}
+                    {i.status === LabOrderItemStatusEnum.VERIFIED ? (
+                      i.isAbnormal ? (
+                        <span className="text-critical">abnormal</span>
+                      ) : (
+                        'normal'
+                      )
+                    ) : (
+                      <span className="text-ink-muted">pending</span>
+                    )}
                   </span>
                 </li>
               ))}

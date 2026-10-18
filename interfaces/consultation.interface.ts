@@ -6,6 +6,8 @@ import type {
   DepartmentEnum,
   SortOrderEnum,
 } from '@/enum';
+import type { IAdmitPatientDto } from './admission.interface';
+import type { IConsultationDiagnosis, IConsultationDiagnosisDto } from './diagnosis.interface';
 import type { IPatient } from './patient.interface';
 import type { IUser } from './user.interface';
 
@@ -21,12 +23,13 @@ export interface IConsultation extends IBaseEntity {
   department: DepartmentEnum;
   chiefComplaint: string;
   historyOfPresentIllness?: string | null;
-  examinationFindings?: string | null;
-  assessment?: string | null;
+  examinationAndAssessment?: string | null;
   diagnosis?: string | null;
-  icd10Codes?: string | null;
+  diagnoses?: IConsultationDiagnosis[];
   plan?: string | null;
   notes?: string | null;
+  completionNotes?: string | null;
+  cancellationReason?: string | null;
   followUpDate?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
@@ -38,14 +41,12 @@ export interface ICreateConsultationDto {
   visitId?: string;
   triageId?: string;
   type?: ConsultationTypeEnum;
-  status?: ConsultationStatusEnum;
   department?: DepartmentEnum;
   chiefComplaint: string;
   historyOfPresentIllness?: string;
-  examinationFindings?: string;
-  assessment?: string;
+  examinationAndAssessment?: string;
   diagnosis?: string;
-  icd10Codes?: string;
+  diagnoses?: IConsultationDiagnosisDto[];
   plan?: string;
   notes?: string;
   followUpDate?: string;
@@ -58,6 +59,7 @@ export interface ICompleteConsultationDto {
   nextDepartment?: DepartmentEnum;
   nextIntents?: string[];
   notes?: string;
+  admission?: IAdmitPatientDto;
 }
 
 export interface ICancelConsultationDto {
@@ -81,4 +83,15 @@ export interface IConsultationFilters {
   sortOrder?: SortOrderEnum;
   page?: number;
   limit?: number;
+}
+
+export interface IConsultationAddendum extends IBaseEntity {
+  consultationId: string;
+  authorId: string;
+  author?: IUser;
+  body: string;
+}
+
+export interface ICreateAddendumDto {
+  body: string;
 }

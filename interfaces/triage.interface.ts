@@ -31,6 +31,7 @@ export interface ITriage extends IBaseEntity {
   heightCm?: number | null;
   painScore?: number | null;
   allergiesNoted?: string | null;
+  /** @deprecated Legacy rows only; triage now always hands the patient to the doctor (R6). */
   referredToDepartment?: DepartmentEnum | null;
   arrivedAt: string;
   triagedAt?: string | null;
@@ -57,7 +58,6 @@ export interface ICreateTriageDto {
   heightCm?: number;
   painScore?: number;
   allergiesNoted?: string;
-  referredToDepartment?: DepartmentEnum;
   arrivedAt?: string;
   triagedAt?: string;
   queueNumber?: string;

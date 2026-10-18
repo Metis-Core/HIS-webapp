@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { FaBoxes, FaExclamationTriangle, FaPlus } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { Button, Dropdown, EmptyState, Input, PageHeader, Pill, Stats, Tabs } from '@/components';
+import { Button, Dropdown, EmptyState, Input, PageHeader, Pagination, Pill, Stats, Tabs } from '@/components';
 import InventoryItemDrawer from '@/components/drawers/inventory-item.drawer';
 import StockMovementDrawer from '@/components/drawers/stock-movement.drawer';
 import {
@@ -22,9 +22,14 @@ import {
   useInventoryStock,
   useInventoryStores,
   useInventoryTransactions,
+  useListTotal,
   useLowStock,
+  usePagedSearch,
   useRoles,
+  useUrlPage,
 } from '@/hooks';
+import { inventoryItemsService } from '@/helpers/inventory.service';
+import { MAX_PAGE_SIZE } from '@/helpers/pagination';
 import type { ICreateInventoryItemDto, IInventoryItem, IOption, IUpdateInventoryItemDto } from '@/interfaces';
 
 type TabId = 'items' | 'stock' | 'low' | 'transactions' | 'stores';
@@ -33,16 +38,44 @@ const NEGATIVE_TYPES = new Set(['ISSUE', 'TRANSFER_OUT', 'ADJUSTMENT_OUT', 'DISP
 
 export default function InventoryPage() {
   const [tab, setTab] = useState<TabId>('items');
-  const [search, setSearch] = useState('');
   const [drawerMode, setDrawerMode] = useState<ModalDrawerModeEnum | null>(null);
   const [selected, setSelected] = useState<IInventoryItem | null>(null);
   const [stockItem, setStockItem] = useState<IInventoryItem | null>(null);
   const roles = useRoles();
 
-  const { items, createItem, updateItem, removeItem } = useInventoryItems({ limit: 100 });
-  const { stock } = useInventoryStock();
-  const { lowStock } = useLowStock();
-  const { transactions, recordTransaction } = useInventoryTransactions({ limit: 50 });
+  // Every tab pages on the server and keeps its own page in the URL.
+  const itemsList = usePagedSearch('itemsPage');
+  const stockList = usePagedSearch('stockPage');
+  const [lowPage, setLowPage] = useUrlPage('lowPage');
+  const [txPage, setTxPage] = useUrlPage('txPage');
+
+  const {
+    items,
+    pagination: itemsPagination,
+    createItem,
+    updateItem,
+    removeItem,
+  } = useInventoryItems({ page: itemsList.page, search: itemsList.debouncedSearch });
+  const { stock, pagination: stockPagination } = useInventoryStock({
+    page: stockList.page,
+    search: stockList.debouncedSearch,
+  });
+  const { lowStock, pagination: lowPagination } = useLowStock({ page: lowPage });
+  const { transactions, pagination: txPagination, recordTransaction } = useInventoryTransactions({ page: txPage });
+  const activeItemsCount = useListTotal(inventoryItemsService.buildListUrl({ isActive: true, limit: 1 }));
+  const allItemsCount = useListTotal(inventoryItemsService.buildListUrl({ limit: 1 }));
+
+  // On-hand totals (all stores) for just the items on this page.
+  const pageItemIds = items.map((i) => i.id);
+  const { stock: pageStock } = useInventoryStock(
+    { itemIds: pageItemIds, limit: MAX_PAGE_SIZE },
+    { enabled: tab === 'items' && pageItemIds.length > 0 },
+  );
+  // Current balances of the item being adjusted, for the stock drawer.
+  const { stock: stockItemRows } = useInventoryStock(
+    { itemIds: stockItem ? [stockItem.id] : [], limit: MAX_PAGE_SIZE },
+    { enabled: Boolean(stockItem) },
+  );
 
   const canManage = roles.isAdmin;
   const canAdjustStock = roles.is(
@@ -54,31 +87,16 @@ export default function InventoryPage() {
 
   const onHandByItem = useMemo(() => {
     const map = new Map<string, number>();
-    stock.forEach((s) => map.set(s.itemId, (map.get(s.itemId) ?? 0) + s.quantity));
+    pageStock.forEach((st) => map.set(st.itemId, (map.get(st.itemId) ?? 0) + st.quantity));
     return map;
-  }, [stock]);
+  }, [pageStock]);
 
-  const query = search.trim().toLowerCase();
-  const matches = (name?: string, sku?: string) =>
-    !query || (name ?? '').toLowerCase().includes(query) || (sku ?? '').toLowerCase().includes(query);
-
-  const filteredItems = items.filter((i) => matches(i.name, i.sku));
-  const filteredStock = stock.filter((s) => matches(s.item?.name, s.item?.sku));
-
-  const stats = useMemo(
-    () => [
-      {
-        label: 'Active items',
-        value: items.filter((i) => i.isActive).length,
-        icon: FaBoxes,
-        variant: StatVariantEnum.Emerald,
-      },
-      { label: 'Low stock', value: lowStock.length, icon: FaBoxes, variant: StatVariantEnum.Amber },
-      { label: 'Total SKUs', value: items.length, icon: FaBoxes, variant: StatVariantEnum.Blue },
-      { label: 'Recent movements', value: transactions.length, icon: FaBoxes, variant: StatVariantEnum.Green },
-    ],
-    [items, lowStock, transactions],
-  );
+  const stats = [
+    { label: 'Active items', value: activeItemsCount, icon: FaBoxes, variant: StatVariantEnum.Emerald },
+    { label: 'Low stock', value: lowPagination.total, icon: FaBoxes, variant: StatVariantEnum.Amber },
+    { label: 'Total SKUs', value: allItemsCount, icon: FaBoxes, variant: StatVariantEnum.Blue },
+    { label: 'Stock movements', value: txPagination.total, icon: FaBoxes, variant: StatVariantEnum.Green },
+  ];
 
   const openAdd = () => {
     setSelected(null);
@@ -122,19 +140,24 @@ export default function InventoryPage() {
     });
   };
 
+  const activeList = tab === 'stock' ? stockList : itemsList;
   const searchBox = (
     <Input
       className="max-w-sm"
       placeholder="Search SKU / name"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
+      value={activeList.search}
+      onChange={(e) => activeList.setSearch(e.target.value)}
     />
   );
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        description="Medications, consumables, and equipment across stores."
+        description={
+          roles.is(UserRoleEnum.LAB_TECH)
+            ? 'Laboratory reagents and consumables in the lab stores.'
+            : 'Medications, consumables, and equipment across stores.'
+        }
         action={
           tab === 'items' && canManage ? (
             <Button type="button" variant={ButtonVariantEnum.PRIMARY} onClick={openAdd}>
@@ -151,7 +174,7 @@ export default function InventoryPage() {
         tabs={[
           { id: 'items', label: 'Items' },
           { id: 'stock', label: 'Stock levels' },
-          { id: 'low', label: `Low stock (${lowStock.length})` },
+          { id: 'low', label: `Low stock (${lowPagination.total})` },
           { id: 'transactions', label: 'Transactions' },
           { id: 'stores', label: 'Stores' },
         ]}
@@ -162,12 +185,12 @@ export default function InventoryPage() {
       {tab === 'items' && (
         <>
           {searchBox}
-          {filteredItems.length === 0 ? (
+          {items.length === 0 ? (
             <EmptyState
-              message={items.length === 0 ? 'No inventory items yet' : 'No items match your search'}
+              message={itemsList.debouncedSearch ? 'No items match your search' : 'No inventory items yet'}
               icon={FaBoxes}
-              actionLabel={canManage && items.length === 0 ? 'Add first item' : undefined}
-              onAction={canManage && items.length === 0 ? openAdd : undefined}
+              actionLabel={canManage && !itemsList.debouncedSearch ? 'Add first item' : undefined}
+              onAction={canManage && !itemsList.debouncedSearch ? openAdd : undefined}
             />
           ) : (
             <div className="overflow-hidden rounded-lg border border-line bg-surface-raised">
@@ -187,7 +210,7 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredItems.map((i) => {
+                  {items.map((i) => {
                     const onHand = onHandByItem.get(i.id) ?? 0;
                     const low = i.isActive && onHand <= i.minStockLevel;
                     return (
@@ -251,6 +274,7 @@ export default function InventoryPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination {...itemsPagination} onPageChange={itemsList.setPage} label="Item pages" />
             </div>
           )}
         </>
@@ -259,9 +283,11 @@ export default function InventoryPage() {
       {tab === 'stock' && (
         <>
           {searchBox}
-          {filteredStock.length === 0 ? (
+          {stock.length === 0 ? (
             <EmptyState
-              message={stock.length === 0 ? 'No stock yet — receive stock from the Items tab' : 'No stock matches'}
+              message={
+                stockList.debouncedSearch ? 'No stock matches' : 'No stock yet — receive stock from the Items tab'
+              }
               icon={FaBoxes}
             />
           ) : (
@@ -278,7 +304,7 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStock.map((s) => {
+                  {stock.map((s) => {
                     const low = s.item != null && s.quantity <= s.item.minStockLevel;
                     return (
                       <tr key={s.id} className="border-b border-line last:border-0">
@@ -319,6 +345,7 @@ export default function InventoryPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination {...stockPagination} onPageChange={stockList.setPage} label="Stock pages" />
             </div>
           )}
         </>
@@ -365,6 +392,7 @@ export default function InventoryPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination {...lowPagination} onPageChange={setLowPage} label="Low stock pages" />
           </div>
         ))}
 
@@ -416,6 +444,7 @@ export default function InventoryPage() {
                 })}
               </tbody>
             </table>
+            <Pagination {...txPagination} onPageChange={setTxPage} label="Transaction pages" />
           </div>
         ))}
 
@@ -424,7 +453,7 @@ export default function InventoryPage() {
       <InventoryItemDrawer mode={drawerMode} item={selected} onClose={closeDrawer} onSave={save} />
       <StockMovementDrawer
         item={stockItem}
-        stock={stock.filter((s) => s.itemId === stockItem?.id)}
+        stock={stockItemRows}
         onClose={() => setStockItem(null)}
         onSubmit={recordTransaction}
       />
@@ -439,7 +468,8 @@ const departmentOptions: IOption[] = [
 ];
 
 function StoresPanel({ canManage }: { canManage: boolean }) {
-  const { stores, createStore, updateStore } = useInventoryStores();
+  const [page, setPage] = useUrlPage('storesPage');
+  const { stores, pagination, createStore, updateStore } = useInventoryStores({ page });
   const [name, setName] = useState('');
   const [type, setType] = useState<InventoryStoreTypeEnum>(InventoryStoreTypeEnum.DEPARTMENT);
   const [department, setDepartment] = useState('');
@@ -552,6 +582,7 @@ function StoresPanel({ canManage }: { canManage: boolean }) {
               ))}
             </tbody>
           </table>
+          <Pagination {...pagination} onPageChange={setPage} label="Store pages" />
         </div>
       )}
     </div>

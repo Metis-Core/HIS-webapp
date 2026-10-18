@@ -7,33 +7,33 @@ import {
   FaClipboardCheck,
   FaDoorOpen,
   FaExchangeAlt,
+  FaFileInvoiceDollar,
   FaFlask,
   FaPills,
   FaProcedures,
   FaShareSquare,
   FaStethoscope,
   FaTooth,
-  FaUserPlus,
+  FaUserCheck,
   FaXRay,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 import { QueueStageEnum } from '@/enum/queue.enum';
 import { stageLabel } from '@/data/queue';
 
+// The real outpatient journey (R7/R3): reception -> triage -> doctor -> lab -> pharmacy -> billing.
 export const mainPathway: QueueStageEnum[] = [
-  QueueStageEnum.REGISTRATION,
-  QueueStageEnum.CONSULTATION,
+  QueueStageEnum.RECEPTION,
   QueueStageEnum.EXAMINATION,
+  QueueStageEnum.CONSULTATION,
   QueueStageEnum.LAB,
-  QueueStageEnum.RADIOLOGY,
   QueueStageEnum.PHARMACY,
-  QueueStageEnum.SURGERY,
-  QueueStageEnum.POSTOPERATIVE,
-  QueueStageEnum.DISCHARGE,
+  QueueStageEnum.BILLING,
 ];
 
 const stageIcons: Record<QueueStageEnum, IconType> = {
-  [QueueStageEnum.REGISTRATION]: FaUserPlus,
+  [QueueStageEnum.RECEPTION]: FaUserCheck,
+  [QueueStageEnum.BILLING]: FaFileInvoiceDollar,
   [QueueStageEnum.CONSULTATION]: FaStethoscope,
   [QueueStageEnum.EXAMINATION]: FaClipboardCheck,
   [QueueStageEnum.LAB]: FaFlask,

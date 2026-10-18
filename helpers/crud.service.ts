@@ -1,12 +1,13 @@
 import { api } from './axios';
 import type { IPagination } from '@/interfaces';
 
-const buildQuery = (filters: Record<string, unknown> = {}): string => {
+const buildQuery = (filters: object = {}): string => {
   const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => {
+  Object.entries(filters as Record<string, unknown>).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return;
     if (Array.isArray(value)) {
-      value.forEach((v) => params.append(key, String(v)));
+      // The API reads list filters as one comma-separated value.
+      if (value.length > 0) params.append(key, value.map(String).join(','));
       return;
     }
     params.append(key, String(value));

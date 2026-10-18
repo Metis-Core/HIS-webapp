@@ -2,6 +2,7 @@
 
 import * as Yup from 'yup';
 import { useField } from 'formik';
+import { formatFee } from '../billing/billing-format';
 import Drawer from './drawer';
 import Button from '../buttons/button';
 import Form from '../forms/form';
@@ -15,10 +16,17 @@ const schema = Yup.object({
   name: Yup.string().required('Service name is required').max(150, 'Keep it under 150 characters'),
   fee: Yup.number().typeError('Fee must be a number').min(0, 'Fee cannot be negative').required('Fee is required'),
   description: Yup.string().max(255, 'Keep it under 255 characters'),
+  code: Yup.string()
+    .trim()
+    .matches(/^[A-Za-z][A-Za-z0-9_]{1,31}$/, {
+      message: '2-32 letters, digits or underscores, starting with a letter',
+      excludeEmptyString: true,
+    }),
 });
 
 const emptyValues: ServiceFormValues = {
   name: '',
+  code: '',
   fee: '',
   description: '',
   isActive: true,
@@ -49,6 +57,7 @@ export default function ServiceDrawer({ mode, service, onClose, onSave, onEdit }
   const initialValues: ServiceFormValues = service
     ? {
         name: service.name,
+        code: service.code ?? '',
         fee: String(service.fee),
         description: service.description ?? '',
         isActive: service.isActive,
@@ -67,7 +76,8 @@ export default function ServiceDrawer({ mode, service, onClose, onSave, onEdit }
           </div>
 
           <dl className="grid gap-4 sm:grid-cols-2">
-            <ViewField label="Fee (UGX)" value={service.fee.toLocaleString()} />
+            <ViewField label="Fee" value={formatFee(service.fee)} />
+            <ViewField label="Code" value={service.code} />
             <ViewField label="Description" value={service.description} />
           </dl>
 
@@ -93,6 +103,7 @@ export default function ServiceDrawer({ mode, service, onClose, onSave, onEdit }
         >
           <FormInput name="name" label="Service name" placeholder="e.g. Consultation" required />
           <FormInput name="fee" label="Fee (UGX)" type="number" min={0} placeholder="0" required />
+          <FormInput name="code" label="System code (optional)" placeholder="CONSULTATION for the check-in fee" />
           <FormInput name="description" label="Description" placeholder="Optional" />
           <FormToggle name="isActive" label="Active" />
 

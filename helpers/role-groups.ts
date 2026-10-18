@@ -39,6 +39,8 @@ export const RoleGroups = {
 
   NURSING_ADMIN: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.NURSE] as const,
 
+  FINANCE_MANAGERS: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.ACCOUNTANT] as const,
+
   BILLING: [UserRoleEnum.SUPER_ADMIN, UserRoleEnum.ADMIN, UserRoleEnum.ACCOUNTANT, UserRoleEnum.RECEPTIONIST] as const,
 } as const;
 

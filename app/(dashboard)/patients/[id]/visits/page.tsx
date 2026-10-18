@@ -2,17 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import useSWR from 'swr';
 import { PatientTimeline, VisitDrawer } from '@/components';
 import { getPatientHistory } from '@/data/patient-history';
 import type { IPatientHistoryEvent } from '@/data/patient-history';
-import { api } from '@/helpers/axios';
-import type { IPatient } from '@/interfaces/patient.interface';
+import { usePatient } from '@/hooks';
 
 export default function PatientVisitsPage() {
   const params = useParams<{ id: string }>();
-  const { data } = useSWR<{ data: { data: IPatient } }>(`/patients/${params.id}`, api);
-  const patient = data?.data.data;
+  const { patient } = usePatient(params.id);
   const history = useMemo(() => (patient ? getPatientHistory(patient.id) : []), [patient]);
   const [selected, setSelected] = useState<IPatientHistoryEvent | null>(null);
 

@@ -10,7 +10,9 @@ export * from './user.interface';
 export * from './service.interface';
 export * from './patient.interface';
 export * from './contact.interface';
+export * from './admission.interface';
 export * from './consultation.interface';
+export * from './diagnosis.interface';
 export * from './triage.interface';
 export * from './queue.interfaces';
 export * from './otp.interface';
@@ -19,6 +21,12 @@ export * from './lab.interface';
 export * from './inventory.interface';
 export * from './pharmacy.interface';
 export * from './billing.interface';
+export * from './admission.interface';
+export * from './clinic.interface';
+export * from './message.interface';
+export * from './availability.interface';
+export * from './ledger.interface';
+export * from './analytics.interface';
 
 export interface IOption {
   label: string;
@@ -52,6 +60,12 @@ export interface ISelectProps {
   placeholder?: string;
   isDisabled?: boolean;
   compact?: boolean;
+  /** Async search: controlled text and change handler; options are then filtered by the server. */
+  inputValue?: string;
+  onInputChange?: (value: string) => void;
+  isLoading?: boolean;
+  isClearable?: boolean;
+  noOptionsMessage?: string;
 }
 
 export interface IPhoneInputProps {
