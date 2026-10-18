@@ -1,6 +1,8 @@
 export enum ChargeSourceEnum {
   CONSULTATION = 'consultation',
   LAB = 'lab',
+  RADIOLOGY = 'radiology',
+  SURGERY = 'surgery',
   SERVICE = 'service',
   PHARMACY = 'pharmacy',
   OTHER = 'other',

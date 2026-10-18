@@ -22,6 +22,7 @@ export * from './inventory.interface';
 export * from './pharmacy.interface';
 export * from './billing.interface';
 export * from './availability.interface';
+export * from './ledger.interface';
 
 export interface IOption {
   label: string;

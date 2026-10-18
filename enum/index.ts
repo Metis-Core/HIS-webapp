@@ -68,6 +68,16 @@ export {
 } from './endpoints.enum';
 export { SortOrderEnum } from './common.enum';
 export {
+  LedgerEndpointEnum,
+  PaymentMethodEnum,
+  PaymentStatusEnum,
+  InvoiceStatusEnum,
+  OrderEndpointEnum,
+  OrderKindEnum,
+  OrderStatusEnum,
+  OrderPriorityEnum,
+} from './ledger.enum';
+export {
   AvailabilityEndpointEnum,
   DoctorEndpointEnum,
   AvailabilityStatusEnum,
